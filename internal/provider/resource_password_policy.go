@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/client"
+	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
 type resourcePasswordPolicyType struct{}
@@ -15,6 +15,7 @@ type resourcePasswordPolicy struct {
 
 func (r resourcePasswordPolicyType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: "`cidaas_password_policy` controls the password policies in the tenant",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
 				Type:     types.StringType,

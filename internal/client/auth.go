@@ -19,6 +19,10 @@ func (c *client) SignIn() (*authResponse, error) {
 		strings.NewReader(string(rb)),
 	)
 
+	if err != nil {
+		return nil, err
+	}
+
 	req.Header.Add("content-type", "application/json")
 
 	body, err := c.doRequest(req, nil)

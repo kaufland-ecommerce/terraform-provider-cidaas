@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/client"
+	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
 type computeSocialProviderDataSourceType struct{}
@@ -16,6 +16,7 @@ type computeSocialProviderDataSource struct {
 
 func (c computeSocialProviderDataSourceType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: "Allows reading social providers that are configured in internal",
 		Attributes: map[string]tfsdk.Attribute{
 			"social_id": {
 				Type:     types.StringType,

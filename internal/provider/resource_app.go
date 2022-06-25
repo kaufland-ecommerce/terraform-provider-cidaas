@@ -8,9 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	validators2 "github.com/real-digital/terraform-provider-cidaas/internal/provider/validators"
+
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/client"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/provider/validators"
+	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 	"golang.org/x/exp/slices"
 )
 
@@ -35,14 +36,14 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
+					validators2.NonEmptyString(),
 				},
 			},
 			"client_display_name": {
 				Type:     types.StringType,
 				Optional: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
+					validators2.NonEmptyString(),
 				},
 			},
 			// TODO: App Logo URL
@@ -94,21 +95,20 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
-				},
+					validators2.NonEmptyString()},
 			},
 			"company_address": {
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
+					validators2.NonEmptyString(),
 				},
 			},
 			"company_website": {
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
+					validators2.NonEmptyString(),
 				},
 			},
 
@@ -136,24 +136,24 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Required: true,
 			},
 			"token_lifetime_in_seconds": {
-				Type:     types.Int64Type,
-				Required: true,
+				Type:       types.Int64Type,
+				Required:   true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.GreaterOrEqual(0),
+					// validators.AtLeast(0),
 				},
 			},
 			"id_token_lifetime_in_seconds": {
 				Type:     types.Int64Type,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.GreaterOrEqual(0),
+					validators2.AtLeast(0),
 				},
 			},
 			"refresh_token_lifetime_in_seconds": {
 				Type:     types.Int64Type,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.GreaterOrEqual(0),
+					validators2.AtLeast(0),
 				},
 			},
 
@@ -182,7 +182,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 							tfsdk.UseStateForUnknown(),
 						},
 					},
-				}, tfsdk.ListNestedAttributesOptions{}),
+				}),
 			},
 
 			// Guest Login

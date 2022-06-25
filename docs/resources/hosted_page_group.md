@@ -17,7 +17,7 @@ description: |-
 
 ### Required
 
-- `name` (String) Unique identifier of the webhook
+- `name` (String) Unique identifier of the hook
 - `pages` (Map of String)
 
 

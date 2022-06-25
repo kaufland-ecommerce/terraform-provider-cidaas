@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/provider"
+	"github.com/real-digital/terraform-provider-cidaas/internal/provider"
 	"log"
 )
 
@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "app.terraform.io/kec-team-account/cidaas",
+		Address: "app.terraform.io/kec-team-account/internal",
 		Debug:   debug,
 	}
 

@@ -18,7 +18,7 @@ type hooksResponse struct {
 }
 
 func (c *client) GetHooks() ([]*Hook, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/webhooks-srv/webhook/list", c.HostUrl), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/webhooks-srv/hook/list", c.HostUrl), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (c *client) GetHooks() ([]*Hook, error) {
 func (c *client) GetHook(ID string) (*Hook, error) {
 	req, err := http.NewRequest(
 		"GET",
-		fmt.Sprintf("%s/webhooks-srv/webhook?id=%s", c.HostUrl, ID),
+		fmt.Sprintf("%s/webhooks-srv/hook?id=%s", c.HostUrl, ID),
 		nil,
 	)
 
@@ -86,9 +86,13 @@ func (c *client) UpsertHook(hook Hook) (*Hook, error) {
 
 	req, err := http.NewRequest(
 		"POST",
-		fmt.Sprintf("%s/webhooks-srv/webhook", c.HostUrl),
+		fmt.Sprintf("%s/webhooks-srv/hook", c.HostUrl),
 		strings.NewReader(string(rb)),
 	)
+
+	if err != nil {
+		return nil, err
+	}
 
 	req.Header.Add("content-type", "application/json")
 
@@ -111,7 +115,7 @@ func (c *client) UpsertHook(hook Hook) (*Hook, error) {
 func (c *client) DeleteHook(ID string) error {
 	req, err := http.NewRequest(
 		"DELETE",
-		fmt.Sprintf("%s/webhooks-srv/webhook/%s", c.HostUrl, ID),
+		fmt.Sprintf("%s/webhooks-srv/hook/%s", c.HostUrl, ID),
 		nil,
 	)
 

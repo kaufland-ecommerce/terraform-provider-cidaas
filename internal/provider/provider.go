@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/client"
+	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
 var _ tfsdk.Provider = &provider{}
@@ -117,7 +117,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	if err != nil {
 		res.Diagnostics.AddError(
 			"unable to create client",
-			"unable to create cidaas client: \n\n"+err.Error(),
+			"unable to create internal client: \n\n"+err.Error(),
 		)
 	}
 

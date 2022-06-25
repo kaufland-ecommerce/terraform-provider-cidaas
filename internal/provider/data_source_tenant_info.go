@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/client"
+	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
 type computeTenantInfoDataSourceType struct{}
@@ -15,22 +15,26 @@ type computeTenantInfoDataSource struct {
 
 func (c computeTenantInfoDataSourceType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: "Information about the connected tenant.",
 		Attributes: map[string]tfsdk.Attribute{
 			"tenant_name": {
-				Type:     types.StringType,
-				Computed: true,
+				Type:        types.StringType,
+				Computed:    true,
+				Description: "Public visible name of the tenant",
 			},
 			"tenant_key": {
-				Type:     types.StringType,
-				Computed: true,
+				Type:        types.StringType,
+				Computed:    true,
+				Description: "(internal) id of the tenant",
 			},
 			"custom_field_flatten": {
 				Type:     types.BoolType,
 				Computed: true,
 			},
 			"version_info": {
-				Type:     types.StringType,
-				Computed: true,
+				Type:        types.StringType,
+				Computed:    true,
+				Description: "Currently deployed version",
 			},
 		},
 	}, nil

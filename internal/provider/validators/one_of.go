@@ -12,7 +12,7 @@ type ValueInListValidator struct {
 	List []string
 }
 
-func ValueInList(list []string) ValueInListValidator {
+func OneOf(list []string) ValueInListValidator {
 	return ValueInListValidator{
 		List: list,
 	}

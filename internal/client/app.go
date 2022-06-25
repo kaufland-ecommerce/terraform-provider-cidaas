@@ -33,7 +33,7 @@ func (c *client) GetApp(clientId string) (*App, error) {
 
 	err = json.Unmarshal(body, &response)
 
-	return &response.Data, nil
+	return &response.Data, err
 }
 
 func (c *client) UpdateApp(app App) (*App, error) {

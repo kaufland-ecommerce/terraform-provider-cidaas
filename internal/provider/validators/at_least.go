@@ -11,7 +11,7 @@ type GreaterOrEqualValidtor struct {
 	Min int64
 }
 
-func GreaterOrEqual(min int64) GreaterOrEqualValidtor {
+func AtLeast(min int64) GreaterOrEqualValidtor {
 	return GreaterOrEqualValidtor{
 		Min: min,
 	}

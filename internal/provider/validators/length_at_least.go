@@ -11,16 +11,14 @@ type MinimumStringLengthValidator struct {
 	Min int64
 }
 
-func MinimumStringLength(min int64) MinimumStringLengthValidator {
+func LengthAtLeast(min int64) MinimumStringLengthValidator {
 	return MinimumStringLengthValidator{
 		Min: min,
 	}
 }
 
 func NonEmptyString() MinimumStringLengthValidator {
-	return MinimumStringLengthValidator{
-		Min: 1,
-	}
+	return LengthAtLeast(1)
 }
 
 func (v MinimumStringLengthValidator) Description(context.Context) string {

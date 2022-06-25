@@ -5,8 +5,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/client"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/provider/validators"
+	"github.com/real-digital/terraform-provider-cidaas/internal/client"
+	"github.com/real-digital/terraform-provider-cidaas/internal/provider/validators"
 )
 
 type resourceHookType struct{}
@@ -16,6 +16,8 @@ type resourceHook struct {
 
 func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: "`cidaas_hook` manages webhooks in the tenant.\n\n" +
+			"Webhooks are triggered depending on the configured events.",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
 				Type:     types.StringType,
@@ -23,12 +25,12 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 				PlanModifiers: tfsdk.AttributePlanModifiers{
 					tfsdk.UseStateForUnknown(),
 				},
-				Description: "Unique identifier of the webhook",
+				Description: "Unique identifier of the hook",
 			},
 			"last_updated": {
 				Type:        types.StringType,
 				Computed:    true,
-				Description: "Time of the last update of the webhook",
+				Description: "Time of the last update of the hook",
 			},
 			"url": {
 				Type:        types.StringType,
@@ -38,9 +40,9 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 			"auth_type": {
 				Type:        types.StringType,
 				Required:    true,
-				Description: "Authentication method that is used for the webhook",
+				Description: "Authentication method that is used for the hook",
 				Validators: []tfsdk.AttributeValidator{
-					validators.ValueInList([]string{
+					validators.OneOf([]string{
 						"APIKEY", "TOTP", "CIDAAS_OAUTH2",
 					}),
 				},
@@ -48,7 +50,7 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 			"events": {
 				Type:        types.ListType{ElemType: types.StringType},
 				Required:    true,
-				Description: "One or more webhook events which will trigger the webhook",
+				Description: "One or more hook events which will trigger the hook",
 			},
 			"apikey_details": {
 				Required: false,
@@ -57,7 +59,7 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 					"apikey": {
 						Type:        types.StringType,
 						Required:    true,
-						Description: "apikey to measure and restrict access to the webhook",
+						Description: "apikey to measure and restrict access to the hook",
 					},
 					"apikey_placeholder": {
 						Type:        types.StringType,
@@ -69,7 +71,7 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 						Required:    true,
 						Description: "pass apikey as query param or header param",
 						Validators: []tfsdk.AttributeValidator{
-							validators.ValueInList([]string{
+							validators.OneOf([]string{
 								"query", "header",
 							}),
 						},

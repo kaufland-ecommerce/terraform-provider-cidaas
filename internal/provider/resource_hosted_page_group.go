@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/real-digital/terraform-provider-cidaas/cidaas/client"
+	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
 type resourceHostedPageGroupType struct{}
@@ -25,7 +25,7 @@ func (r resourceHostedPageGroupType) GetSchema(context.Context) (tfsdk.Schema, d
 				PlanModifiers: tfsdk.AttributePlanModifiers{
 					tfsdk.RequiresReplace(),
 				},
-				Description: "Unique identifier of the webhook",
+				Description: "Unique identifier of the hook",
 			},
 			"pages": {
 				Type:     types.MapType{ElemType: types.StringType},
@@ -147,6 +147,11 @@ func (r resourceHostedPageGroup) Update(ctx context.Context, req tfsdk.UpdateRes
 	plannedGroup.Name = plan.Name.Value
 
 	diags = plan.Pages.ElementsAs(ctx, &plannedGroup.Pages, true)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	err := r.p.client.UpdateHostedPagesGroup(plannedGroup)
 
