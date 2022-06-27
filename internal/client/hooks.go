@@ -54,7 +54,7 @@ func (c *client) GetHooks() ([]*Hook, error) {
 func (c *client) GetHook(ID string) (*Hook, error) {
 	req, err := http.NewRequest(
 		"GET",
-		fmt.Sprintf("%s/webhooks-srv/hook?id=%s", c.HostUrl, ID),
+		fmt.Sprintf("%s/webhooks-srv/webhook?id=%s", c.HostUrl, ID),
 		nil,
 	)
 
