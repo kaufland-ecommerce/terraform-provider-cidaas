@@ -56,35 +56,35 @@ type AppKey struct {
 }
 
 type App struct {
-	ID                               string `json:"id"`
-	ClientId                         string `json:"client_id"`
-	ClientSecret                     string `json:"client_secret"`
-	ClientName                       string `json:"client_name"`
-	ClientDisplayName                string `json:"client_display_name"`
-	IsRememberMeSelected             bool   `json:"is_remember_me_selected"`
-	ClientType                       string `json:"client_type"`
-	AllowDisposableEmail             bool   `json:"allow_disposable_email"`
-	FdsEnabled                       bool   `json:"fds_enabled"`
-	EnablePasswordlessAuth           bool   `json:"enable_passwordless_auth"`
-	EnableDeduplication              bool   `json:"enable_deduplication"`
-	MobileNumberVerificationRequired bool   `json:"mobile_number_verification_required"`
-	HostedPageGroup                  string `json:"hosted_page_group"`
-	PrimaryColor                     string `json:"primaryColor"`
-	AccentColor                      string `json:"accentColor"`
-	AutoLoginAfterRegister           bool   `json:"auto_login_after_register"`
-	CompanyName                      string `json:"company_name"`
-	CompanyAddress                   string `json:"company_address"`
-	CompanyWebsite                   string `json:"company_website"`
-	TokenLifetimeInSeconds           int64  `json:"token_lifetime_in_seconds"`
-	IdTokenLifetimeInSeconds         int64  `json:"id_token_lifetime_in_seconds"`
-	RefreshTokenLifetimeInSeconds    int64  `json:"refresh_token_lifetime_in_seconds"`
-	EmailVerificationRequired        bool   `json:"email_verification_required"`
-	EnableBotDetection               bool   `json:"enable_bot_detection"`
-	IsLoginSuccessPageEnabled        bool   `json:"is_login_success_page_enabled"`
-	AllowGuestLogin                  bool   `json:"allow_guest_login"`
-	JweEnabled                       bool   `json:"jwe_enabled"`
-	AlwaysAskMfa                     bool   `json:"always_ask_mfa"`
-	PasswordPolicy                   string `json:"password_policy_ref"`
+	ID                               string  `json:"id"`
+	ClientId                         string  `json:"client_id"`
+	ClientSecret                     string  `json:"client_secret"`
+	ClientName                       string  `json:"client_name"`
+	ClientDisplayName                string  `json:"client_display_name"`
+	IsRememberMeSelected             bool    `json:"is_remember_me_selected"`
+	ClientType                       string  `json:"client_type"`
+	AllowDisposableEmail             bool    `json:"allow_disposable_email"`
+	FdsEnabled                       bool    `json:"fds_enabled"`
+	EnablePasswordlessAuth           bool    `json:"enable_passwordless_auth"`
+	EnableDeduplication              bool    `json:"enable_deduplication"`
+	MobileNumberVerificationRequired bool    `json:"mobile_number_verification_required"`
+	HostedPageGroup                  string  `json:"hosted_page_group"`
+	PrimaryColor                     string  `json:"primaryColor"`
+	AccentColor                      string  `json:"accentColor"`
+	AutoLoginAfterRegister           bool    `json:"auto_login_after_register"`
+	CompanyName                      string  `json:"company_name"`
+	CompanyAddress                   string  `json:"company_address"`
+	CompanyWebsite                   string  `json:"company_website"`
+	TokenLifetimeInSeconds           int64   `json:"token_lifetime_in_seconds"`
+	IdTokenLifetimeInSeconds         int64   `json:"id_token_lifetime_in_seconds"`
+	RefreshTokenLifetimeInSeconds    int64   `json:"refresh_token_lifetime_in_seconds"`
+	EmailVerificationRequired        bool    `json:"email_verification_required"`
+	EnableBotDetection               bool    `json:"enable_bot_detection"`
+	IsLoginSuccessPageEnabled        bool    `json:"is_login_success_page_enabled"`
+	AllowGuestLogin                  bool    `json:"allow_guest_login"`
+	JweEnabled                       bool    `json:"jwe_enabled"`
+	AlwaysAskMfa                     bool    `json:"always_ask_mfa"`
+	PasswordPolicy                   *string `json:"password_policy_ref,omitempty"`
 
 	AppKey AppKey `json:"appKey"`
 

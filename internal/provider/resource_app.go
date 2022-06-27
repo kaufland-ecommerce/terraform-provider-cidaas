@@ -8,10 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	validators2 "github.com/real-digital/terraform-provider-cidaas/internal/provider/validators"
-
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
+	"github.com/real-digital/terraform-provider-cidaas/internal/provider/validators"
 	"golang.org/x/exp/slices"
 )
 
@@ -36,14 +35,14 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators2.NonEmptyString(),
+					validators.NonEmptyString(),
 				},
 			},
 			"client_display_name": {
 				Type:     types.StringType,
 				Optional: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators2.NonEmptyString(),
+					validators.NonEmptyString(),
 				},
 			},
 			// TODO: App Logo URL
@@ -95,20 +94,20 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators2.NonEmptyString()},
+					validators.NonEmptyString()},
 			},
 			"company_address": {
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators2.NonEmptyString(),
+					validators.NonEmptyString(),
 				},
 			},
 			"company_website": {
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators2.NonEmptyString(),
+					validators.NonEmptyString(),
 				},
 			},
 
@@ -136,8 +135,8 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Required: true,
 			},
 			"token_lifetime_in_seconds": {
-				Type:       types.Int64Type,
-				Required:   true,
+				Type:     types.Int64Type,
+				Required: true,
 				Validators: []tfsdk.AttributeValidator{
 					// validators.AtLeast(0),
 				},
@@ -146,14 +145,14 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.Int64Type,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators2.AtLeast(0),
+					validators.AtLeast(0),
 				},
 			},
 			"refresh_token_lifetime_in_seconds": {
 				Type:     types.Int64Type,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators2.AtLeast(0),
+					validators.AtLeast(0),
 				},
 			},
 
@@ -217,7 +216,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 			// Password Rules
 			"password_policy": {
 				Type:     types.StringType,
-				Required: true,
+				Optional: true,
 			},
 
 			// Template Group
@@ -375,7 +374,7 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, re
 		return
 	}
 
-	err = applyAppToState(&state, app)
+	err = applyAppToState(ctx, &state, app)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -414,7 +413,7 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk.UpdateResourceRequest
 		return
 	}
 
-	err = applyAppToState(&state, app)
+	err = applyAppToState(ctx, &state, app)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error Updating app", err.Error())
@@ -464,7 +463,7 @@ func (r resourceApp) ImportState(ctx context.Context, req tfsdk.ImportResourceSt
 		return
 	}
 
-	err = applyAppToState(&state, app)
+	err = applyAppToState(ctx, &state, app)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing app", err.Error())
@@ -475,7 +474,7 @@ func (r resourceApp) ImportState(ctx context.Context, req tfsdk.ImportResourceSt
 	resp.Diagnostics.Append(diags...)
 }
 
-func applyAppToState(state *App, app *client.App) error {
+func applyAppToState(ctx context.Context, state *App, app *client.App) error {
 	state.ID.Value = app.ID
 	state.ClientId.Value = app.ClientId
 	state.ClientSecret.Value = app.ClientSecret
@@ -503,7 +502,8 @@ func applyAppToState(state *App, app *client.App) error {
 	state.IsLoginSuccessPageEnabled.Value = app.IsLoginSuccessPageEnabled
 	state.JweEnabled.Value = app.JweEnabled
 	state.AlwaysAskMfa.Value = app.AlwaysAskMfa
-	state.PasswordPolicy.Value = app.PasswordPolicy
+
+	tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
 
 	state.Scopes = app.AllowedScopes
 	state.RedirectUris = app.RedirectUris
@@ -580,7 +580,7 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, error) 
 		RequiredFields:               plan.RequiredFields,
 		ConsentRefs:                  plan.ConsentRefs,
 		ResponseTypes:                plan.ResponseTypes,
-		GrantTypes:                   plan.ResponseTypes,
+		GrantTypes:                   plan.GrantTypes,
 		AllowedWebOrigins:            plan.AllowedWebOrigins,
 		AllowedOrigins:               plan.AllowedOrigins,
 		AllowedMfa:                   plan.AllowedMfa,
@@ -597,6 +597,8 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, error) 
 			},
 		)
 	}
+
+	tfsdk.ValueAs(ctx, plan.PasswordPolicy, &plannedApp.PasswordPolicy)
 
 	var appKey client.AppKey
 

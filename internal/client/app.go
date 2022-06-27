@@ -68,6 +68,10 @@ func (c *client) UpdateApp(app App) (*App, error) {
 		return nil, err
 	}
 
+	if *response.Data.PasswordPolicy == "" {
+		response.Data.PasswordPolicy = nil
+	}
+
 	return &response.Data, nil
 }
 
