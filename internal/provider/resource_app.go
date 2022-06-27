@@ -135,8 +135,8 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Required: true,
 			},
 			"token_lifetime_in_seconds": {
-				Type:     types.Int64Type,
-				Required: true,
+				Type:       types.Int64Type,
+				Required:   true,
 				Validators: []tfsdk.AttributeValidator{
 					// validators.AtLeast(0),
 				},
@@ -503,7 +503,11 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) error {
 	state.JweEnabled.Value = app.JweEnabled
 	state.AlwaysAskMfa.Value = app.AlwaysAskMfa
 
-	tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
+	if app.PasswordPolicy != nil {
+		tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
+	} else {
+		state.PasswordPolicy.Unknown = true
+	}
 
 	state.Scopes = app.AllowedScopes
 	state.RedirectUris = app.RedirectUris

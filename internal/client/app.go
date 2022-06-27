@@ -33,6 +33,10 @@ func (c *client) GetApp(clientId string) (*App, error) {
 
 	err = json.Unmarshal(body, &response)
 
+	if *response.Data.PasswordPolicy == "" {
+		response.Data.PasswordPolicy = nil
+	}
+
 	return &response.Data, err
 }
 
