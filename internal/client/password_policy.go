@@ -80,7 +80,7 @@ func (c *client) UpdatePasswordPolicy(policy PasswordPolicy) (*PasswordPolicy, e
 	var response passwordPolicyResponse
 	err = json.Unmarshal(body, &response)
 
-	return &response.Data, nil
+	return &response.Data, err
 }
 
 func (c *client) GetPasswordPolicyByName(name string) (*PasswordPolicy, error) {

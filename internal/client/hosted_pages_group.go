@@ -69,6 +69,10 @@ func (c *client) CreateHostedPagesGroup(group HostedPageGroup) error {
 			Url:              link,
 		})
 
+		if err != nil {
+			return err
+		}
+
 		req, err := http.NewRequest(
 			"POST",
 			fmt.Sprintf("%s/hosted-srv/hosted", c.HostUrl),
@@ -175,6 +179,10 @@ func (c *client) UpdateHostedPagesGroup(group HostedPageGroup) error {
 			Locale:           defaultLocale,
 			Url:              link,
 		})
+
+		if err != nil {
+			return err
+		}
 
 		req, err := http.NewRequest(
 			"POST",
