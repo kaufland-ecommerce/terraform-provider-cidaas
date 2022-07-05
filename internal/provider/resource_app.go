@@ -58,6 +58,11 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 			"client_type": {
 				Required: true,
 				Type:     types.StringType,
+				Validators: []tfsdk.AttributeValidator{
+					validators.OneOf([]string{
+						"SINGLE_PAGE", "ANDROID", "IOS", "REGULAR_WEB", "NON_INTERACTIVE",
+					}),
+				},
 			},
 
 			// App Settings
@@ -217,6 +222,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 			"password_policy": {
 				Type:     types.StringType,
 				Optional: true,
+				Required: false,
 			},
 
 			// Template Group
@@ -340,6 +346,37 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk.CreateResourceRequest
 		return
 	}
 
+	var plan App
+
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plannedApp, _ := planToApp(ctx, &plan, &plan)
+
+	app, err := r.p.client.CreateApp(plannedApp)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Could not create app",
+			err.Error(),
+		)
+		return
+	}
+
+	var state App
+
+	err = applyAppToState(ctx, &state, app)
+
+	if err != nil {
+		resp.Diagnostics.AddError("Error Updating app", err.Error())
+		return
+	}
+
+	diags = resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
@@ -503,11 +540,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) error {
 	state.JweEnabled.Value = app.JweEnabled
 	state.AlwaysAskMfa.Value = app.AlwaysAskMfa
 
-	if app.PasswordPolicy != nil {
-		tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
-	} else {
-		state.PasswordPolicy.Unknown = true
-	}
+	tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
 
 	state.Scopes = app.AllowedScopes
 	state.RedirectUris = app.RedirectUris

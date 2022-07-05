@@ -52,6 +52,7 @@ type Client interface {
 	DeleteHostedPagesGroup(groupName string) error
 	GetHostedPagesGroup(groupName string) (*HostedPageGroup, error)
 
+	CreateApp(app *App) (*App, error)
 	GetApp(ClientId string) (*App, error)
 	UpdateApp(app App) (*App, error)
 	DeleteApp(ID string) error

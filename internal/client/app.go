@@ -12,6 +12,44 @@ type appResponse struct {
 	Data   App `json:"data"`
 }
 
+func (c *client) CreateApp(app *App) (*App, error) {
+	rb, err := json.Marshal(app)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(
+		"POST",
+		fmt.Sprintf("%s/apps-srv/clients", c.HostUrl),
+		strings.NewReader(string(rb)),
+	)
+
+	req.Header.Add("content-type", "application/json")
+
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.doRequest(req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var response appResponse
+
+	err = json.Unmarshal(body, &response)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Data.PasswordPolicy == nil || *response.Data.PasswordPolicy == "" {
+		response.Data.PasswordPolicy = nil
+	}
+
+	return &response.Data, nil
+}
+
 func (c *client) GetApp(clientId string) (*App, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/apps-srv/clients/%s", c.HostUrl, clientId), nil)
 
@@ -33,7 +71,7 @@ func (c *client) GetApp(clientId string) (*App, error) {
 
 	err = json.Unmarshal(body, &response)
 
-	if *response.Data.PasswordPolicy == "" {
+	if response.Data.PasswordPolicy == nil || *response.Data.PasswordPolicy == "" {
 		response.Data.PasswordPolicy = nil
 	}
 
@@ -72,7 +110,7 @@ func (c *client) UpdateApp(app App) (*App, error) {
 		return nil, err
 	}
 
-	if *response.Data.PasswordPolicy == "" {
+	if response.Data.PasswordPolicy == nil || *response.Data.PasswordPolicy == "" {
 		response.Data.PasswordPolicy = nil
 	}
 
