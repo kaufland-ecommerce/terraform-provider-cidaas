@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 	"github.com/real-digital/terraform-provider-cidaas/internal/provider/validators"
@@ -324,8 +324,8 @@ func (r resourceApp) ValidateConfig(ctx context.Context, req tfsdk.ValidateResou
 	var allowedFields []string
 	var requiredFields []string
 
-	req.Config.GetAttribute(ctx, tftypes.NewAttributePath().WithAttributeName("allowed_fields"), &allowedFields)
-	req.Config.GetAttribute(ctx, tftypes.NewAttributePath().WithAttributeName("required_fields"), &requiredFields)
+	req.Config.GetAttribute(ctx, path.Root("allowed_fields"), &allowedFields)
+	req.Config.GetAttribute(ctx, path.Root("required_fields"), &requiredFields)
 
 	for _, el := range requiredFields {
 		if !slices.Contains(allowedFields, el) {

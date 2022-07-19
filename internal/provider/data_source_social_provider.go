@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
@@ -44,7 +44,7 @@ func (c computeSocialProviderDataSource) Read(ctx context.Context, req tfsdk.Rea
 	var name string
 	var state SocialProvider
 
-	diags := req.Config.GetAttribute(ctx, tftypes.NewAttributePath().WithAttributeName("provider_name"), &name)
+	diags := req.Config.GetAttribute(ctx, path.Root("provider_name"), &name)
 
 	resp.Diagnostics.Append(diags...)
 

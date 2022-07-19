@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
@@ -88,7 +88,7 @@ func (r resourceHostedPageGroup) Create(ctx context.Context, req tfsdk.CreateRes
 func (r resourceHostedPageGroup) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
 	var groupName string
 
-	diags := req.State.GetAttribute(ctx, tftypes.NewAttributePath().WithAttributeName("name"), &groupName)
+	diags := req.State.GetAttribute(ctx, path.Root("name"), &groupName)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
