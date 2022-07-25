@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -10,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
-	"github.com/real-digital/terraform-provider-cidaas/internal/provider/validators"
 	"golang.org/x/exp/slices"
 )
 
@@ -35,14 +36,14 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"client_display_name": {
 				Type:     types.StringType,
 				Optional: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			// TODO: App Logo URL
@@ -59,9 +60,9 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Required: true,
 				Type:     types.StringType,
 				Validators: []tfsdk.AttributeValidator{
-					validators.OneOf([]string{
+					stringvalidator.OneOf(
 						"SINGLE_PAGE", "ANDROID", "IOS", "REGULAR_WEB", "NON_INTERACTIVE",
-					}),
+					),
 				},
 			},
 
@@ -99,20 +100,21 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString()},
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"company_address": {
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"company_website": {
 				Type:     types.StringType,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.NonEmptyString(),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 
@@ -150,14 +152,14 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.Int64Type,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.AtLeast(0),
+					int64validator.AtLeast(0),
 				},
 			},
 			"refresh_token_lifetime_in_seconds": {
 				Type:     types.Int64Type,
 				Required: true,
 				Validators: []tfsdk.AttributeValidator{
-					validators.AtLeast(0),
+					int64validator.AtLeast(0),
 				},
 			},
 

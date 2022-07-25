@@ -2,11 +2,11 @@ package provider
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
-	"github.com/real-digital/terraform-provider-cidaas/internal/provider/validators"
 )
 
 type resourceHookType struct{}
@@ -42,9 +42,9 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 				Required:    true,
 				Description: "Authentication method that is used for the hook",
 				Validators: []tfsdk.AttributeValidator{
-					validators.OneOf([]string{
+					stringvalidator.OneOf(
 						"APIKEY", "TOTP", "CIDAAS_OAUTH2",
-					}),
+					),
 				},
 			},
 			"events": {
@@ -71,9 +71,9 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 						Required:    true,
 						Description: "pass apikey as query param or header param",
 						Validators: []tfsdk.AttributeValidator{
-							validators.OneOf([]string{
+							stringvalidator.OneOf(
 								"query", "header",
-							}),
+							),
 						},
 					},
 				}),
