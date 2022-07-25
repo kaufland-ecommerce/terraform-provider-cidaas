@@ -86,7 +86,7 @@ type App struct {
 	AlwaysAskMfa                     bool    `json:"always_ask_mfa"`
 	PasswordPolicy                   *string `json:"password_policy_ref,omitempty"`
 
-	AppKey AppKey `json:"appKey"`
+	AppKey *AppKey `json:"appKey,omitempty"`
 
 	AllowLoginWith               []string         `json:"allow_login_with"`
 	RedirectUris                 []string         `json:"redirect_uris"`

@@ -637,14 +637,5 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, error) 
 
 	tfsdk.ValueAs(ctx, plan.PasswordPolicy, &plannedApp.PasswordPolicy)
 
-	var appKey client.AppKey
-
-	plan.AppKey.As(ctx, &appKey, types.ObjectAsOptions{
-		UnhandledNullAsEmpty:    false,
-		UnhandledUnknownAsEmpty: false,
-	})
-
-	plannedApp.AppKey = appKey
-
 	return &plannedApp, nil
 }
