@@ -1,6 +1,7 @@
 terraform-provider-cidaas
 bin
 dist/
+test/
 
 # Created by https://www.toptal.com/developers/gitignore/api/terraform,go,osx,goland
 # Edit at https://www.toptal.com/developers/gitignore?templates=terraform,go,osx,goland

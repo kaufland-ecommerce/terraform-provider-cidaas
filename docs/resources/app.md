@@ -45,7 +45,6 @@ description: |-
 - `is_remember_me_selected` (Boolean)
 - `jwe_enabled` (Boolean)
 - `mobile_number_verification_required` (Boolean)
-- `password_policy` (String)
 - `redirect_uris` (List of String)
 - `refresh_token_lifetime_in_seconds` (Number)
 - `response_types` (List of String)
@@ -58,6 +57,7 @@ description: |-
 - `allowed_fields` (List of String)
 - `allowed_mfa` (List of String)
 - `client_display_name` (String)
+- `password_policy` (String)
 - `primary_color` (String)
 - `required_fields` (List of String)
 
@@ -74,8 +74,11 @@ description: |-
 Required:
 
 - `provider_name` (String)
-- `provider_type` (String)
 - `social_id` (String)
+
+Read-Only:
+
+- `provider_type` (String)
 
 
 <a id="nestedatt--app_key"></a>

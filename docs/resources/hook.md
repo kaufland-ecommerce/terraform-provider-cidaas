@@ -55,7 +55,7 @@ resource "cidaas_hook" "example_hook" {
 <a id="nestedatt--apikey_details"></a>
 ### Nested Schema for `apikey_details`
 
-Optional:
+Required:
 
 - `apikey` (String) apikey to measure and restrict access to the hook
 - `apikey_placeholder` (String) name of the attribute in which the apikey is to be provided
