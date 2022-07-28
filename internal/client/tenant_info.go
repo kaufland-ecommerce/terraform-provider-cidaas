@@ -12,7 +12,7 @@ type tenantInfoResponse struct {
 }
 
 func (c *client) GetTenantInfo() (*TenantInfo, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/public-srv/tenantinfo/basic", c.HostUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/public-srv/tenantinfo/basic", c.HostUrl), nil)
 
 	if err != nil {
 		return nil, err
@@ -25,7 +25,6 @@ func (c *client) GetTenantInfo() (*TenantInfo, error) {
 	}
 
 	var response tenantInfoResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {

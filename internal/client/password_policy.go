@@ -1,11 +1,11 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 type passwordPolicyResponse struct {
@@ -19,7 +19,7 @@ type passwordPoliciesResponse struct {
 }
 
 func (c *client) GetPasswordPolicy(id string) (*PasswordPolicy, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/password-policy-srv/policy/%s", c.HostUrl, id), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/password-policy-srv/policy/%s", c.HostUrl, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (c *client) GetPasswordPolicy(id string) (*PasswordPolicy, error) {
 }
 
 func (c *client) DeletePasswordPolicy(id string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/password-policy-srv/policy/%s", c.HostUrl, id), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/password-policy-srv/policy/%s", c.HostUrl, id), nil)
 	if err != nil {
 		return err
 	}
@@ -61,9 +61,9 @@ func (c *client) UpdatePasswordPolicy(policy PasswordPolicy) (*PasswordPolicy, e
 	}
 
 	req, err := http.NewRequest(
-		"POST",
+		http.MethodPost,
 		fmt.Sprintf("%s/password-policy-srv/policy", c.HostUrl),
-		strings.NewReader(string(rb)),
+		bytes.NewReader(rb),
 	)
 
 	req.Header.Add("content-type", "application/json")
@@ -84,7 +84,7 @@ func (c *client) UpdatePasswordPolicy(policy PasswordPolicy) (*PasswordPolicy, e
 }
 
 func (c *client) GetPasswordPolicyByName(name string) (*PasswordPolicy, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/password-policy-srv/policy/list", c.HostUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/password-policy-srv/policy/list", c.HostUrl), nil)
 
 	if err != nil {
 		return nil, err
@@ -97,7 +97,6 @@ func (c *client) GetPasswordPolicyByName(name string) (*PasswordPolicy, error) {
 	}
 
 	var response passwordPoliciesResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {

@@ -1,10 +1,10 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 func (c *client) SignIn() (*authResponse, error) {
@@ -14,9 +14,9 @@ func (c *client) SignIn() (*authResponse, error) {
 	}
 
 	req, err := http.NewRequest(
-		"POST",
+		http.MethodPost,
 		fmt.Sprintf("%s/token-srv/token", c.HostUrl),
-		strings.NewReader(string(rb)),
+		bytes.NewReader(rb),
 	)
 
 	if err != nil {
@@ -25,17 +25,19 @@ func (c *client) SignIn() (*authResponse, error) {
 
 	req.Header.Add("content-type", "application/json")
 
-	body, err := c.doRequest(req, nil)
+	res, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	ar := authResponse{}
-	err = json.Unmarshal(body, &ar)
+	defer res.Body.Close()
 
-	if err != nil {
-		return nil, err
+	if res.StatusCode > http.StatusOK {
+		return nil, fmt.Errorf("auth failed: %s", res.Body)
 	}
 
-	return &ar, nil
+	var response authResponse
+	err = json.NewDecoder(res.Body).Decode(&response)
+
+	return &response, err
 }

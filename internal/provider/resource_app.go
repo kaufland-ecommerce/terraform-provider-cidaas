@@ -591,6 +591,7 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, error) 
 		ClientType:                       plan.ClientType.Value,
 		IsRememberMeSelected:             plan.IsRememberMeSelected.Value,
 		AllowDisposableEmail:             plan.AllowDisposableEmail.Value,
+		AutoLoginAfterRegister:           plan.AutoLoginAfterRegister.Value,
 		FdsEnabled:                       plan.FdsEnabled.Value,
 		EnablePasswordlessAuth:           plan.EnablePasswordlessAuth.Value,
 		EnableDeduplication:              plan.EnableDeduplication.Value,

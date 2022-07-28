@@ -1,10 +1,10 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 type appResponse struct {
@@ -19,9 +19,9 @@ func (c *client) CreateApp(app *App) (*App, error) {
 	}
 
 	req, err := http.NewRequest(
-		"POST",
+		http.MethodPost,
 		fmt.Sprintf("%s/apps-srv/clients", c.HostUrl),
-		strings.NewReader(string(rb)),
+		bytes.NewReader(rb),
 	)
 
 	req.Header.Add("content-type", "application/json")
@@ -36,7 +36,6 @@ func (c *client) CreateApp(app *App) (*App, error) {
 	}
 
 	var response appResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {
@@ -51,7 +50,7 @@ func (c *client) CreateApp(app *App) (*App, error) {
 }
 
 func (c *client) GetApp(clientId string) (*App, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/apps-srv/clients/%s", c.HostUrl, clientId), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/apps-srv/clients/%s", c.HostUrl, clientId), nil)
 
 	if err != nil {
 		return nil, err
@@ -68,7 +67,6 @@ func (c *client) GetApp(clientId string) (*App, error) {
 	}
 
 	var response appResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if response.Data.PasswordPolicy == nil || *response.Data.PasswordPolicy == "" {
@@ -85,9 +83,9 @@ func (c *client) UpdateApp(app App) (*App, error) {
 	}
 
 	req, err := http.NewRequest(
-		"PUT",
+		http.MethodPut,
 		fmt.Sprintf("%s/apps-srv/clients", c.HostUrl),
-		strings.NewReader(string(rb)),
+		bytes.NewReader(rb),
 	)
 
 	req.Header.Add("content-type", "application/json")
@@ -103,7 +101,6 @@ func (c *client) UpdateApp(app App) (*App, error) {
 	}
 
 	var response appResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {
@@ -118,7 +115,7 @@ func (c *client) UpdateApp(app App) (*App, error) {
 }
 
 func (c *client) DeleteApp(clientId string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/apps-srv/clients/%s", c.HostUrl, clientId), nil)
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/apps-srv/clients/%s", c.HostUrl, clientId), nil)
 
 	if err != nil {
 		return err

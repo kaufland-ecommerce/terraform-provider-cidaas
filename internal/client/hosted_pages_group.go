@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -45,7 +46,7 @@ func (c *client) CreateHostedPagesGroup(group HostedPageGroup) error {
 	}
 
 	req, err := http.NewRequest(
-		"POST",
+		http.MethodPost,
 		fmt.Sprintf("%s/hosted-srv/hostedgroup", c.HostUrl),
 		strings.NewReader(string(rb)),
 	)
@@ -74,9 +75,9 @@ func (c *client) CreateHostedPagesGroup(group HostedPageGroup) error {
 		}
 
 		req, err := http.NewRequest(
-			"POST",
+			http.MethodPost,
 			fmt.Sprintf("%s/hosted-srv/hosted", c.HostUrl),
-			strings.NewReader(string(rb)),
+			bytes.NewReader(rb),
 		)
 
 		req.Header.Add("content-type", "application/json")
@@ -95,7 +96,7 @@ func (c *client) CreateHostedPagesGroup(group HostedPageGroup) error {
 }
 
 func (c *client) GetHostedPagesGroup(groupName string) (*HostedPageGroup, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/hosted-srv/hosted/availablepages", c.HostUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/hosted-srv/hosted/availablepages", c.HostUrl), nil)
 
 	if err != nil {
 		return nil, err
@@ -108,7 +109,6 @@ func (c *client) GetHostedPagesGroup(groupName string) (*HostedPageGroup, error)
 	}
 
 	var response availablePagesResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {
@@ -133,9 +133,9 @@ func (c *client) GetHostedPagesGroup(groupName string) (*HostedPageGroup, error)
 		}
 
 		req, err := http.NewRequest(
-			"POST",
+			http.MethodPost,
 			fmt.Sprintf("%s/hosted-srv/hosted/bylang", c.HostUrl),
-			strings.NewReader(string(rb)),
+			bytes.NewReader(rb),
 		)
 
 		req.Header.Add("content-type", "application/json")
@@ -154,7 +154,6 @@ func (c *client) GetHostedPagesGroup(groupName string) (*HostedPageGroup, error)
 		}
 
 		var response hostedByLangResponse
-
 		err = json.Unmarshal(body, &response)
 
 		if err != nil {
@@ -185,9 +184,9 @@ func (c *client) UpdateHostedPagesGroup(group HostedPageGroup) error {
 		}
 
 		req, err := http.NewRequest(
-			"POST",
+			http.MethodPost,
 			fmt.Sprintf("%s/hosted-srv/hosted", c.HostUrl),
-			strings.NewReader(string(rb)),
+			bytes.NewReader(rb),
 		)
 
 		req.Header.Add("content-type", "application/json")
@@ -207,7 +206,7 @@ func (c *client) UpdateHostedPagesGroup(group HostedPageGroup) error {
 
 func (c *client) DeleteHostedPagesGroup(groupName string) error {
 	req, err := http.NewRequest(
-		"DELETE",
+		http.MethodDelete,
 		fmt.Sprintf("%s/hosted-srv/hostedgroup?groupname=%s", c.HostUrl, groupName),
 		nil,
 	)

@@ -14,7 +14,7 @@ type consentsInstancesResponse struct {
 
 func (c *client) GetConsentInstance(name string) (*ConsentInstance, error) {
 	req, err := http.NewRequest(
-		"GET",
+		http.MethodGet,
 		fmt.Sprintf("%s/consent-management-srv/v2/consent/instance/all/list", c.HostUrl),
 		nil,
 	)
@@ -30,7 +30,6 @@ func (c *client) GetConsentInstance(name string) (*ConsentInstance, error) {
 	}
 
 	var response consentsInstancesResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {

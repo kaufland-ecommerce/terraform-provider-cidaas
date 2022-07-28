@@ -1,10 +1,10 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 type hookResponse struct {
@@ -18,7 +18,7 @@ type hooksResponse struct {
 }
 
 func (c *client) GetHooks() ([]*Hook, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/webhooks-srv/webhook/list", c.HostUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/webhooks-srv/webhook/list", c.HostUrl), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,6 @@ func (c *client) GetHooks() ([]*Hook, error) {
 	}
 
 	var response hooksResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {
@@ -53,7 +52,7 @@ func (c *client) GetHooks() ([]*Hook, error) {
 
 func (c *client) GetHook(ID string) (*Hook, error) {
 	req, err := http.NewRequest(
-		"GET",
+		http.MethodGet,
 		fmt.Sprintf("%s/webhooks-srv/webhook?id=%s", c.HostUrl, ID),
 		nil,
 	)
@@ -85,9 +84,9 @@ func (c *client) UpsertHook(hook Hook) (*Hook, error) {
 	}
 
 	req, err := http.NewRequest(
-		"POST",
+		http.MethodPost,
 		fmt.Sprintf("%s/webhooks-srv/webhook", c.HostUrl),
-		strings.NewReader(string(rb)),
+		bytes.NewReader(rb),
 	)
 
 	if err != nil {
@@ -102,7 +101,6 @@ func (c *client) UpsertHook(hook Hook) (*Hook, error) {
 	}
 
 	var response hookResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {
@@ -114,7 +112,7 @@ func (c *client) UpsertHook(hook Hook) (*Hook, error) {
 
 func (c *client) DeleteHook(ID string) error {
 	req, err := http.NewRequest(
-		"DELETE",
+		http.MethodDelete,
 		fmt.Sprintf("%s/webhooks-srv/webhook/%s", c.HostUrl, ID),
 		nil,
 	)

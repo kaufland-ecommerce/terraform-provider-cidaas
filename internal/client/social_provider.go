@@ -13,7 +13,7 @@ type socialProvidersResponse struct {
 }
 
 func (c *client) GetSocialProvider(name string) (*SocialProvider, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/providers-srv/multi/providers/list?provider_name=%s&provider_type=system", c.HostUrl, name), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/providers-srv/multi/providers/list?provider_name=%s&provider_type=system", c.HostUrl, name), nil)
 
 	if err != nil {
 		return nil, err
@@ -26,7 +26,6 @@ func (c *client) GetSocialProvider(name string) (*SocialProvider, error) {
 	}
 
 	var response socialProvidersResponse
-
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {
