@@ -5,6 +5,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -13,7 +15,7 @@ import (
 
 type resourceHostedPageGroupType struct{}
 type resourceHostedPageGroup struct {
-	p provider
+	p cidaasProvider
 }
 
 func (r resourceHostedPageGroupType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -23,7 +25,7 @@ func (r resourceHostedPageGroupType) GetSchema(context.Context) (tfsdk.Schema, d
 				Type:     types.StringType,
 				Required: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.RequiresReplace(),
+					resource.RequiresReplace(),
 				},
 				Description: "Unique identifier of the hook",
 			},
@@ -35,13 +37,13 @@ func (r resourceHostedPageGroupType) GetSchema(context.Context) (tfsdk.Schema, d
 	}, nil
 }
 
-func (r resourceHostedPageGroupType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceHostedPageGroupType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceHostedPageGroup{
-		p: *(p.(*provider)),
+		p: *(p.(*cidaasProvider)),
 	}, nil
 }
 
-func (r resourceHostedPageGroup) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceHostedPageGroup) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -85,7 +87,7 @@ func (r resourceHostedPageGroup) Create(ctx context.Context, req tfsdk.CreateRes
 	}
 }
 
-func (r resourceHostedPageGroup) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceHostedPageGroup) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var groupName string
 
 	diags := req.State.GetAttribute(ctx, path.Root("name"), &groupName)
@@ -124,7 +126,7 @@ func (r resourceHostedPageGroup) Read(ctx context.Context, req tfsdk.ReadResourc
 
 }
 
-func (r resourceHostedPageGroup) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceHostedPageGroup) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -170,7 +172,7 @@ func (r resourceHostedPageGroup) Update(ctx context.Context, req tfsdk.UpdateRes
 	}
 }
 
-func (r resourceHostedPageGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceHostedPageGroup) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",

@@ -2,8 +2,10 @@ package provider
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
@@ -29,13 +31,13 @@ func (c computeConsentInstanceDataSourceType) GetSchema(context.Context) (tfsdk.
 	}, nil
 }
 
-func (c computeConsentInstanceDataSourceType) NewDataSource(_ context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (c computeConsentInstanceDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return computeConsentInstanceDataSource{
-		client: p.(*provider).client,
+		client: p.(*cidaasProvider).client,
 	}, nil
 }
 
-func (c computeConsentInstanceDataSource) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (c computeConsentInstanceDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var name string
 	var state ConsentInstance
 

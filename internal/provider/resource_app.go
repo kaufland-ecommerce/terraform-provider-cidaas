@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -17,7 +19,7 @@ import (
 
 type resourceAppType struct{}
 type resourceApp struct {
-	p provider
+	p cidaasProvider
 }
 
 func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -27,7 +29,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.StringType,
 				Computed: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 
@@ -71,7 +73,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Type:     types.StringType,
 				Computed: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"client_secret": {
@@ -79,7 +81,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Computed:  true,
 				Sensitive: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 			"allowed_scopes": {
@@ -185,7 +187,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 						Type:     types.StringType,
 						Computed: true,
 						PlanModifiers: tfsdk.AttributePlanModifiers{
-							tfsdk.UseStateForUnknown(),
+							resource.UseStateForUnknown(),
 						},
 					},
 				}),
@@ -280,7 +282,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Computed:  true,
 				Sensitive: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 			},
 
@@ -316,13 +318,13 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 	}, nil
 }
 
-func (r resourceAppType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceAppType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceApp{
-		p: *(p.(*provider)),
+		p: *(p.(*cidaasProvider)),
 	}, nil
 }
 
-func (r resourceApp) ValidateConfig(ctx context.Context, req tfsdk.ValidateResourceConfigRequest, resp *tfsdk.ValidateResourceConfigResponse) {
+func (r resourceApp) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var allowedFields []string
 	var requiredFields []string
 
@@ -339,7 +341,7 @@ func (r resourceApp) ValidateConfig(ctx context.Context, req tfsdk.ValidateResou
 	}
 }
 
-func (r resourceApp) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -381,7 +383,7 @@ func (r resourceApp) Create(ctx context.Context, req tfsdk.CreateResourceRequest
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -426,7 +428,7 @@ func (r resourceApp) Read(ctx context.Context, req tfsdk.ReadResourceRequest, re
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceApp) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -463,7 +465,7 @@ func (r resourceApp) Update(ctx context.Context, req tfsdk.UpdateResourceRequest
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceApp) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceApp) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -490,7 +492,7 @@ func (r resourceApp) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceApp) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r resourceApp) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	var state App
 
 	tflog.Trace(ctx, "fetching app")
@@ -628,12 +630,12 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, error) 
 		SocialProviders: []client.SocialProvider{},
 	}
 
-	for _, provider := range plan.SocialProviders {
+	for _, socialProvider := range plan.SocialProviders {
 		plannedApp.SocialProviders = append(
 			plannedApp.SocialProviders,
 			client.SocialProvider{
-				SocialId:     provider.SocialId.Value,
-				ProviderName: provider.ProviderName.Value,
+				SocialId:     socialProvider.SocialId.Value,
+				ProviderName: socialProvider.ProviderName.Value,
 			},
 		)
 	}

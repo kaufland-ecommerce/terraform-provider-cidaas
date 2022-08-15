@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
@@ -10,7 +12,7 @@ import (
 
 type resourcePasswordPolicyType struct{}
 type resourcePasswordPolicy struct {
-	p provider
+	p cidaasProvider
 }
 
 func (r resourcePasswordPolicyType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -21,7 +23,7 @@ func (r resourcePasswordPolicyType) GetSchema(context.Context) (tfsdk.Schema, di
 				Type:     types.StringType,
 				Computed: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 				Description: "Unique identifier of the policy",
 			},
@@ -54,13 +56,13 @@ func (r resourcePasswordPolicyType) GetSchema(context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (r resourcePasswordPolicyType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourcePasswordPolicyType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourcePasswordPolicy{
-		p: *(p.(*provider)),
+		p: *(p.(*cidaasProvider)),
 	}, nil
 }
 
-func (r resourcePasswordPolicy) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourcePasswordPolicy) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -111,7 +113,7 @@ func (r resourcePasswordPolicy) Create(ctx context.Context, req tfsdk.CreateReso
 	}
 }
 
-func (r resourcePasswordPolicy) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourcePasswordPolicy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state PasswordPolicy
 	diags := req.State.Get(ctx, &state)
 
@@ -147,7 +149,7 @@ func (r resourcePasswordPolicy) Read(ctx context.Context, req tfsdk.ReadResource
 	}
 }
 
-func (r resourcePasswordPolicy) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourcePasswordPolicy) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -201,7 +203,7 @@ func (r resourcePasswordPolicy) Update(ctx context.Context, req tfsdk.UpdateReso
 	}
 }
 
-func (r resourcePasswordPolicy) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourcePasswordPolicy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",

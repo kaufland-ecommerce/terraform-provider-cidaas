@@ -2,8 +2,10 @@ package provider
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
@@ -34,13 +36,13 @@ func (c computeSocialProviderDataSourceType) GetSchema(context.Context) (tfsdk.S
 	}, nil
 }
 
-func (c computeSocialProviderDataSourceType) NewDataSource(_ context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (c computeSocialProviderDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return computeSocialProviderDataSource{
-		client: p.(*provider).client,
+		client: p.(*cidaasProvider).client,
 	}, nil
 }
 
-func (c computeSocialProviderDataSource) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (c computeSocialProviderDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var name string
 	var state SocialProvider
 
@@ -52,18 +54,18 @@ func (c computeSocialProviderDataSource) Read(ctx context.Context, req tfsdk.Rea
 		return
 	}
 
-	provider, err := c.client.GetSocialProvider(name)
+	socialProvider, err := c.client.GetSocialProvider(name)
 
 	if err != nil {
-		resp.Diagnostics.AddError("Could not fetch social provider",
+		resp.Diagnostics.AddError("Could not fetch social socialProvider",
 			err.Error(),
 		)
 		return
 	}
 
-	state.SocialId.Value = provider.Id
-	state.ProviderName.Value = provider.ProviderName
-	state.ProviderType.Value = provider.ProviderType
+	state.SocialId.Value = socialProvider.Id
+	state.ProviderName.Value = socialProvider.ProviderName
+	state.ProviderType.Value = socialProvider.ProviderType
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
