@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -11,23 +12,23 @@ import (
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-var _ tfsdk.Provider = &provider{}
+var _ provider.Provider = &cidaasProvider{}
 
-func New(version string) func() tfsdk.Provider {
-	return func() tfsdk.Provider {
-		return &provider{
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &cidaasProvider{
 			version: version,
 		}
 	}
 }
 
-type provider struct {
+type cidaasProvider struct {
 	configured bool
 	client     client.Client
 	version    string
 }
 
-func (p *provider) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (p *cidaasProvider) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"host": {
@@ -57,7 +58,7 @@ type providerData struct {
 	ClientSecret types.String `tfsdk:"client_secret"`
 }
 
-func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, res *tfsdk.ConfigureProviderResponse) {
+func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRequest, res *provider.ConfigureResponse) {
 	var config providerData
 
 	diags := req.Config.Get(ctx, &config)
@@ -125,8 +126,8 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	p.configured = true
 }
 
-func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
-	return map[string]tfsdk.ResourceType{
+func (p *cidaasProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
+	return map[string]provider.ResourceType{
 		"cidaas_hook":              resourceHookType{},
 		"cidaas_app":               resourceAppType{},
 		"cidaas_password_policy":   resourcePasswordPolicyType{},
@@ -134,8 +135,8 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 	}, nil
 }
 
-func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk.DataSourceType{
+func (p *cidaasProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
+	return map[string]provider.DataSourceType{
 		"cidaas_social_provider":  computeSocialProviderDataSourceType{},
 		"cidaas_consent_instance": computeConsentInstanceDataSourceType{},
 		"cidaas_password_policy":  computePasswordPolicyDataSourceType{},

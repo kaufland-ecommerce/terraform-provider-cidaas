@@ -2,7 +2,9 @@ package provider
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
@@ -40,13 +42,13 @@ func (c computeTenantInfoDataSourceType) GetSchema(context.Context) (tfsdk.Schem
 	}, nil
 }
 
-func (c computeTenantInfoDataSourceType) NewDataSource(_ context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (c computeTenantInfoDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return computeTenantInfoDataSource{
-		client: p.(*provider).client,
+		client: p.(*cidaasProvider).client,
 	}, nil
 }
 
-func (c computeTenantInfoDataSource) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (c computeTenantInfoDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state TenantInfo
 
 	info, err := c.client.GetTenantInfo()

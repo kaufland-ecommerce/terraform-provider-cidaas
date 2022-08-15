@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
@@ -11,7 +13,7 @@ import (
 
 type resourceHookType struct{}
 type resourceHook struct {
-	p provider
+	p cidaasProvider
 }
 
 func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -23,7 +25,7 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 				Type:     types.StringType,
 				Computed: true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{
-					tfsdk.UseStateForUnknown(),
+					resource.UseStateForUnknown(),
 				},
 				Description: "Unique identifier of the hook",
 			},
@@ -82,13 +84,13 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 	}, nil
 }
 
-func (r resourceHookType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceHookType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceHook{
-		p: *(p.(*provider)),
+		p: *(p.(*cidaasProvider)),
 	}, nil
 }
 
-func (r resourceHook) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceHook) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -148,7 +150,7 @@ func (r resourceHook) Create(ctx context.Context, req tfsdk.CreateResourceReques
 	}
 }
 
-func (r resourceHook) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceHook) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state Hook
 	diags := req.State.Get(ctx, &state)
 
@@ -186,7 +188,7 @@ func (r resourceHook) Read(ctx context.Context, req tfsdk.ReadResourceRequest, r
 	}
 }
 
-func (r resourceHook) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceHook) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -247,7 +249,7 @@ func (r resourceHook) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 	}
 }
 
-func (r resourceHook) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceHook) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
