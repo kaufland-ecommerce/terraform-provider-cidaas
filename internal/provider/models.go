@@ -79,8 +79,8 @@ type App struct {
 	JweEnabled                       types.Bool   `tfsdk:"jwe_enabled"`
 	AlwaysAskMfa                     types.Bool   `tfsdk:"always_ask_mfa"`
 	PasswordPolicy                   types.String `tfsdk:"password_policy"`
-
-	AppKey types.Object `tfsdk:"app_key"`
+	RegisterWithLoginInformation     types.Bool   `tfsdk:"register_with_login_information"`
+	AppKey                           types.Object `tfsdk:"app_key"`
 
 	AllowLoginWith               []string         `tfsdk:"allow_login_with"`
 	RedirectUris                 []string         `tfsdk:"redirect_uris"`

@@ -297,6 +297,11 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 				Required:    true,
 				Description: "Profile information that can be used to login",
 			},
+			"register_with_login_information": {
+				Type:        types.BoolType,
+				Required:    true,
+				Description: "Should a login with social lead to account creation if not existing",
+			},
 			"fds_enabled": {
 				Type:     types.BoolType,
 				Required: true,
@@ -544,6 +549,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) error {
 	state.JweEnabled.Value = app.JweEnabled
 	state.AlwaysAskMfa.Value = app.AlwaysAskMfa
 
+	tfsdk.ValueFrom(ctx, app.RegisterWithLoginInformation, types.BoolType, &state.RegisterWithLoginInformation)
 	tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
 
 	state.Scopes = app.AllowedScopes
@@ -612,6 +618,7 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, error) 
 		IsLoginSuccessPageEnabled:        plan.IsLoginSuccessPageEnabled.Value,
 		JweEnabled:                       plan.JweEnabled.Value,
 		AlwaysAskMfa:                     plan.AlwaysAskMfa.Value,
+		RegisterWithLoginInformation:     plan.RegisterWithLoginInformation.Value,
 
 		AllowLoginWith:               plan.AllowLoginWith,
 		RedirectUris:                 plan.RedirectUris,

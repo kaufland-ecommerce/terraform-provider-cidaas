@@ -85,6 +85,7 @@ type App struct {
 	JweEnabled                       bool    `json:"jwe_enabled"`
 	AlwaysAskMfa                     bool    `json:"always_ask_mfa"`
 	PasswordPolicy                   *string `json:"password_policy_ref,omitempty"`
+	RegisterWithLoginInformation     bool    `json:"register_with_login_information"`
 
 	AppKey *AppKey `json:"appKey,omitempty"`
 
