@@ -128,10 +128,11 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 
 func (p *cidaasProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
 	return map[string]provider.ResourceType{
-		"cidaas_hook":              resourceHookType{},
-		"cidaas_app":               resourceAppType{},
-		"cidaas_password_policy":   resourcePasswordPolicyType{},
-		"cidaas_hosted_page_group": resourceHostedPageGroupType{},
+		"cidaas_hook":               resourceHookType{},
+		"cidaas_app":                resourceAppType{},
+		"cidaas_password_policy":    resourcePasswordPolicyType{},
+		"cidaas_hosted_page_group":  resourceHostedPageGroupType{},
+		"cidaas_registration_field": resourceRegistrationFieldType{},
 	}, nil
 }
 

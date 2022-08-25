@@ -104,3 +104,37 @@ type App struct {
 	AllowedOrigins               []string         `json:"allowed_origins"`
 	AllowedMfa                   []string         `json:"allowed_mfa"`
 }
+
+type RegistrationField struct {
+	Internal        bool            `json:"internal"`
+	ReadOnly        bool            `json:"readOnly"`
+	Claimable       bool            `json:"claimable"`
+	Required        bool            `json:"required"`
+	Scopes          []string        `json:"scopes"`
+	Enabled         bool            `json:"enabled"`
+	LocaleText      LocaleText      `json:"localeText"`
+	IsGroup         bool            `json:"is_group"`
+	IsList          bool            `json:"is_list"`
+	ParentGroupID   string          `json:"parent_group_id"`
+	FieldType       string          `json:"fieldType"`
+	ConsentRefs     []string        `json:"consent_refs"`
+	ID              *string         `json:"_id,omitempty"`
+	FieldKey        string          `json:"fieldKey"`
+	DataType        string          `json:"dataType"`
+	Order           int64           `json:"order"`
+	FieldDefinition FieldDefinition `json:"fieldDefinition"`
+	BaseDataType    string          `json:"baseDataType"`
+}
+type ConsentLabel struct {
+	Label     string `json:"label"`
+	LabelText string `json:"label_text"`
+}
+type LocaleText struct {
+	Locale       string       `json:"locale"`
+	Language     string       `json:"language"`
+	ConsentLabel ConsentLabel `json:"consentLabel"`
+}
+type FieldDefinition struct {
+	Language string `json:"language"`
+	Locale   string `json:"locale"`
+}
