@@ -56,6 +56,10 @@ type Client interface {
 	GetApp(ClientId string) (*App, error)
 	UpdateApp(app App) (*App, error)
 	DeleteApp(ID string) error
+
+	GetRegistrationField(key string) (*RegistrationField, error)
+	UpsertRegistrationField(field *RegistrationField) error
+	DeleteRegistrationField(key string) error
 }
 
 type client struct {

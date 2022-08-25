@@ -97,3 +97,16 @@ type App struct {
 	AllowedOrigins               []string         `tfsdk:"allowed_origins"`
 	AllowedMfa                   []string         `tfsdk:"allowed_mfa"`
 }
+
+type RegistrationField struct {
+	ID            types.String `tfsdk:"id"`
+	Required      types.Bool   `tfsdk:"required"`
+	Enabled       types.Bool   `tfsdk:"enabled"`
+	FieldKey      types.String `tfsdk:"field_key"`
+	ConsentRefs   types.List   `tfsdk:"consent_refs"`
+	DataType      types.String `tfsdk:"data_type"`
+	ReadOnly      types.Bool   `tfsdk:"read_only"`
+	Claimable     types.Bool   `tfsdk:"claimable"`
+	ParentGroupId types.String `tfsdk:"parent_group_id"`
+	Order         types.Int64  `tfsdk:"order"`
+}
