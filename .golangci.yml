@@ -5,8 +5,8 @@ issues:
 linters:
   disable-all: true
   enable:
-    - deadcode
     - durationcheck
+    - unused
     - errcheck
     - exportloopref
     - gofmt
@@ -21,5 +21,4 @@ linters:
     - tenv
     - unconvert
     - unparam
-    - varcheck
     - vet

@@ -24,7 +24,7 @@ func (c *client) GetPasswordPolicy(id string) (*PasswordPolicy, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (c *client) DeletePasswordPolicy(id string) error {
 		return err
 	}
 
-	_, err = c.doRequest(req, nil)
+	_, err = c.doRequest(req)
 
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func (c *client) UpdatePasswordPolicy(policy PasswordPolicy) (*PasswordPolicy, e
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (c *client) GetPasswordPolicyByName(name string) (*PasswordPolicy, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err

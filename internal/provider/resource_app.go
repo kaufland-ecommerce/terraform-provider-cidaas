@@ -364,7 +364,7 @@ func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	plannedApp, _ := planToApp(ctx, &plan, &plan)
+	plannedApp := planToApp(ctx, &plan, &plan)
 
 	app, err := r.p.client.CreateApp(plannedApp)
 	if err != nil {
@@ -377,7 +377,7 @@ func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 
 	var state App
 
-	err = applyAppToState(ctx, &state, app)
+	applyAppToState(ctx, &state, app)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error Updating app", err.Error())
@@ -420,7 +420,7 @@ func (r resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	err = applyAppToState(ctx, &state, app)
+	applyAppToState(ctx, &state, app)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -450,7 +450,7 @@ func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	resp.Diagnostics.Append(diags...)
 
-	plannedApp, _ := planToApp(ctx, &plan, &state)
+	plannedApp := planToApp(ctx, &plan, &state)
 
 	app, err := r.p.client.UpdateApp(*plannedApp)
 
@@ -459,7 +459,7 @@ func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	err = applyAppToState(ctx, &state, app)
+	applyAppToState(ctx, &state, app)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error Updating app", err.Error())
@@ -509,7 +509,7 @@ func (r resourceApp) ImportState(ctx context.Context, req resource.ImportStateRe
 		return
 	}
 
-	err = applyAppToState(ctx, &state, app)
+	applyAppToState(ctx, &state, app)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing app", err.Error())
@@ -520,7 +520,7 @@ func (r resourceApp) ImportState(ctx context.Context, req resource.ImportStateRe
 	resp.Diagnostics.Append(diags...)
 }
 
-func applyAppToState(ctx context.Context, state *App, app *client.App) error {
+func applyAppToState(ctx context.Context, state *App, app *client.App) {
 	state.ID.Value = app.ID
 	state.ClientId.Value = app.ClientId
 	state.ClientSecret.Value = app.ClientSecret
@@ -585,11 +585,9 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) error {
 		"private_key": types.String{Value: app.AppKey.PrivateKey},
 		"public_key":  types.String{Value: app.AppKey.PublicKey},
 	}
-
-	return nil
 }
 
-func planToApp(ctx context.Context, plan *App, state *App) (*client.App, error) {
+func planToApp(ctx context.Context, plan *App, state *App) *client.App {
 	plannedApp := client.App{
 		ID:                               state.ID.Value,
 		ClientSecret:                     state.ClientSecret.Value,
@@ -649,5 +647,5 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, error) 
 
 	tfsdk.ValueAs(ctx, plan.PasswordPolicy, &plannedApp.PasswordPolicy)
 
-	return &plannedApp, nil
+	return &plannedApp
 }

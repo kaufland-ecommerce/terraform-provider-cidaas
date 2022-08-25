@@ -23,7 +23,7 @@ func (c *client) GetConsentInstance(name string) (*ConsentInstance, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err

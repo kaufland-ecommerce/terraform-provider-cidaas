@@ -19,7 +19,7 @@ func (c *client) GetSocialProvider(name string) (*SocialProvider, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err

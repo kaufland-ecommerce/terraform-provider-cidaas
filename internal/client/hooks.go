@@ -23,7 +23,7 @@ func (c *client) GetHooks() ([]*Hook, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (c *client) GetHook(ID string) (*Hook, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (c *client) UpsertHook(hook Hook) (*Hook, error) {
 
 	req.Header.Add("content-type", "application/json")
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (c *client) DeleteHook(ID string) error {
 		return err
 	}
 
-	_, err = c.doRequest(req, nil)
+	_, err = c.doRequest(req)
 
 	if err != nil {
 		return err
