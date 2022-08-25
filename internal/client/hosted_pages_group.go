@@ -57,7 +57,7 @@ func (c *client) CreateHostedPagesGroup(group HostedPageGroup) error {
 		return err
 	}
 
-	_, err = c.doRequest(req, nil)
+	_, err = c.doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (c *client) CreateHostedPagesGroup(group HostedPageGroup) error {
 			return err
 		}
 
-		_, err = c.doRequest(req, nil)
+		_, err = c.doRequest(req)
 
 		if err != nil {
 			return err
@@ -102,7 +102,7 @@ func (c *client) GetHostedPagesGroup(groupName string) (*HostedPageGroup, error)
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func (c *client) GetHostedPagesGroup(groupName string) (*HostedPageGroup, error)
 			return nil, err
 		}
 
-		body, err := c.doRequest(req, nil)
+		body, err := c.doRequest(req)
 		if err != nil {
 			return nil, err
 		}
@@ -194,7 +194,7 @@ func (c *client) UpdateHostedPagesGroup(group HostedPageGroup) error {
 			return err
 		}
 
-		_, err = c.doRequest(req, nil)
+		_, err = c.doRequest(req)
 
 		if err != nil {
 			return err
@@ -215,7 +215,7 @@ func (c *client) DeleteHostedPagesGroup(groupName string) error {
 		return err
 	}
 
-	_, err = c.doRequest(req, nil)
+	_, err = c.doRequest(req)
 
 	return err
 }

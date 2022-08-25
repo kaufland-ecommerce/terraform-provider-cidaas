@@ -79,12 +79,8 @@ type authResponse struct {
 	Token string `json:"access_token"`
 }
 
-func (c *client) doRequest(req *http.Request, authToken *string) ([]byte, error) {
+func (c *client) doRequest(req *http.Request) ([]byte, error) {
 	token := c.Token
-
-	if authToken != nil {
-		token = *authToken
-	}
 
 	req.Header.Set("Authorization", "Bearer "+token)
 

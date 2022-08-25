@@ -30,7 +30,7 @@ func (c *client) CreateApp(app *App) (*App, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (c *client) GetApp(clientId string) (*App, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (c *client) UpdateApp(app App) (*App, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func (c *client) DeleteApp(clientId string) error {
 		return err
 	}
 
-	_, err = c.doRequest(req, nil)
+	_, err = c.doRequest(req)
 
 	return err
 }

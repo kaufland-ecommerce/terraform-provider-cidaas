@@ -27,7 +27,7 @@ func (c *client) GetRegistrationField(key string) (*RegistrationField, error) {
 		return nil, err
 	}
 
-	body, err := c.doRequest(req, nil)
+	body, err := c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (c *client) GetRegistrationField(key string) (*RegistrationField, error) {
 
 	consentRefs := make([]string, len(consentRefsRaw))
 
-	for i, _ := range consentRefsRaw {
+	for i := range consentRefsRaw {
 		consentRefs[i] = consentRefsRaw[i].(string)
 	}
 
@@ -81,7 +81,11 @@ func (c *client) UpsertRegistrationField(field *RegistrationField) error {
 	)
 	req.Header.Add("content-type", "application/json")
 
-	body, err := c.doRequest(req, nil)
+	if err != nil {
+		return err
+	}
+
+	body, err := c.doRequest(req)
 	if err != nil {
 		return err
 	}
@@ -110,7 +114,7 @@ func (c *client) DeleteRegistrationField(key string) error {
 		return err
 	}
 
-	_, err = c.doRequest(req, nil)
+	_, err = c.doRequest(req)
 
 	return err
 }
