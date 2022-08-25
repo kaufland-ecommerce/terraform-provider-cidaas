@@ -66,7 +66,7 @@ func (c *client) GetRegistrationField(key string) (*RegistrationField, error) {
 }
 
 func (c *client) UpsertRegistrationField(field *RegistrationField) error {
-	_ = field.calculateFields()
+	field.calculateFields()
 
 	rb, err := json.Marshal(field)
 
@@ -119,7 +119,7 @@ func (c *client) DeleteRegistrationField(key string) error {
 	return err
 }
 
-func (rf *RegistrationField) calculateFields() error {
+func (rf *RegistrationField) calculateFields() {
 
 	rf.BaseDataType = registrationFieldBaseTypes[rf.DataType]
 
@@ -142,6 +142,4 @@ func (rf *RegistrationField) calculateFields() error {
 			LabelText: fmt.Sprintf("<a href=\"%s\">Consent</a>", rf.ConsentRefs[0]),
 		},
 	}
-
-	return nil
 }
