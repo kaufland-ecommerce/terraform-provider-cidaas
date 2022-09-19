@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -17,12 +16,25 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type resourceAppType struct{}
-type resourceApp struct {
-	p cidaasProvider
+type appResource struct {
+	provider *cidaasProvider
 }
 
-func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ resource.Resource = (*appResource)(nil)
+
+func NewAppResource() resource.Resource {
+	return &appResource{}
+}
+
+func (r *appResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_app"
+}
+
+func (r *appResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
+}
+
+func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -323,13 +335,7 @@ func (r resourceAppType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnost
 	}, nil
 }
 
-func (r resourceAppType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceApp{
-		p: *(p.(*cidaasProvider)),
-	}, nil
-}
-
-func (r resourceApp) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+func (r appResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var allowedFields []string
 	var requiredFields []string
 
@@ -346,8 +352,8 @@ func (r resourceApp) ValidateConfig(ctx context.Context, req resource.ValidateCo
 	}
 }
 
-func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.p.configured {
+func (r appResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -366,7 +372,7 @@ func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 
 	plannedApp := planToApp(ctx, &plan, &plan)
 
-	app, err := r.p.client.CreateApp(plannedApp)
+	app, err := r.provider.client.CreateApp(plannedApp)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Could not create app",
@@ -388,8 +394,8 @@ func (r resourceApp) Create(ctx context.Context, req resource.CreateRequest, res
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if !r.p.configured {
+func (r appResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -407,7 +413,7 @@ func (r resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *r
 
 	appID := state.ClientId.Value
 
-	app, err := r.p.client.GetApp(appID)
+	app, err := r.provider.client.GetApp(appID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading app",
@@ -433,8 +439,8 @@ func (r resourceApp) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if !r.p.configured {
+func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -452,7 +458,7 @@ func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	plannedApp := planToApp(ctx, &plan, &state)
 
-	app, err := r.p.client.UpdateApp(*plannedApp)
+	app, err := r.provider.client.UpdateApp(*plannedApp)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error Updating app", err.Error())
@@ -470,8 +476,8 @@ func (r resourceApp) Update(ctx context.Context, req resource.UpdateRequest, res
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceApp) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if !r.p.configured {
+func (r appResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -488,7 +494,7 @@ func (r resourceApp) Delete(ctx context.Context, req resource.DeleteRequest, res
 		return
 	}
 
-	err := r.p.client.DeleteApp(state.ClientId.Value)
+	err := r.provider.client.DeleteApp(state.ClientId.Value)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting app", err.Error())
@@ -497,12 +503,12 @@ func (r resourceApp) Delete(ctx context.Context, req resource.DeleteRequest, res
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceApp) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r appResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	var state App
 
 	tflog.Trace(ctx, "fetching app")
 
-	app, err := r.p.client.GetApp(req.ID)
+	app, err := r.provider.client.GetApp(req.ID)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing App", err.Error())

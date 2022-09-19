@@ -2,7 +2,10 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -12,7 +15,8 @@ import (
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-var _ provider.Provider = &cidaasProvider{}
+var _ provider.Provider = (*cidaasProvider)(nil)
+var _ provider.ProviderWithMetadata = (*cidaasProvider)(nil)
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
@@ -26,6 +30,10 @@ type cidaasProvider struct {
 	configured bool
 	client     client.Client
 	version    string
+}
+
+func (p *cidaasProvider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "cidaas"
 }
 
 func (p *cidaasProvider) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -60,6 +68,9 @@ type providerData struct {
 
 func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRequest, res *provider.ConfigureResponse) {
 	var config providerData
+
+	res.ResourceData = p
+	res.DataSourceData = p
 
 	diags := req.Config.Get(ctx, &config)
 	res.Diagnostics.Append(diags...)
@@ -126,21 +137,45 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	p.configured = true
 }
 
-func (p *cidaasProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
-	return map[string]provider.ResourceType{
-		"cidaas_hook":               resourceHookType{},
-		"cidaas_app":                resourceAppType{},
-		"cidaas_password_policy":    resourcePasswordPolicyType{},
-		"cidaas_hosted_page_group":  resourceHostedPageGroupType{},
-		"cidaas_registration_field": resourceRegistrationFieldType{},
-	}, nil
+func (p *cidaasProvider) Resources(context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewAppResource,
+		NewHookResource,
+		NewHostedPageGroupResource,
+		NewPasswordPolicyResource,
+		NewRegistrationFieldResource,
+	}
 }
 
-func (p *cidaasProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
-	return map[string]provider.DataSourceType{
-		"cidaas_social_provider":  computeSocialProviderDataSourceType{},
-		"cidaas_consent_instance": computeConsentInstanceDataSourceType{},
-		"cidaas_password_policy":  computePasswordPolicyDataSourceType{},
-		"cidaas_tenant_info":      computeTenantInfoDataSourceType{},
-	}, nil
+func (p *cidaasProvider) DataSources(context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+		NewConsentInstanceDataSource,
+		NewPasswordPolicyDataSource,
+		NewSocialProviderDataSource,
+		NewTenantInfoDataSource,
+	}
+}
+
+// toProvider can be used to cast a generic provider.Provider reference to this specific provider.
+// This is ideally used in DataSourceType.NewDataSource and ResourceType.NewResource calls.
+func toProvider(in any) (*cidaasProvider, diag.Diagnostics) {
+	if in == nil {
+		return nil, nil
+	}
+
+	var diags diag.Diagnostics
+
+	p, ok := in.(*cidaasProvider)
+
+	if !ok {
+		diags.AddError(
+			"Unexpected Provider Instance Type",
+			fmt.Sprintf("While creating the data source or resource, an unexpected provider type (%T) was received. "+
+				"This is always a bug in the provider code and should be reported to the provider developers.", in,
+			),
+		)
+		return nil, diags
+	}
+
+	return p, diags
 }

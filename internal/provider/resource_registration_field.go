@@ -5,19 +5,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-type resourceRegistrationFieldType struct{}
 type resourceRegistrationField struct {
-	p cidaasProvider
+	provider *cidaasProvider
 }
 
-func (r resourceRegistrationFieldType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ resource.Resource = (*resourceRegistrationField)(nil)
+
+func NewRegistrationFieldResource() resource.Resource {
+	return &resourceRegistrationField{}
+}
+
+func (r *resourceRegistrationField) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_registration_field"
+}
+
+func (r *resourceRegistrationField) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
+}
+
+func (r *resourceRegistrationField) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "`cidaas_hook` manages webhooks in the tenant.\n\n" +
 			"Webhooks are triggered depending on the configured events.",
@@ -87,14 +99,8 @@ func (r resourceRegistrationFieldType) GetSchema(context.Context) (tfsdk.Schema,
 	}, nil
 }
 
-func (r resourceRegistrationFieldType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceRegistrationField{
-		p: *(p.(*cidaasProvider)),
-	}, nil
-}
-
 func (r resourceRegistrationField) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.p.configured {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -122,7 +128,7 @@ func (r resourceRegistrationField) Create(ctx context.Context, req resource.Crea
 
 	tfsdk.ValueAs(ctx, plan.ConsentRefs, &plannedField.ConsentRefs)
 
-	err := r.p.client.UpsertRegistrationField(&plannedField)
+	err := r.provider.client.UpsertRegistrationField(&plannedField)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating registration field",
@@ -144,7 +150,7 @@ func (r resourceRegistrationField) Create(ctx context.Context, req resource.Crea
 }
 
 func (r resourceRegistrationField) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if !r.p.configured {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -162,7 +168,7 @@ func (r resourceRegistrationField) Read(ctx context.Context, req resource.ReadRe
 
 	fieldKey := state.FieldKey.Value
 
-	field, err := r.p.client.GetRegistrationField(fieldKey)
+	field, err := r.provider.client.GetRegistrationField(fieldKey)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading registration field",
@@ -182,7 +188,7 @@ func (r resourceRegistrationField) Read(ctx context.Context, req resource.ReadRe
 }
 
 func (r resourceRegistrationField) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if !r.p.configured {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -215,7 +221,7 @@ func (r resourceRegistrationField) Update(ctx context.Context, req resource.Upda
 	tfsdk.ValueAs(ctx, plan.ID, &plannedField.ID)
 	tfsdk.ValueAs(ctx, plan.ConsentRefs, &plannedField.ConsentRefs)
 
-	err := r.p.client.UpsertRegistrationField(&plannedField)
+	err := r.provider.client.UpsertRegistrationField(&plannedField)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -237,7 +243,7 @@ func (r resourceRegistrationField) Update(ctx context.Context, req resource.Upda
 }
 
 func (r resourceRegistrationField) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if !r.p.configured {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -253,7 +259,7 @@ func (r resourceRegistrationField) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	err := r.p.client.DeleteRegistrationField(state.FieldKey.Value)
+	err := r.provider.client.DeleteRegistrationField(state.FieldKey.Value)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting Registration Field",

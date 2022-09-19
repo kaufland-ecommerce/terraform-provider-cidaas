@@ -4,18 +4,29 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-type computeTenantInfoDataSourceType struct{}
-type computeTenantInfoDataSource struct {
-	client client.Client
+type tenantInfoDataSource struct {
+	provider *cidaasProvider
 }
 
-func (c computeTenantInfoDataSourceType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ datasource.DataSource = (*tenantInfoDataSource)(nil)
+
+func NewTenantInfoDataSource() datasource.DataSource {
+	return &tenantInfoDataSource{}
+}
+
+func (d *tenantInfoDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_tenant_info"
+}
+
+func (d *tenantInfoDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	d.provider, resp.Diagnostics = toProvider(req.ProviderData)
+}
+
+func (c *tenantInfoDataSource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "Information about the connected tenant.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -42,16 +53,10 @@ func (c computeTenantInfoDataSourceType) GetSchema(context.Context) (tfsdk.Schem
 	}, nil
 }
 
-func (c computeTenantInfoDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return computeTenantInfoDataSource{
-		client: p.(*cidaasProvider).client,
-	}, nil
-}
-
-func (c computeTenantInfoDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (c tenantInfoDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state TenantInfo
 
-	info, err := c.client.GetTenantInfo()
+	info, err := c.provider.client.GetTenantInfo()
 
 	if err != nil {
 		resp.Diagnostics.AddError("Could not fetch social provider",

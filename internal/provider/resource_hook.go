@@ -4,19 +4,31 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-type resourceHookType struct{}
-type resourceHook struct {
-	p cidaasProvider
+type hookResource struct {
+	provider *cidaasProvider
 }
 
-func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ resource.Resource = (*hookResource)(nil)
+
+func NewHookResource() resource.Resource {
+	return &hookResource{}
+}
+
+func (r *hookResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_hook"
+}
+
+func (r *hookResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
+}
+
+func (r *hookResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "`cidaas_hook` manages webhooks in the tenant.\n\n" +
 			"Webhooks are triggered depending on the configured events.",
@@ -84,14 +96,8 @@ func (r resourceHookType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnos
 	}, nil
 }
 
-func (r resourceHookType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceHook{
-		p: *(p.(*cidaasProvider)),
-	}, nil
-}
-
-func (r resourceHook) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.p.configured {
+func (r hookResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -121,7 +127,7 @@ func (r resourceHook) Create(ctx context.Context, req resource.CreateRequest, re
 		},
 	}
 
-	hook, err := r.p.client.UpsertHook(plannedHook)
+	hook, err := r.provider.client.UpsertHook(plannedHook)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating hook",
@@ -147,7 +153,7 @@ func (r resourceHook) Create(ctx context.Context, req resource.CreateRequest, re
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceHook) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r hookResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state Hook
 	diags := req.State.Get(ctx, &state)
 
@@ -158,7 +164,7 @@ func (r resourceHook) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	hookID := state.ID.Value
 
-	hook, err := r.p.client.GetHook(hookID)
+	hook, err := r.provider.client.GetHook(hookID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading hook",
@@ -181,8 +187,8 @@ func (r resourceHook) Read(ctx context.Context, req resource.ReadRequest, resp *
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceHook) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if !r.p.configured {
+func (r hookResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -213,7 +219,7 @@ func (r resourceHook) Update(ctx context.Context, req resource.UpdateRequest, re
 		},
 	}
 
-	hook, err := r.p.client.UpsertHook(plannedHook)
+	hook, err := r.provider.client.UpsertHook(plannedHook)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating hook",
@@ -239,8 +245,8 @@ func (r resourceHook) Update(ctx context.Context, req resource.UpdateRequest, re
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r resourceHook) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if !r.p.configured {
+func (r hookResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -257,7 +263,7 @@ func (r resourceHook) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	err := r.p.client.DeleteHook(state.ID.Value)
+	err := r.provider.client.DeleteHook(state.ID.Value)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
