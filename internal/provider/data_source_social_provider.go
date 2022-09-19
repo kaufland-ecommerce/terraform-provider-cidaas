@@ -5,18 +5,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-type computeSocialProviderDataSourceType struct{}
-type computeSocialProviderDataSource struct {
-	client client.Client
+type socialProviderDataSource struct {
+	provider *cidaasProvider
 }
 
-func (c computeSocialProviderDataSourceType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ datasource.DataSource = (*socialProviderDataSource)(nil)
+
+func NewSocialProviderDataSource() datasource.DataSource {
+	return &socialProviderDataSource{}
+}
+
+func (d *socialProviderDataSource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "Allows reading social providers that are configured in internal",
 		Attributes: map[string]tfsdk.Attribute{
@@ -36,13 +39,15 @@ func (c computeSocialProviderDataSourceType) GetSchema(context.Context) (tfsdk.S
 	}, nil
 }
 
-func (c computeSocialProviderDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return computeSocialProviderDataSource{
-		client: p.(*cidaasProvider).client,
-	}, nil
+func (d *socialProviderDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_social_provider"
 }
 
-func (c computeSocialProviderDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *socialProviderDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	d.provider, resp.Diagnostics = toProvider(req.ProviderData)
+}
+
+func (d socialProviderDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var name string
 	var state SocialProvider
 
@@ -54,7 +59,7 @@ func (c computeSocialProviderDataSource) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	socialProvider, err := c.client.GetSocialProvider(name)
+	socialProvider, err := d.provider.client.GetSocialProvider(name)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Could not fetch social socialProvider",

@@ -5,18 +5,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-type computePasswordPolicyDataSourceType struct{}
-type computePasswordPolicyDataSource struct {
-	client client.Client
+type passwordPolicyDataSource struct {
+	provider *cidaasProvider
 }
 
-func (c computePasswordPolicyDataSourceType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ datasource.DataSource = (*passwordPolicyDataSource)(nil)
+
+func NewPasswordPolicyDataSource() datasource.DataSource {
+	return &passwordPolicyDataSource{}
+}
+
+func (d *passwordPolicyDataSource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -47,13 +50,15 @@ func (c computePasswordPolicyDataSourceType) GetSchema(context.Context) (tfsdk.S
 	}, nil
 }
 
-func (c computePasswordPolicyDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return computePasswordPolicyDataSource{
-		client: p.(*cidaasProvider).client,
-	}, nil
+func (d *passwordPolicyDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_password_policy"
 }
 
-func (c computePasswordPolicyDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *passwordPolicyDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	d.provider, resp.Diagnostics = toProvider(req.ProviderData)
+}
+
+func (d passwordPolicyDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var name string
 	var state PasswordPolicy
 
@@ -65,7 +70,7 @@ func (c computePasswordPolicyDataSource) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	policy, err := c.client.GetPasswordPolicyByName(name)
+	policy, err := d.provider.client.GetPasswordPolicyByName(name)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Could not fetch social provider",

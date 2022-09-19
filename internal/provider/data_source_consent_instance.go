@@ -5,18 +5,25 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-type computeConsentInstanceDataSourceType struct{}
-type computeConsentInstanceDataSource struct {
-	client client.Client
+type consentInstanceDataSource struct {
+	provider *cidaasProvider
 }
 
-func (c computeConsentInstanceDataSourceType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ datasource.DataSource = (*consentInstanceDataSource)(nil)
+
+func NewConsentInstanceDataSource() datasource.DataSource {
+	return &consentInstanceDataSource{}
+}
+
+func (d *consentInstanceDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_consent_instance"
+}
+
+func (d *consentInstanceDataSource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -31,13 +38,11 @@ func (c computeConsentInstanceDataSourceType) GetSchema(context.Context) (tfsdk.
 	}, nil
 }
 
-func (c computeConsentInstanceDataSourceType) NewDataSource(_ context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return computeConsentInstanceDataSource{
-		client: p.(*cidaasProvider).client,
-	}, nil
+func (d *consentInstanceDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	d.provider, resp.Diagnostics = toProvider(req.ProviderData)
 }
 
-func (c computeConsentInstanceDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (c consentInstanceDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var name string
 	var state ConsentInstance
 
@@ -49,7 +54,7 @@ func (c computeConsentInstanceDataSource) Read(ctx context.Context, req datasour
 		return
 	}
 
-	consent, err := c.client.GetConsentInstance(name)
+	consent, err := c.provider.client.GetConsentInstance(name)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Could not fetch consent instance",

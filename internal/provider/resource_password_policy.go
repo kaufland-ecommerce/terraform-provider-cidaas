@@ -3,19 +3,31 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-type resourcePasswordPolicyType struct{}
-type resourcePasswordPolicy struct {
-	p cidaasProvider
+type passwordPolicyResource struct {
+	provider *cidaasProvider
 }
 
-func (r resourcePasswordPolicyType) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
+var _ resource.Resource = (*passwordPolicyResource)(nil)
+
+func NewPasswordPolicyResource() resource.Resource {
+	return &passwordPolicyResource{}
+}
+
+func (r *passwordPolicyResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_password_policy"
+}
+
+func (r *passwordPolicyResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
+}
+
+func (r *passwordPolicyResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: "`cidaas_password_policy` controls the password policies in the tenant",
 		Attributes: map[string]tfsdk.Attribute{
@@ -56,14 +68,8 @@ func (r resourcePasswordPolicyType) GetSchema(context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (r resourcePasswordPolicyType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourcePasswordPolicy{
-		p: *(p.(*cidaasProvider)),
-	}, nil
-}
-
-func (r resourcePasswordPolicy) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.p.configured {
+func (r *passwordPolicyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -88,7 +94,7 @@ func (r resourcePasswordPolicy) Create(ctx context.Context, req resource.CreateR
 		NoOfSpecialChars:  plan.NoOfSpecialChars.Value,
 	}
 
-	policy, err := r.p.client.UpdatePasswordPolicy(plannedPolicy)
+	policy, err := r.provider.client.UpdatePasswordPolicy(plannedPolicy)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating password policy",
@@ -113,7 +119,7 @@ func (r resourcePasswordPolicy) Create(ctx context.Context, req resource.CreateR
 	}
 }
 
-func (r resourcePasswordPolicy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r passwordPolicyResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state PasswordPolicy
 	diags := req.State.Get(ctx, &state)
 
@@ -124,7 +130,7 @@ func (r resourcePasswordPolicy) Read(ctx context.Context, req resource.ReadReque
 
 	policyID := state.ID.Value
 
-	policy, err := r.p.client.GetPasswordPolicy(policyID)
+	policy, err := r.provider.client.GetPasswordPolicy(policyID)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading hook",
@@ -149,8 +155,8 @@ func (r resourcePasswordPolicy) Read(ctx context.Context, req resource.ReadReque
 	}
 }
 
-func (r resourcePasswordPolicy) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if !r.p.configured {
+func (r passwordPolicyResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -178,7 +184,7 @@ func (r resourcePasswordPolicy) Update(ctx context.Context, req resource.UpdateR
 		NoOfSpecialChars:  plan.NoOfSpecialChars.Value,
 	}
 
-	policy, err := r.p.client.UpdatePasswordPolicy(plannedPolicy)
+	policy, err := r.provider.client.UpdatePasswordPolicy(plannedPolicy)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating password policy",
@@ -203,8 +209,8 @@ func (r resourcePasswordPolicy) Update(ctx context.Context, req resource.UpdateR
 	}
 }
 
-func (r resourcePasswordPolicy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if !r.p.configured {
+func (r passwordPolicyResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
 			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
@@ -221,7 +227,7 @@ func (r resourcePasswordPolicy) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	err := r.p.client.DeletePasswordPolicy(state.ID.Value)
+	err := r.provider.client.DeletePasswordPolicy(state.ID.Value)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
