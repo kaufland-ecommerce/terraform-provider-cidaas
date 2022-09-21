@@ -81,6 +81,7 @@ type App struct {
 	PasswordPolicy                   types.String `tfsdk:"password_policy"`
 	RegisterWithLoginInformation     types.Bool   `tfsdk:"register_with_login_information"`
 	AppKey                           types.Object `tfsdk:"app_key"`
+	TemplateGroupId                  types.String `tfsdk:"template_group_id"`
 
 	AllowLoginWith               []string         `tfsdk:"allow_login_with"`
 	RedirectUris                 []string         `tfsdk:"redirect_uris"`

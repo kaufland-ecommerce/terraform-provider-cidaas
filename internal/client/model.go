@@ -75,6 +75,7 @@ type App struct {
 	CompanyName                      string  `json:"company_name"`
 	CompanyAddress                   string  `json:"company_address"`
 	CompanyWebsite                   string  `json:"company_website"`
+	TemplateGroupId                  *string `json:"template_group_id"`
 	TokenLifetimeInSeconds           int64   `json:"token_lifetime_in_seconds"`
 	IdTokenLifetimeInSeconds         int64   `json:"id_token_lifetime_in_seconds"`
 	RefreshTokenLifetimeInSeconds    int64   `json:"refresh_token_lifetime_in_seconds"`

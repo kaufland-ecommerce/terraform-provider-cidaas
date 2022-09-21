@@ -60,8 +60,6 @@ func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			// TODO: App Logo URL
-			// TODO: App Background URL
 			"primary_color": {
 				Type:     types.StringType,
 				Optional: true,
@@ -180,6 +178,12 @@ func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics
 			// Consent management
 			"consent_refs": {
 				Type:     types.ListType{ElemType: types.StringType},
+				Required: true,
+			},
+
+			// Template Group ID
+			"template_group_id": {
+				Type:     types.StringType,
 				Required: true,
 			},
 
@@ -557,6 +561,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) {
 
 	tfsdk.ValueFrom(ctx, app.RegisterWithLoginInformation, types.BoolType, &state.RegisterWithLoginInformation)
 	tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
+	tfsdk.ValueFrom(ctx, app.TemplateGroupId, types.StringType, &state.TemplateGroupId)
 
 	state.Scopes = app.AllowedScopes
 	state.RedirectUris = app.RedirectUris
@@ -651,6 +656,7 @@ func planToApp(ctx context.Context, plan *App, state *App) *client.App {
 		)
 	}
 
+	tfsdk.ValueAs(ctx, plan.TemplateGroupId, &plannedApp.TemplateGroupId)
 	tfsdk.ValueAs(ctx, plan.PasswordPolicy, &plannedApp.PasswordPolicy)
 
 	return &plannedApp
