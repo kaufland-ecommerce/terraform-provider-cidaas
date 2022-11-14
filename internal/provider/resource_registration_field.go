@@ -116,14 +116,14 @@ func (r resourceRegistrationField) Create(ctx context.Context, req resource.Crea
 	}
 
 	plannedField := client.RegistrationField{
-		FieldKey:      plan.FieldKey.Value,
-		DataType:      plan.DataType.Value,
-		Required:      plan.Required.Value,
-		Enabled:       plan.Enabled.Value,
-		ReadOnly:      plan.ReadOnly.Value,
-		Claimable:     plan.Claimable.Value,
-		ParentGroupID: plan.ParentGroupId.Value,
-		Order:         plan.Order.Value,
+		FieldKey:      plan.FieldKey.ValueString(),
+		DataType:      plan.DataType.ValueString(),
+		Required:      plan.Required.ValueBool(),
+		Enabled:       plan.Enabled.ValueBool(),
+		ReadOnly:      plan.ReadOnly.ValueBool(),
+		Claimable:     plan.Claimable.ValueBool(),
+		ParentGroupID: plan.ParentGroupId.ValueString(),
+		Order:         plan.Order.ValueInt64(),
 	}
 
 	tfsdk.ValueAs(ctx, plan.ConsentRefs, &plannedField.ConsentRefs)
@@ -166,7 +166,7 @@ func (r resourceRegistrationField) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	fieldKey := state.FieldKey.Value
+	fieldKey := state.FieldKey.ValueString()
 
 	field, err := r.provider.client.GetRegistrationField(fieldKey)
 	if err != nil {
@@ -208,14 +208,14 @@ func (r resourceRegistrationField) Update(ctx context.Context, req resource.Upda
 	}
 
 	plannedField := client.RegistrationField{
-		FieldKey:      plan.FieldKey.Value,
-		DataType:      plan.DataType.Value,
-		Required:      plan.Required.Value,
-		Enabled:       plan.Enabled.Value,
-		ReadOnly:      plan.ReadOnly.Value,
-		Claimable:     plan.Claimable.Value,
-		ParentGroupID: plan.ParentGroupId.Value,
-		Order:         plan.Order.Value,
+		FieldKey:      plan.FieldKey.ValueString(),
+		DataType:      plan.DataType.ValueString(),
+		Required:      plan.Required.ValueBool(),
+		Enabled:       plan.Enabled.ValueBool(),
+		ReadOnly:      plan.ReadOnly.ValueBool(),
+		Claimable:     plan.Claimable.ValueBool(),
+		ParentGroupID: plan.ParentGroupId.ValueString(),
+		Order:         plan.Order.ValueInt64(),
 	}
 
 	tfsdk.ValueAs(ctx, plan.ID, &plannedField.ID)
@@ -259,7 +259,7 @@ func (r resourceRegistrationField) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	err := r.provider.client.DeleteRegistrationField(state.FieldKey.Value)
+	err := r.provider.client.DeleteRegistrationField(state.FieldKey.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting Registration Field",

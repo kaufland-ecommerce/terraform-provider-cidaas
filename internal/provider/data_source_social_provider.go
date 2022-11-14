@@ -68,9 +68,9 @@ func (d socialProviderDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	state.SocialId.Value = socialProvider.Id
-	state.ProviderName.Value = socialProvider.ProviderName
-	state.ProviderType.Value = socialProvider.ProviderType
+	state.SocialId = types.StringValue(socialProvider.Id)
+	state.ProviderName = types.StringValue(socialProvider.ProviderName)
+	state.ProviderType = types.StringValue(socialProvider.ProviderType)
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)

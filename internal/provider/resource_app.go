@@ -387,10 +387,10 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 
 	var state App
 
-	applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app)
+	resp.Diagnostics.Append(diags...)
 
-	if err != nil {
-		resp.Diagnostics.AddError("Error Updating app", err.Error())
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -415,7 +415,7 @@ func (r appResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	appID := state.ClientId.Value
+	appID := state.ClientId.ValueString()
 
 	app, err := r.provider.client.GetApp(appID)
 	if err != nil {
@@ -430,13 +430,11 @@ func (r appResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app)
+	resp.Diagnostics.Append(diags...)
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"error reading app",
-			err.Error(),
-		)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, &state)
@@ -469,10 +467,10 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app)
+	resp.Diagnostics.Append(diags...)
 
-	if err != nil {
-		resp.Diagnostics.AddError("Error Updating app", err.Error())
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -498,7 +496,7 @@ func (r appResource) Delete(ctx context.Context, req resource.DeleteRequest, res
 		return
 	}
 
-	err := r.provider.client.DeleteApp(state.ClientId.Value)
+	err := r.provider.client.DeleteApp(state.ClientId.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting app", err.Error())
@@ -530,34 +528,38 @@ func (r appResource) ImportState(ctx context.Context, req resource.ImportStateRe
 	resp.Diagnostics.Append(diags...)
 }
 
-func applyAppToState(ctx context.Context, state *App, app *client.App) {
-	state.ID.Value = app.ID
-	state.ClientId.Value = app.ClientId
-	state.ClientSecret.Value = app.ClientSecret
-	state.ClientName.Value = app.ClientName
-	state.ClientDisplayName.Value = app.ClientDisplayName
-	state.IsRememberMeSelected.Value = app.IsRememberMeSelected
-	state.ClientType.Value = app.ClientType
-	state.AllowDisposableEmail.Value = app.AllowDisposableEmail
-	state.FdsEnabled.Value = app.FdsEnabled
-	state.EnablePasswordlessAuth.Value = app.EnablePasswordlessAuth
-	state.EnableDeduplication.Value = app.EnableDeduplication
-	state.MobileNumberVerificationRequired.Value = app.MobileNumberVerificationRequired
-	state.HostedPageGroup.Value = app.HostedPageGroup
-	state.PrimaryColor.Value = app.PrimaryColor
-	state.AccentColor.Value = app.AccentColor
-	state.AutoLoginAfterRegister.Value = app.AutoLoginAfterRegister
-	state.CompanyName.Value = app.CompanyName
-	state.CompanyAddress.Value = app.CompanyAddress
-	state.CompanyWebsite.Value = app.CompanyWebsite
-	state.TokenLifetimeInSeconds.Value = app.TokenLifetimeInSeconds
-	state.IdTokenLifetimeInSeconds.Value = app.IdTokenLifetimeInSeconds
-	state.RefreshTokenLifetimeInSeconds.Value = app.RefreshTokenLifetimeInSeconds
-	state.EmailVerificationRequired.Value = app.EmailVerificationRequired
-	state.EnableBotDetection.Value = app.EnableBotDetection
-	state.IsLoginSuccessPageEnabled.Value = app.IsLoginSuccessPageEnabled
-	state.JweEnabled.Value = app.JweEnabled
-	state.AlwaysAskMfa.Value = app.AlwaysAskMfa
+func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diagnostics {
+	ret := diag.Diagnostics{}
+
+	var diags diag.Diagnostics
+
+	state.ID = types.StringValue(app.ID)
+	state.ClientId = types.StringValue(app.ClientId)
+	state.ClientSecret = types.StringValue(app.ClientSecret)
+	state.ClientName = types.StringValue(app.ClientName)
+	state.ClientDisplayName = types.StringValue(app.ClientDisplayName)
+	state.IsRememberMeSelected = types.BoolValue(app.IsRememberMeSelected)
+	state.ClientType = types.StringValue(app.ClientType)
+	state.AllowDisposableEmail = types.BoolValue(app.AllowDisposableEmail)
+	state.FdsEnabled = types.BoolValue(app.FdsEnabled)
+	state.EnablePasswordlessAuth = types.BoolValue(app.EnablePasswordlessAuth)
+	state.EnableDeduplication = types.BoolValue(app.EnableDeduplication)
+	state.MobileNumberVerificationRequired = types.BoolValue(app.MobileNumberVerificationRequired)
+	state.HostedPageGroup = types.StringValue(app.HostedPageGroup)
+	state.PrimaryColor = types.StringValue(app.PrimaryColor)
+	state.AccentColor = types.StringValue(app.AccentColor)
+	state.AutoLoginAfterRegister = types.BoolValue(app.AutoLoginAfterRegister)
+	state.CompanyName = types.StringValue(app.CompanyName)
+	state.CompanyAddress = types.StringValue(app.CompanyAddress)
+	state.CompanyWebsite = types.StringValue(app.CompanyWebsite)
+	state.TokenLifetimeInSeconds = types.Int64Value(app.TokenLifetimeInSeconds)
+	state.IdTokenLifetimeInSeconds = types.Int64Value(app.IdTokenLifetimeInSeconds)
+	state.RefreshTokenLifetimeInSeconds = types.Int64Value(app.RefreshTokenLifetimeInSeconds)
+	state.EmailVerificationRequired = types.BoolValue(app.EmailVerificationRequired)
+	state.EnableBotDetection = types.BoolValue(app.EnableBotDetection)
+	state.IsLoginSuccessPageEnabled = types.BoolValue(app.IsLoginSuccessPageEnabled)
+	state.JweEnabled = types.BoolValue(app.JweEnabled)
+	state.AlwaysAskMfa = types.BoolValue(app.AlwaysAskMfa)
 
 	tfsdk.ValueFrom(ctx, app.RegisterWithLoginInformation, types.BoolType, &state.RegisterWithLoginInformation)
 	tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
@@ -580,54 +582,59 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) {
 	state.SocialProviders = []SocialProvider{}
 	for _, item := range app.SocialProviders {
 		state.SocialProviders = append(state.SocialProviders, SocialProvider{
-			SocialId:     types.String{Value: item.SocialId},
-			ProviderName: types.String{Value: item.ProviderName},
+			SocialId:     types.StringValue(item.SocialId),
+			ProviderName: types.StringValue(item.ProviderName),
 		})
 	}
 
-	state.AppKey.AttrTypes = map[string]attr.Type{
-		"id":          types.StringType,
-		"private_key": types.StringType,
-		"public_key":  types.StringType,
-	}
+	state.AppKey, diags = types.ObjectValue(
+		map[string]attr.Type{
+			"id":          types.StringType,
+			"private_key": types.StringType,
+			"public_key":  types.StringType,
+		},
+		map[string]attr.Value{
+			"id":          types.StringValue(app.AppKey.ID),
+			"private_key": types.StringValue(app.AppKey.PrivateKey),
+			"public_key":  types.StringValue(app.AppKey.PublicKey),
+		},
+	)
 
-	state.AppKey.Attrs = map[string]attr.Value{
-		"id":          types.String{Value: app.AppKey.ID},
-		"private_key": types.String{Value: app.AppKey.PrivateKey},
-		"public_key":  types.String{Value: app.AppKey.PublicKey},
-	}
+	ret.Append(diags...)
+
+	return ret
 }
 
 func planToApp(ctx context.Context, plan *App, state *App) *client.App {
 	plannedApp := client.App{
-		ID:                               state.ID.Value,
-		ClientSecret:                     state.ClientSecret.Value,
-		ClientId:                         state.ClientId.Value,
-		ClientDisplayName:                plan.ClientDisplayName.Value,
-		ClientName:                       plan.ClientName.Value,
-		ClientType:                       plan.ClientType.Value,
-		IsRememberMeSelected:             plan.IsRememberMeSelected.Value,
-		AllowDisposableEmail:             plan.AllowDisposableEmail.Value,
-		AutoLoginAfterRegister:           plan.AutoLoginAfterRegister.Value,
-		FdsEnabled:                       plan.FdsEnabled.Value,
-		EnablePasswordlessAuth:           plan.EnablePasswordlessAuth.Value,
-		EnableDeduplication:              plan.EnableDeduplication.Value,
-		MobileNumberVerificationRequired: plan.MobileNumberVerificationRequired.Value,
-		HostedPageGroup:                  plan.HostedPageGroup.Value,
-		PrimaryColor:                     plan.PrimaryColor.Value,
-		AccentColor:                      plan.AccentColor.Value,
-		CompanyName:                      plan.CompanyName.Value,
-		CompanyWebsite:                   plan.CompanyWebsite.Value,
-		CompanyAddress:                   plan.CompanyAddress.Value,
-		TokenLifetimeInSeconds:           plan.TokenLifetimeInSeconds.Value,
-		IdTokenLifetimeInSeconds:         plan.IdTokenLifetimeInSeconds.Value,
-		RefreshTokenLifetimeInSeconds:    plan.RefreshTokenLifetimeInSeconds.Value,
-		EmailVerificationRequired:        plan.EmailVerificationRequired.Value,
-		EnableBotDetection:               plan.EnableBotDetection.Value,
-		IsLoginSuccessPageEnabled:        plan.IsLoginSuccessPageEnabled.Value,
-		JweEnabled:                       plan.JweEnabled.Value,
-		AlwaysAskMfa:                     plan.AlwaysAskMfa.Value,
-		RegisterWithLoginInformation:     plan.RegisterWithLoginInformation.Value,
+		ID:                               state.ID.ValueString(),
+		ClientSecret:                     state.ClientSecret.ValueString(),
+		ClientId:                         state.ClientId.ValueString(),
+		ClientDisplayName:                plan.ClientDisplayName.ValueString(),
+		ClientName:                       plan.ClientName.ValueString(),
+		ClientType:                       plan.ClientType.ValueString(),
+		IsRememberMeSelected:             plan.IsRememberMeSelected.ValueBool(),
+		AllowDisposableEmail:             plan.AllowDisposableEmail.ValueBool(),
+		AutoLoginAfterRegister:           plan.AutoLoginAfterRegister.ValueBool(),
+		FdsEnabled:                       plan.FdsEnabled.ValueBool(),
+		EnablePasswordlessAuth:           plan.EnablePasswordlessAuth.ValueBool(),
+		EnableDeduplication:              plan.EnableDeduplication.ValueBool(),
+		MobileNumberVerificationRequired: plan.MobileNumberVerificationRequired.ValueBool(),
+		HostedPageGroup:                  plan.HostedPageGroup.ValueString(),
+		PrimaryColor:                     plan.PrimaryColor.ValueString(),
+		AccentColor:                      plan.AccentColor.ValueString(),
+		CompanyName:                      plan.CompanyName.ValueString(),
+		CompanyWebsite:                   plan.CompanyWebsite.ValueString(),
+		CompanyAddress:                   plan.CompanyAddress.ValueString(),
+		TokenLifetimeInSeconds:           plan.TokenLifetimeInSeconds.ValueInt64(),
+		IdTokenLifetimeInSeconds:         plan.IdTokenLifetimeInSeconds.ValueInt64(),
+		RefreshTokenLifetimeInSeconds:    plan.RefreshTokenLifetimeInSeconds.ValueInt64(),
+		EmailVerificationRequired:        plan.EmailVerificationRequired.ValueBool(),
+		EnableBotDetection:               plan.EnableBotDetection.ValueBool(),
+		IsLoginSuccessPageEnabled:        plan.IsLoginSuccessPageEnabled.ValueBool(),
+		JweEnabled:                       plan.JweEnabled.ValueBool(),
+		AlwaysAskMfa:                     plan.AlwaysAskMfa.ValueBool(),
+		RegisterWithLoginInformation:     plan.RegisterWithLoginInformation.ValueBool(),
 
 		AllowLoginWith:               plan.AllowLoginWith,
 		RedirectUris:                 plan.RedirectUris,
@@ -650,8 +657,8 @@ func planToApp(ctx context.Context, plan *App, state *App) *client.App {
 		plannedApp.SocialProviders = append(
 			plannedApp.SocialProviders,
 			client.SocialProvider{
-				SocialId:     socialProvider.SocialId.Value,
-				ProviderName: socialProvider.ProviderName.Value,
+				SocialId:     socialProvider.SocialId.ValueString(),
+				ProviderName: socialProvider.ProviderName.ValueString(),
 			},
 		)
 	}

@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -67,7 +66,7 @@ func (r hostedPageGroupResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	plannedGroup.Name = plan.Name.Value
+	plannedGroup.Name = plan.Name.ValueString()
 
 	diags = plan.Pages.ElementsAs(ctx, &plannedGroup.Pages, true)
 
@@ -118,12 +117,13 @@ func (r hostedPageGroupResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	state := HostedPageGroup{
-		Name:  types.String{Value: group.Name},
-		Pages: types.Map{Elems: map[string]attr.Value{}, ElemType: types.StringType},
+		Name: types.StringValue(group.Name),
 	}
+	state.Pages, diags = types.MapValueFrom(ctx, types.StringType, group.Pages)
 
-	for key, val := range group.Pages {
-		state.Pages.Elems[key] = types.String{Value: val}
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, &state)
@@ -152,7 +152,7 @@ func (r hostedPageGroupResource) Update(ctx context.Context, req resource.Update
 
 	var plannedGroup client.HostedPageGroup
 
-	plannedGroup.Name = plan.Name.Value
+	plannedGroup.Name = plan.Name.ValueString()
 
 	diags = plan.Pages.ElementsAs(ctx, &plannedGroup.Pages, true)
 	resp.Diagnostics.Append(diags...)
@@ -196,7 +196,7 @@ func (r hostedPageGroupResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	err := r.provider.client.DeleteHostedPagesGroup(state.Name.Value)
+	err := r.provider.client.DeleteHostedPagesGroup(state.Name.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(
