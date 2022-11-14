@@ -387,10 +387,10 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 
 	var state App
 
-	applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app)
+	resp.Diagnostics.Append(diags...)
 
-	if err != nil {
-		resp.Diagnostics.AddError("Error Updating app", err.Error())
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -430,13 +430,11 @@ func (r appResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app)
+	resp.Diagnostics.Append(diags...)
 
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"error reading app",
-			err.Error(),
-		)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, &state)
@@ -469,10 +467,10 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app)
+	resp.Diagnostics.Append(diags...)
 
-	if err != nil {
-		resp.Diagnostics.AddError("Error Updating app", err.Error())
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -532,7 +530,8 @@ func (r appResource) ImportState(ctx context.Context, req resource.ImportStateRe
 
 func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diagnostics {
 	ret := diag.Diagnostics{}
-	diags := diag.Diagnostics{}
+
+	var diags diag.Diagnostics
 
 	state.ID = types.StringValue(app.ID)
 	state.ClientId = types.StringValue(app.ClientId)
