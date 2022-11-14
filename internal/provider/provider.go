@@ -80,7 +80,7 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	}
 
 	var host string
-	if config.Host.Unknown {
+	if config.Host.IsUnknown() {
 		res.Diagnostics.AddWarning(
 			"unable to create client",
 			"Cannot use unknown value as host",
@@ -88,14 +88,14 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		return
 	}
 
-	if config.Host.Null {
+	if config.Host.IsNull() {
 		host = os.Getenv("CIDAAS_HOST")
 	} else {
 		host = config.Host.Value
 	}
 
 	var clientId string
-	if config.ClientId.Unknown {
+	if config.ClientId.IsUnknown() {
 		res.Diagnostics.AddWarning(
 			"unable to create client",
 			"Cannot use unknown value as client_id",
@@ -103,14 +103,14 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		return
 	}
 
-	if config.ClientId.Null {
+	if config.ClientId.IsNull() {
 		clientId = os.Getenv("CIDAAS_CLIENT_ID")
 	} else {
-		clientId = config.ClientId.Value
+		clientId = config.ClientId.ValueString()
 	}
 
 	var clientSecret string
-	if config.ClientSecret.Unknown {
+	if config.ClientSecret.IsUnknown() {
 		res.Diagnostics.AddWarning(
 			"unable to create client",
 			"Cannot use unknown value as client_secret",
@@ -118,10 +118,10 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		return
 	}
 
-	if config.ClientSecret.Null {
+	if config.ClientSecret.IsNull() {
 		clientSecret = os.Getenv("CIDAAS_CLIENT_SECRET")
 	} else {
-		clientSecret = config.ClientSecret.Value
+		clientSecret = config.ClientSecret.ValueString()
 	}
 
 	c, err := client.NewClient(&host, &clientId, &clientSecret)

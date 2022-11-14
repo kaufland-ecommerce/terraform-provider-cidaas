@@ -63,8 +63,8 @@ func (c consentInstanceDataSource) Read(ctx context.Context, req datasource.Read
 		return
 	}
 
-	state.ID.Value = consent.ID
-	state.ConsentName.Value = consent.ConsentName
+	state.ID = types.StringValue(consent.ID)
+	state.ConsentName = types.StringValue(consent.ConsentName)
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)

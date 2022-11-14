@@ -137,8 +137,8 @@ func (r hookResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	result := Hook{
-		ID:         types.String{Value: hook.Id},
-		LastUpdate: types.String{Value: hook.UpdatedTime},
+		ID:         types.StringValue(hook.Id),
+		LastUpdate: types.StringValue(hook.UpdatedTime),
 		Url:        hook.URL,
 		AuthType:   hook.AuthType,
 		Events:     hook.Events,
@@ -162,7 +162,7 @@ func (r hookResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	hookID := state.ID.Value
+	hookID := state.ID.ValueString()
 
 	hook, err := r.provider.client.GetHook(hookID)
 	if err != nil {
@@ -175,7 +175,7 @@ func (r hookResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	state.Url = hook.URL
 	state.Events = hook.Events
-	state.LastUpdate.Value = hook.UpdatedTime
+	state.LastUpdate = types.StringValue(hook.UpdatedTime)
 	state.AuthType = hook.AuthType
 
 	state.APIKeyDetails.APIKeyPlaceholder = hook.ApiKeyDetails.APIKeyPlaceholder
@@ -208,7 +208,7 @@ func (r hookResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	plannedHook := client.Hook{
-		Id:       state.ID.Value,
+		Id:       state.ID.ValueString(),
 		AuthType: plan.AuthType,
 		Events:   plan.Events,
 		URL:      plan.Url,
@@ -229,8 +229,8 @@ func (r hookResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	result := Hook{
-		ID:         types.String{Value: hook.Id},
-		LastUpdate: types.String{Value: hook.UpdatedTime},
+		ID:         types.StringValue(hook.Id),
+		LastUpdate: types.StringValue(hook.UpdatedTime),
 		Url:        hook.URL,
 		AuthType:   hook.AuthType,
 		Events:     hook.Events,
@@ -263,7 +263,7 @@ func (r hookResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	err := r.provider.client.DeleteHook(state.ID.Value)
+	err := r.provider.client.DeleteHook(state.ID.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(

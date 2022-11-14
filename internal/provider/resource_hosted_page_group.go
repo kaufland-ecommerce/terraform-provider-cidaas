@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -118,12 +117,13 @@ func (r hostedPageGroupResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	state := HostedPageGroup{
-		Name:  types.String{Value: group.Name},
-		Pages: types.Map{Elems: map[string]attr.Value{}, ElemType: types.StringType},
+		Name: types.StringValue(group.Name),
 	}
+	state.Pages, diags = types.MapValueFrom(ctx, types.StringType, group.Pages)
 
-	for key, val := range group.Pages {
-		state.Pages.Elems[key] = types.String{Value: val}
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	diags = resp.State.Set(ctx, &state)

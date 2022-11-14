@@ -87,11 +87,11 @@ func (r *passwordPolicyResource) Create(ctx context.Context, req resource.Create
 	}
 
 	plannedPolicy := client.PasswordPolicy{
-		PolicyName:        plan.PolicyName.Value,
-		MinimumLength:     plan.MinimumLength.Value,
-		NoOfDigits:        plan.NoOfDigits.Value,
-		LowerAndUpperCase: plan.LowerAndUpperCase.Value,
-		NoOfSpecialChars:  plan.NoOfSpecialChars.Value,
+		PolicyName:        plan.PolicyName.ValueString(),
+		MinimumLength:     plan.MinimumLength.ValueInt64(),
+		NoOfDigits:        plan.NoOfDigits.ValueInt64(),
+		LowerAndUpperCase: plan.LowerAndUpperCase.ValueBool(),
+		NoOfSpecialChars:  plan.NoOfSpecialChars.ValueInt64(),
 	}
 
 	policy, err := r.provider.client.UpdatePasswordPolicy(plannedPolicy)
@@ -104,12 +104,12 @@ func (r *passwordPolicyResource) Create(ctx context.Context, req resource.Create
 	}
 
 	result := PasswordPolicy{
-		ID:                types.String{Value: policy.ID},
-		PolicyName:        types.String{Value: policy.PolicyName},
-		MinimumLength:     types.Int64{Value: policy.MinimumLength},
-		NoOfDigits:        types.Int64{Value: policy.NoOfDigits},
-		LowerAndUpperCase: types.Bool{Value: policy.LowerAndUpperCase},
-		NoOfSpecialChars:  types.Int64{Value: policy.NoOfSpecialChars},
+		ID:                types.StringValue(policy.ID),
+		PolicyName:        types.StringValue(policy.PolicyName),
+		MinimumLength:     types.Int64Value(policy.MinimumLength),
+		NoOfDigits:        types.Int64Value(policy.NoOfDigits),
+		LowerAndUpperCase: types.BoolValue(policy.LowerAndUpperCase),
+		NoOfSpecialChars:  types.Int64Value(policy.NoOfSpecialChars),
 	}
 
 	diags = resp.State.Set(ctx, result)
@@ -139,12 +139,12 @@ func (r passwordPolicyResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	state.ID.Value = policy.ID
-	state.PolicyName.Value = policy.PolicyName
-	state.LowerAndUpperCase.Value = policy.LowerAndUpperCase
-	state.MinimumLength.Value = policy.MinimumLength
-	state.NoOfDigits.Value = policy.NoOfDigits
-	state.NoOfSpecialChars.Value = policy.NoOfSpecialChars
+	state.ID = types.StringValue(policy.ID)
+	state.PolicyName = types.StringValue(policy.PolicyName)
+	state.LowerAndUpperCase = types.BoolValue(policy.LowerAndUpperCase)
+	state.MinimumLength = types.Int64Value(policy.MinimumLength)
+	state.NoOfDigits = types.Int64Value(policy.NoOfDigits)
+	state.NoOfSpecialChars = types.Int64Value(policy.NoOfSpecialChars)
 
 	diags = resp.State.Set(ctx, &state)
 
@@ -176,12 +176,12 @@ func (r passwordPolicyResource) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	plannedPolicy := client.PasswordPolicy{
-		ID:                state.ID.Value,
-		PolicyName:        plan.PolicyName.Value,
-		MinimumLength:     plan.MinimumLength.Value,
-		NoOfDigits:        plan.NoOfDigits.Value,
-		LowerAndUpperCase: plan.LowerAndUpperCase.Value,
-		NoOfSpecialChars:  plan.NoOfSpecialChars.Value,
+		ID:                state.ID.ValueString(),
+		PolicyName:        plan.PolicyName.ValueString(),
+		MinimumLength:     plan.MinimumLength.ValueInt64(),
+		NoOfDigits:        plan.NoOfDigits.ValueInt64(),
+		LowerAndUpperCase: plan.LowerAndUpperCase.ValueBool(),
+		NoOfSpecialChars:  plan.NoOfSpecialChars.ValueInt64(),
 	}
 
 	policy, err := r.provider.client.UpdatePasswordPolicy(plannedPolicy)
@@ -195,11 +195,11 @@ func (r passwordPolicyResource) Update(ctx context.Context, req resource.UpdateR
 
 	result := PasswordPolicy{
 		ID:                state.ID,
-		PolicyName:        types.String{Value: policy.PolicyName},
-		MinimumLength:     types.Int64{Value: policy.MinimumLength},
-		NoOfDigits:        types.Int64{Value: policy.NoOfDigits},
-		LowerAndUpperCase: types.Bool{Value: policy.LowerAndUpperCase},
-		NoOfSpecialChars:  types.Int64{Value: policy.NoOfSpecialChars},
+		PolicyName:        types.StringValue(policy.PolicyName),
+		MinimumLength:     types.Int64Value(policy.MinimumLength),
+		NoOfDigits:        types.Int64Value(policy.NoOfDigits),
+		LowerAndUpperCase: types.BoolValue(policy.LowerAndUpperCase),
+		NoOfSpecialChars:  types.Int64Value(policy.NoOfSpecialChars),
 	}
 
 	diags = resp.State.Set(ctx, result)

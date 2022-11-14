@@ -79,8 +79,8 @@ func (d passwordPolicyDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	state.ID.Value = policy.ID
-	state.PolicyName.Value = policy.PolicyName
+	state.ID = types.StringValue(policy.ID)
+	state.PolicyName = types.StringValue(policy.PolicyName)
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
