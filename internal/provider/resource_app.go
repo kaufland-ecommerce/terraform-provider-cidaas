@@ -154,8 +154,8 @@ func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics
 				Required: true,
 			},
 			"token_lifetime_in_seconds": {
-				Type:     types.Int64Type,
-				Required: true,
+				Type:       types.Int64Type,
+				Required:   true,
 				Validators: []tfsdk.AttributeValidator{
 					// validators.AtLeast(0),
 				},
