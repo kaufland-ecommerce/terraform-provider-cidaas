@@ -128,7 +128,7 @@ func (r passwordPolicyResource) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
-	policyID := state.ID.Value
+	policyID := state.ID.ValueString()
 
 	policy, err := r.provider.client.GetPasswordPolicy(policyID)
 	if err != nil {
@@ -227,7 +227,7 @@ func (r passwordPolicyResource) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	err := r.provider.client.DeletePasswordPolicy(state.ID.Value)
+	err := r.provider.client.DeletePasswordPolicy(state.ID.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(

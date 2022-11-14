@@ -66,7 +66,7 @@ func (r hostedPageGroupResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	plannedGroup.Name = plan.Name.Value
+	plannedGroup.Name = plan.Name.ValueString()
 
 	diags = plan.Pages.ElementsAs(ctx, &plannedGroup.Pages, true)
 
@@ -152,7 +152,7 @@ func (r hostedPageGroupResource) Update(ctx context.Context, req resource.Update
 
 	var plannedGroup client.HostedPageGroup
 
-	plannedGroup.Name = plan.Name.Value
+	plannedGroup.Name = plan.Name.ValueString()
 
 	diags = plan.Pages.ElementsAs(ctx, &plannedGroup.Pages, true)
 	resp.Diagnostics.Append(diags...)
@@ -196,7 +196,7 @@ func (r hostedPageGroupResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	err := r.provider.client.DeleteHostedPagesGroup(state.Name.Value)
+	err := r.provider.client.DeleteHostedPagesGroup(state.Name.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(

@@ -91,7 +91,7 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	if config.Host.IsNull() {
 		host = os.Getenv("CIDAAS_HOST")
 	} else {
-		host = config.Host.Value
+		host = config.Host.ValueString()
 	}
 
 	var clientId string

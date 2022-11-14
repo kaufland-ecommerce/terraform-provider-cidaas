@@ -65,8 +65,8 @@ func (c tenantInfoDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	state.CustomFieldFlatten.Value = info.CustomFieldFlatten
-	state.VersionInfo.Value = info.VersionInfo
+	state.CustomFieldFlatten = types.BoolValue(info.CustomFieldFlatten)
+	state.VersionInfo = types.StringValue(info.VersionInfo)
 
 	state.TenantName = types.StringValue(info.TenantName)
 	state.TenantKey = types.StringValue(info.TenantKey)

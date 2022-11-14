@@ -166,7 +166,7 @@ func (r resourceRegistrationField) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	fieldKey := state.FieldKey.Value
+	fieldKey := state.FieldKey.ValueString()
 
 	field, err := r.provider.client.GetRegistrationField(fieldKey)
 	if err != nil {
@@ -259,7 +259,7 @@ func (r resourceRegistrationField) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	err := r.provider.client.DeleteRegistrationField(state.FieldKey.Value)
+	err := r.provider.client.DeleteRegistrationField(state.FieldKey.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting Registration Field",

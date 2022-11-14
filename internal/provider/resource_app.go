@@ -154,8 +154,8 @@ func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics
 				Required: true,
 			},
 			"token_lifetime_in_seconds": {
-				Type:       types.Int64Type,
-				Required:   true,
+				Type:     types.Int64Type,
+				Required: true,
 				Validators: []tfsdk.AttributeValidator{
 					// validators.AtLeast(0),
 				},
@@ -415,7 +415,7 @@ func (r appResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	appID := state.ClientId.Value
+	appID := state.ClientId.ValueString()
 
 	app, err := r.provider.client.GetApp(appID)
 	if err != nil {
@@ -498,7 +498,7 @@ func (r appResource) Delete(ctx context.Context, req resource.DeleteRequest, res
 		return
 	}
 
-	err := r.provider.client.DeleteApp(state.ClientId.Value)
+	err := r.provider.client.DeleteApp(state.ClientId.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting app", err.Error())
@@ -530,7 +530,10 @@ func (r appResource) ImportState(ctx context.Context, req resource.ImportStateRe
 	resp.Diagnostics.Append(diags...)
 }
 
-func applyAppToState(ctx context.Context, state *App, app *client.App) {
+func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diagnostics {
+	ret := diag.Diagnostics{}
+	diags := diag.Diagnostics{}
+
 	state.ID = types.StringValue(app.ID)
 	state.ClientId = types.StringValue(app.ClientId)
 	state.ClientSecret = types.StringValue(app.ClientSecret)
@@ -585,17 +588,22 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) {
 		})
 	}
 
-	state.AppKey.AttrTypes = map[string]attr.Type{
-		"id":          types.StringType,
-		"private_key": types.StringType,
-		"public_key":  types.StringType,
-	}
+	state.AppKey, diags = types.ObjectValue(
+		map[string]attr.Type{
+			"id":          types.StringType,
+			"private_key": types.StringType,
+			"public_key":  types.StringType,
+		},
+		map[string]attr.Value{
+			"id":          types.StringValue(app.AppKey.ID),
+			"private_key": types.StringValue(app.AppKey.PrivateKey),
+			"public_key":  types.StringValue(app.AppKey.PublicKey),
+		},
+	)
 
-	state.AppKey.Attrs = map[string]attr.Value{
-		"id":          types.StringValue(app.AppKey.ID),
-		"private_key": types.StringValue(app.AppKey.PrivateKey),
-		"public_key":  types.StringValue(app.AppKey.PublicKey),
-	}
+	ret.Append(diags...)
+
+	return ret
 }
 
 func planToApp(ctx context.Context, plan *App, state *App) *client.App {
