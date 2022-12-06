@@ -111,3 +111,22 @@ type RegistrationField struct {
 	ParentGroupId types.String `tfsdk:"parent_group_id"`
 	Order         types.Int64  `tfsdk:"order"`
 }
+
+type TemplateGroup struct {
+	ID      types.String `tfsdk:"id"`
+	GroupId types.String `tfsdk:"group_id"`
+}
+
+type Template struct {
+	ID             types.String `tfsdk:"id"`
+	LastSeededBy   types.String `tfsdk:"last_seeded_by"`
+	GroupId        types.String `tfsdk:"group_id"`
+	TemplateKey    types.String `tfsdk:"template_key"`
+	TemplateType   types.String `tfsdk:"template_type"`
+	ProcessingType types.String `tfsdk:"processing_type"`
+	Locale         types.String `tfsdk:"locale"`
+	Language       types.String `tfsdk:"language"`
+	UsageType      types.String `tfsdk:"usage_type"`
+	Subject        types.String `tfsdk:"subject"`
+	Content        types.String `tfsdk:"content"`
+}

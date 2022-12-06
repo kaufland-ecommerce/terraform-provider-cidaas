@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var _ Client = (*client)(nil)
+
 func NewClient(host *string, clientId *string, clientSecret *string) (Client, error) {
 	c := client{
 		HTTPClient: &http.Client{Timeout: 10 * time.Second},
@@ -60,6 +62,13 @@ type Client interface {
 	GetRegistrationField(key string) (*RegistrationField, error)
 	UpsertRegistrationField(field *RegistrationField) error
 	DeleteRegistrationField(key string) error
+
+	CreateTemplateGroup(group string) (*TemplateGroup, error)
+	GetTemplateGroup(groupId string) (*TemplateGroup, error)
+	DeleteTemplateGroup(groupId string) error
+
+	UpdateTemplate(template Template) (*Template, error)
+	GetTemplate(template Template) (*Template, error)
 }
 
 type client struct {

@@ -139,3 +139,21 @@ type FieldDefinition struct {
 	Language string `json:"language"`
 	Locale   string `json:"locale"`
 }
+
+type TemplateGroup struct {
+	GroupId string `json:"group_id"`
+}
+
+type Template struct {
+	ID             *string `json:"id,omitempty"`
+	LastSeededBy   *string `json:"last_seeded_by,omitempty"`
+	GroupId        string  `json:"group_id"`
+	TemplateKey    string  `json:"templateKey"`
+	TemplateType   string  `json:"templateType"`
+	ProcessingType string  `json:"processingType"`
+	Locale         string  `json:"locale"`
+	Language       string  `json:"Language"`
+	UsageType      string  `json:"usageType"`
+	Subject        string  `json:"subject"`
+	Content        string  `json:"content"`
+}

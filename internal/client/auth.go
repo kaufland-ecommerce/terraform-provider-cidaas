@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -33,7 +34,12 @@ func (c *client) SignIn() (*authResponse, error) {
 	defer res.Body.Close()
 
 	if res.StatusCode > http.StatusOK {
-		return nil, fmt.Errorf("auth failed: %s", res.Body)
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, fmt.Errorf("auth failed: unkown error")
+		}
+
+		return nil, fmt.Errorf("auth failed: %s", b)
 	}
 
 	var response authResponse
