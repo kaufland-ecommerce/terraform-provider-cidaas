@@ -3,9 +3,8 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -19,24 +18,21 @@ func NewSocialProviderDataSource() datasource.DataSource {
 	return &socialProviderDataSource{}
 }
 
-func (d *socialProviderDataSource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (d *socialProviderDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "Allows reading social providers that are configured in internal",
-		Attributes: map[string]tfsdk.Attribute{
-			"social_id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"social_id": schema.StringAttribute{
 				Computed: true,
 			},
-			"provider_type": {
-				Type:     types.StringType,
+			"provider_type": schema.StringAttribute{
 				Computed: true,
 			},
-			"provider_name": {
-				Type:     types.StringType,
+			"provider_name": schema.StringAttribute{
 				Required: true,
 			},
 		},
-	}, nil
+	}
 }
 
 func (d *socialProviderDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {

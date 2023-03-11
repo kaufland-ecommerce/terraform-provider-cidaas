@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
 var _ provider.Provider = (*cidaasProvider)(nil)
-var _ provider.ProviderWithMetadata = (*cidaasProvider)(nil)
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
@@ -36,28 +35,21 @@ func (p *cidaasProvider) Metadata(_ context.Context, req provider.MetadataReques
 	resp.TypeName = "cidaas"
 }
 
-func (p *cidaasProvider) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"host": {
-				Type:     types.StringType,
+func (p *cidaasProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"host": schema.StringAttribute{
 				Optional: true,
-				Computed: true,
 			},
-			"client_id": {
-				Type:      types.StringType,
-				Optional:  true,
-				Computed:  true,
-				Sensitive: true,
+			"client_id": schema.StringAttribute{
+				Optional: true,
 			},
-			"client_secret": {
-				Type:      types.StringType,
+			"client_secret": schema.StringAttribute{
 				Optional:  true,
-				Computed:  true,
 				Sensitive: true,
 			},
 		},
-	}, nil
+	}
 }
 
 type providerData struct {

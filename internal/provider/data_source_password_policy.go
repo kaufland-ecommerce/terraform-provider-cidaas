@@ -3,9 +3,8 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -19,35 +18,29 @@ func NewPasswordPolicyDataSource() datasource.DataSource {
 	return &passwordPolicyDataSource{}
 }
 
-func (d *passwordPolicyDataSource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+func (d *passwordPolicyDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"policy_name": {
-				Type:     types.StringType,
+			"policy_name": schema.StringAttribute{
 				Required: true,
 			},
-			"lower_and_upper_case": {
-				Type:     types.BoolType,
+			"lower_and_upper_case": schema.BoolAttribute{
 				Computed: true,
 			},
-			"minimum_length": {
-				Type:     types.Int64Type,
+			"minimum_length": schema.Int64Attribute{
 				Computed: true,
 			},
-			"no_of_digits": {
-				Type:     types.Int64Type,
+			"no_of_digits": schema.Int64Attribute{
 				Computed: true,
 			},
-			"no_of_special_chars": {
-				Type:     types.Int64Type,
+			"no_of_special_chars": schema.Int64Attribute{
 				Computed: true,
 			},
 		},
-	}, nil
+	}
 }
 
 func (d *passwordPolicyDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {

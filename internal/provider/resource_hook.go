@@ -3,9 +3,11 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
@@ -28,72 +30,65 @@ func (r *hookResource) Configure(_ context.Context, req resource.ConfigureReques
 	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
 }
 
-func (r *hookResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r *hookResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "`cidaas_hook` manages webhooks in the tenant.\n\n" +
 			"Webhooks are triggered depending on the configured events.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Description: "Unique identifier of the hook",
 			},
-			"last_updated": {
-				Type:        types.StringType,
+			"last_updated": schema.StringAttribute{
 				Computed:    true,
 				Description: "Time of the last update of the hook",
 			},
-			"url": {
-				Type:        types.StringType,
+			"url": schema.StringAttribute{
 				Required:    true,
 				Description: "The URL corresponding to the client's Webhook receiver",
 			},
-			"auth_type": {
-				Type:        types.StringType,
+			"auth_type": schema.StringAttribute{
 				Required:    true,
 				Description: "Authentication method that is used for the hook",
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"APIKEY", "TOTP", "CIDAAS_OAUTH2",
 					),
 				},
 			},
-			"events": {
-				Type:        types.ListType{ElemType: types.StringType},
+			"events": schema.ListAttribute{
+				ElementType: types.StringType,
 				Required:    true,
 				Description: "One or more hook events which will trigger the hook",
 			},
-			"apikey_details": {
+			"apikey_details": schema.SingleNestedAttribute{
 				Required: false,
 				Optional: true,
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"apikey": {
-						Type:        types.StringType,
+				Attributes: map[string]schema.Attribute{
+					"apikey": schema.StringAttribute{
 						Required:    true,
 						Description: "apikey to measure and restrict access to the hook",
 					},
-					"apikey_placeholder": {
-						Type:        types.StringType,
+					"apikey_placeholder": schema.StringAttribute{
 						Required:    true,
 						Description: "name of the attribute in which the apikey is to be provided",
 					},
-					"apikey_placement": {
-						Type:        types.StringType,
+					"apikey_placement": schema.StringAttribute{
 						Required:    true,
 						Description: "pass apikey as query param or header param",
-						Validators: []tfsdk.AttributeValidator{
+						Validators: []validator.String{
 							stringvalidator.OneOf(
 								"query", "header",
 							),
 						},
 					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (r hookResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

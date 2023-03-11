@@ -2,9 +2,10 @@ package provider
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
@@ -27,45 +28,39 @@ func (r *passwordPolicyResource) Configure(_ context.Context, req resource.Confi
 	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
 }
 
-func (r *passwordPolicyResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r *passwordPolicyResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "`cidaas_password_policy` controls the password policies in the tenant",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Description: "Unique identifier of the policy",
 			},
-			"policy_name": {
-				Type:        types.StringType,
+			"policy_name": schema.StringAttribute{
 				Required:    true,
 				Description: "Display name of the policy",
 			},
-			"lower_and_upper_case": {
-				Type:        types.BoolType,
+			"lower_and_upper_case": schema.BoolAttribute{
 				Required:    true,
 				Description: "Indicates if passwords are required to have lower and upper case letters",
 			},
-			"minimum_length": {
-				Type:        types.Int64Type,
+			"minimum_length": schema.Int64Attribute{
 				Required:    true,
 				Description: "Minimum length of the passwords",
 			},
-			"no_of_digits": {
-				Type:        types.Int64Type,
+			"no_of_digits": schema.Int64Attribute{
 				Required:    true,
 				Description: "Number of digits that need to be included in the password",
 			},
-			"no_of_special_chars": {
-				Type:        types.Int64Type,
+			"no_of_special_chars": schema.Int64Attribute{
 				Required:    true,
 				Description: "Number of special chars that need to be included in the password",
 			},
 		},
-	}, nil
+	}
 }
 
 func (r *passwordPolicyResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

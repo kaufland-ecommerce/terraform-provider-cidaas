@@ -2,9 +2,10 @@ package provider
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -26,28 +27,26 @@ func (r *templateGroupResource) Configure(_ context.Context, req resource.Config
 	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
 }
 
-func (r *templateGroupResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "`cidaas_template_group` manages Template Groups in the tenant.\n\n",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Description: "Cidaas UUID of the Template Group",
 			},
-			"group_id": {
-				Type:        types.StringType,
+			"group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "Unique Name of the Templat Group",
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -68,7 +67,7 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	templateGroup, err := r.provider.client.CreateTemplateGroup(plan.GroupId.Value)
+	templateGroup, err := r.provider.client.CreateTemplateGroup(plan.GroupId.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(

@@ -3,8 +3,7 @@ package provider
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -26,31 +25,27 @@ func (d *tenantInfoDataSource) Configure(_ context.Context, req datasource.Confi
 	d.provider, resp.Diagnostics = toProvider(req.ProviderData)
 }
 
-func (c *tenantInfoDataSource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (c *tenantInfoDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: "Information about the connected tenant.",
-		Attributes: map[string]tfsdk.Attribute{
-			"tenant_name": {
-				Type:        types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"tenant_name": schema.StringAttribute{
 				Computed:    true,
 				Description: "Public visible name of the tenant",
 			},
-			"tenant_key": {
-				Type:        types.StringType,
+			"tenant_key": schema.StringAttribute{
 				Computed:    true,
 				Description: "(internal) id of the tenant",
 			},
-			"custom_field_flatten": {
-				Type:     types.BoolType,
+			"custom_field_flatten": schema.BoolAttribute{
 				Computed: true,
 			},
-			"version_info": {
-				Type:        types.StringType,
+			"version_info": schema.StringAttribute{
 				Computed:    true,
 				Description: "Currently deployed version",
 			},
 		},
-	}, nil
+	}
 }
 
 func (c tenantInfoDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

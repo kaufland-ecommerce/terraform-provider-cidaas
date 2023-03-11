@@ -6,6 +6,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
@@ -29,74 +33,64 @@ func (r *resourceRegistrationField) Configure(_ context.Context, req resource.Co
 	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
 }
 
-func (r *resourceRegistrationField) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Description: "`cidaas_hook` manages webhooks in the tenant.\n\n" +
-			"Webhooks are triggered depending on the configured events.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+func (r *resourceRegistrationField) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "`cidaas_registration_field` manages registration fields in the tenant.",
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
-				Description: "Unique identifier of the hook",
+				Description: "Unique identifier of the registration field",
 			},
-			"required": {
-				Type:        types.BoolType,
+			"required": schema.StringAttribute{
 				Required:    true,
 				Description: "",
 			},
-			"enabled": {
-				Type:        types.BoolType,
+			"enabled": schema.BoolAttribute{
 				Required:    true,
 				Description: "",
 			},
-			"claimable": {
-				Type:        types.BoolType,
+			"claimable": schema.BoolAttribute{
 				Required:    true,
 				Description: "",
 			},
-			"read_only": {
-				Type:        types.BoolType,
+			"read_only": schema.BoolAttribute{
 				Required:    true,
 				Description: "",
 			},
-			"parent_group_id": {
-				Type:        types.StringType,
+			"parent_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "Group the registration field belongs to",
 			},
-			"field_key": {
-				Type:        types.StringType,
+			"field_key": schema.StringAttribute{
 				Required:    true,
 				Description: "",
 			},
-			"consent_refs": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: false,
-				Optional: true,
-				Validators: []tfsdk.AttributeValidator{
+			"consent_refs": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    false,
+				Optional:    true,
+				Validators: []validator.List{
 					listvalidator.SizeAtLeast(1),
 				},
 			},
-			"data_type": {
-				Type:        types.StringType,
+			"data_type": schema.StringAttribute{
 				Required:    true,
 				Description: "",
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"CONSENT",
 					),
 				},
 			},
-			"order": {
-				Type:        types.Int64Type,
+			"order": schema.Int64Attribute{
 				Required:    true,
 				Description: "",
 			},
 		},
-	}, nil
+	}
 }
 
 func (r resourceRegistrationField) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

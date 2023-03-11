@@ -9,6 +9,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -34,44 +39,38 @@ func (r *appResource) Configure(_ context.Context, req resource.ConfigureRequest
 	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
 }
 
-func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 
 			// App Details
-			"client_name": {
-				Type:     types.StringType,
+			"client_name": schema.StringAttribute{
 				Required: true,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"client_display_name": {
-				Type:     types.StringType,
+			"client_display_name": schema.StringAttribute{
 				Optional: true,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"primary_color": {
-				Type:     types.StringType,
+			"primary_color": schema.StringAttribute{
 				Optional: true,
 			},
-			"accent_color": {
-				Type:     types.StringType,
+			"accent_color": schema.StringAttribute{
 				Optional: true,
 			},
-			"client_type": {
+			"client_type": schema.StringAttribute{
 				Required: true,
-				Type:     types.StringType,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"SINGLE_PAGE", "ANDROID", "IOS", "REGULAR_WEB", "NON_INTERACTIVE",
 					),
@@ -79,159 +78,146 @@ func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics
 			},
 
 			// App Settings
-			"client_id": {
-				Type:     types.StringType,
+			"client_id": schema.StringAttribute{
 				Computed: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"client_secret": {
-				Type:      types.StringType,
+			"client_secret": schema.StringAttribute{
 				Computed:  true,
 				Sensitive: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"allowed_scopes": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"allowed_scopes": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
-			"redirect_uris": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"redirect_uris": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
-			"allowed_logout_urls": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"allowed_logout_urls": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
 
 			// Company Details
-			"company_name": {
-				Type:     types.StringType,
+			"company_name": schema.StringAttribute{
 				Required: true,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"company_address": {
-				Type:     types.StringType,
+			"company_address": schema.StringAttribute{
 				Required: true,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"company_website": {
-				Type:     types.StringType,
+			"company_website": schema.StringAttribute{
 				Required: true,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
 
 			// OAuth Settings
-			"response_types": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"response_types": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
-			"grant_types": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"grant_types": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
-			"allowed_web_origins": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"allowed_web_origins": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
-			"allowed_origins": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"allowed_origins": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
 
 			// Token Settings
-			"additional_access_token_payload": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"additional_access_token_payload": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
-			"token_lifetime_in_seconds": {
-				Type:       types.Int64Type,
+			"token_lifetime_in_seconds": schema.Int64Attribute{
 				Required:   true,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.Int64{
 					// validators.AtLeast(0),
 				},
 			},
-			"id_token_lifetime_in_seconds": {
-				Type:     types.Int64Type,
+			"id_token_lifetime_in_seconds": schema.Int64Attribute{
 				Required: true,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.Int64{
 					int64validator.AtLeast(0),
 				},
 			},
-			"refresh_token_lifetime_in_seconds": {
-				Type:     types.Int64Type,
+			"refresh_token_lifetime_in_seconds": schema.Int64Attribute{
 				Required: true,
-				Validators: []tfsdk.AttributeValidator{
+				Validators: []validator.Int64{
 					int64validator.AtLeast(0),
 				},
 			},
 
 			// Consent management
-			"consent_refs": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Required: true,
+			"consent_refs": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
 			},
 
 			// Template Group ID
-			"template_group_id": {
-				Type:     types.StringType,
+			"template_group_id": schema.StringAttribute{
 				Required: true,
 			},
 
 			// Login Provider
-			"social_providers": {
+			"social_providers": schema.ListNestedAttribute{
 				Required: true,
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"social_id": {
-						Type:     types.StringType,
-						Required: true,
-					},
-					"provider_name": {
-						Type:     types.StringType,
-						Required: true,
-					},
-					"provider_type": {
-						Type:     types.StringType,
-						Computed: true,
-						PlanModifiers: tfsdk.AttributePlanModifiers{
-							resource.UseStateForUnknown(),
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"social_id": schema.StringAttribute{
+							Required: true,
+						},
+						"provider_name": schema.StringAttribute{
+							Required: true,
+						},
+						"provider_type": schema.StringAttribute{
+							Computed: true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
 						},
 					},
-				}),
+				},
 			},
 
 			// Guest Login
-			"allow_guest_login": {
-				Type:     types.BoolType,
+			"allow_guest_login": schema.BoolAttribute{
 				Required: true,
 			},
 
 			// TODO: Guest login groups
 
 			// Registration Fields
-			"allowed_fields": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Optional: true,
+			"allowed_fields": schema.ListAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
 			},
-			"required_fields": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Optional: true,
+			"required_fields": schema.ListAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
 			},
-			"email_verification_required": {
-				Type:     types.BoolType,
+			"email_verification_required": schema.BoolAttribute{
 				Required: true,
 			},
-			"mobile_number_verification_required": {
-				Type:     types.BoolType,
+			"mobile_number_verification_required": schema.BoolAttribute{
 				Required: true,
 			},
 
@@ -239,43 +225,36 @@ func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics
 			// TODO
 
 			// Password Rules
-			"password_policy": {
-				Type:     types.StringType,
+			"password_policy": schema.StringAttribute{
 				Optional: true,
-				Required: false,
 			},
 
 			// Template Group
-			"hosted_page_group": {
-				Type:     types.StringType,
+			"hosted_page_group": schema.StringAttribute{
 				Required: true,
 			},
 
 			// Bot Detection
-			"enable_bot_detection": {
-				Type:     types.BoolType,
+			"enable_bot_detection": schema.BoolAttribute{
 				Required: true,
 			},
 
 			// Authentication
-			"always_ask_mfa": {
-				Type:     types.BoolType,
+			"always_ask_mfa": schema.BoolAttribute{
 				Required: true,
 			},
-			"allowed_mfa": {
-				Type:     types.ListType{ElemType: types.StringType},
-				Optional: true,
+			"allowed_mfa": schema.ListAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
 			},
 
 			// Remember Me
-			"is_remember_me_selected": {
-				Type:     types.BoolType,
+			"is_remember_me_selected": schema.BoolAttribute{
 				Required: true,
 			},
 
 			// Success Page
-			"is_login_success_page_enabled": {
-				Type:     types.BoolType,
+			"is_login_success_page_enabled": schema.BoolAttribute{
 				Required: true,
 			},
 
@@ -283,60 +262,53 @@ func (r *appResource) GetSchema(context.Context) (tfsdk.Schema, diag.Diagnostics
 			// TODO
 
 			// Encryption Settings
-			"jwe_enabled": {
-				Type:     types.BoolType,
+			"jwe_enabled": schema.BoolAttribute{
 				Required: true,
 			},
 
 			// Certificates
-			"app_key": {
-				Type: types.ObjectType{AttrTypes: map[string]attr.Type{
+			"app_key": schema.ObjectAttribute{
+				AttributeTypes: map[string]attr.Type{
 					"id":          types.StringType,
 					"private_key": types.StringType,
 					"public_key":  types.StringType,
-				}},
+				},
 				Computed:  true,
 				Sensitive: true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{
-					resource.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.UseStateForUnknown(),
 				},
 			},
 
 			// Flow Settings
-			"auto_login_after_register": {
-				Type:        types.BoolType,
+			"auto_login_after_register": schema.BoolAttribute{
 				Required:    true,
 				Description: "If set, customers will be logged in directly after registrtion",
 			},
-			"allow_login_with": {
-				Type:        types.ListType{ElemType: types.StringType},
+			"allow_login_with": schema.ListAttribute{
+				ElementType: types.StringType,
 				Required:    true,
 				Description: "Profile information that can be used to login",
 			},
-			"register_with_login_information": {
-				Type:        types.BoolType,
+			"register_with_login_information": schema.BoolAttribute{
 				Required:    true,
 				Description: "Should a login with social lead to account creation if not existing",
 			},
-			"fds_enabled": {
-				Type:     types.BoolType,
+			"fds_enabled": schema.BoolAttribute{
 				Required: true,
 			},
-			"enable_passwordless_auth": {
-				Type:     types.BoolType,
+			"enable_passwordless_auth": schema.BoolAttribute{
 				Required: true,
 			},
-			"enable_deduplication": {
-				Type:     types.BoolType,
+			"enable_deduplication": schema.BoolAttribute{
 				Required: true,
 			},
-			"allow_disposable_email": {
-				Type:        types.BoolType,
+			"allow_disposable_email": schema.BoolAttribute{
 				Required:    true,
 				Description: "If set, emails generated by throwaway email providers can be used for signup",
 			},
 		},
-	}, nil
+	}
 }
 
 func (r appResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
