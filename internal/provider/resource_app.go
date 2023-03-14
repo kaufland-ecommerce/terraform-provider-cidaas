@@ -513,6 +513,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.IsRememberMeSelected = types.BoolValue(app.IsRememberMeSelected)
 	state.ClientType = types.StringValue(app.ClientType)
 	state.AllowDisposableEmail = types.BoolValue(app.AllowDisposableEmail)
+	state.AllowGuestLogin = types.BoolValue(app.AllowGuestLogin)
 	state.FdsEnabled = types.BoolValue(app.FdsEnabled)
 	state.EnablePasswordlessAuth = types.BoolValue(app.EnablePasswordlessAuth)
 	state.EnableDeduplication = types.BoolValue(app.EnableDeduplication)
