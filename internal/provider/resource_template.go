@@ -75,7 +75,7 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "Language",
 			},
 			"subject": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Description: "Subject of the Template",
 			},
 			"content": schema.StringAttribute{
