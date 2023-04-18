@@ -17,7 +17,7 @@ description: |-
 
 ### Required
 
-- `name` (String) Unique identifier of the hook
+- `name` (String) Unique identifier of the hosted page group
 - `pages` (Map of String)
 
 

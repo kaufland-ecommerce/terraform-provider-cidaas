@@ -25,6 +25,6 @@ provider "cidaas" {
 
 ### Optional
 
-- `client_id` (String, Sensitive)
+- `client_id` (String)
 - `client_secret` (String, Sensitive)
 - `host` (String)

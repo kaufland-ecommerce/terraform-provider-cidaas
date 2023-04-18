@@ -47,8 +47,10 @@ description: |-
 - `mobile_number_verification_required` (Boolean)
 - `redirect_uris` (List of String)
 - `refresh_token_lifetime_in_seconds` (Number)
+- `register_with_login_information` (Boolean) Should a login with social lead to account creation if not existing
 - `response_types` (List of String)
 - `social_providers` (Attributes List) (see [below for nested schema](#nestedatt--social_providers))
+- `template_group_id` (String)
 - `token_lifetime_in_seconds` (Number)
 
 ### Optional
