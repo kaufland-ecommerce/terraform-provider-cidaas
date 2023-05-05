@@ -100,7 +100,7 @@ func (r templateGroupResource) Read(ctx context.Context, req resource.ReadReques
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading Template Group",
-			"Could not read hookID "+groupId+": "+err.Error(),
+			"Could not read template group with id "+groupId+": "+err.Error(),
 		)
 		return
 	}

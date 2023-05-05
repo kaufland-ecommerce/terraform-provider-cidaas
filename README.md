@@ -1,6 +1,6 @@
 # Terraform Provider for Cidaas
 
-![GoLang](https://img.shields.io/badge/golang-1.18-blue)
+![GoLang](https://img.shields.io/badge/golang-1.19-blue)
 ![GitHub](https://img.shields.io/github/license/real-digital/terraform-provider-cidaas) 
 
 Terraform provider to manage and read resources from cidaas instances.

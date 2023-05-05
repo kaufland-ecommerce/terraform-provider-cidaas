@@ -128,8 +128,8 @@ func (r passwordPolicyResource) Read(ctx context.Context, req resource.ReadReque
 	policy, err := r.provider.client.GetPasswordPolicy(policyID)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reading hook",
-			"Could not read hookID "+policyID+": "+err.Error(),
+			"Error reading password policy",
+			"Could not read policy with id "+policyID+": "+err.Error(),
 		)
 		return
 	}
