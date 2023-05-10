@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/real-digital/cidaas",
+		Address: "registry.terraform.io/kaufland-ecommerce/cidaas",
 		Debug:   debug,
 	}
 

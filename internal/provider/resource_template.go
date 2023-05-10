@@ -122,7 +122,7 @@ func (r templateResource) Create(ctx context.Context, req resource.CreateRequest
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating template group",
+			"Error creating template",
 			"Could not create hook, unexpected error: "+err.Error(),
 		)
 		return
@@ -159,7 +159,7 @@ func (r templateResource) Read(ctx context.Context, req resource.ReadRequest, re
 	template, err := r.provider.client.GetTemplate(*template)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reading Template Group",
+			"Error reading Template",
 			"Could not read template "+state.TemplateKey.ValueString()+": "+err.Error(),
 		)
 		return

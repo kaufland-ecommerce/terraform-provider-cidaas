@@ -113,8 +113,12 @@ type RegistrationField struct {
 }
 
 type TemplateGroup struct {
-	ID      types.String `tfsdk:"id"`
-	GroupId types.String `tfsdk:"group_id"`
+	ID                types.String `tfsdk:"id"`
+	GroupId           types.String `tfsdk:"group_id"`
+	SmsSenderConfig   types.Object `tfsdk:"sms_sender_config"`
+	EmailSenderConfig types.Object `tfsdk:"email_sender_config"`
+	IVRSenderConfig   types.Object `tfsdk:"ivr_sender_config"`
+	PushSenderConfig  types.Object `tfsdk:"push_sender_config"`
 }
 
 type Template struct {
