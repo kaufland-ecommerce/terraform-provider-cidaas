@@ -105,7 +105,7 @@ func (r hostedPageGroupResource) Read(ctx context.Context, req resource.ReadRequ
 	group, err := r.provider.client.GetHostedPagesGroup(groupName)
 
 	tflog.Trace(ctx, "Done fetching hosted pages group", map[string]interface{}{
-		"group": group.Name,
+		//"group": group.Name,
 	})
 
 	if err != nil {

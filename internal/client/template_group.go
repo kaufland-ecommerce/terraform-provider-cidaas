@@ -33,13 +33,49 @@ func (c *client) CreateTemplateGroup(groupId string) (*TemplateGroup, error) {
 		return nil, err
 	}
 
-	_, err = c.doRequest(req)
+	resp, err := c.doRequest(req)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &TemplateGroup{GroupId: groupId}, nil
+	var templateGroup TemplateGroup
+	err = json.Unmarshal(resp, &templateGroup)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &templateGroup, nil
+}
+
+func (c *client) UpdateTemplateGroup(group *TemplateGroup) error {
+	rb, err := json.Marshal(group)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPut,
+		fmt.Sprintf("%s/templates-srv/groups/%s", c.HostUrl, group.GroupId),
+		strings.NewReader(string(rb)),
+	)
+
+	req.Header.Add("content-type", "application/json")
+
+	resp, err := c.doRequest(req)
+
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(resp, group)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *client) GetTemplateGroup(groupId string) (*TemplateGroup, error) {

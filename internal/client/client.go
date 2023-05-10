@@ -65,6 +65,7 @@ type Client interface {
 
 	CreateTemplateGroup(group string) (*TemplateGroup, error)
 	GetTemplateGroup(groupId string) (*TemplateGroup, error)
+	UpdateTemplateGroup(group *TemplateGroup) error
 	DeleteTemplateGroup(groupId string) error
 
 	UpdateTemplate(template Template) (*Template, error)

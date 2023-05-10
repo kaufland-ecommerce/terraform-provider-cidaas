@@ -140,8 +140,36 @@ type FieldDefinition struct {
 	Locale   string `json:"locale"`
 }
 
+type EmailSenderConfig struct {
+	Id        string   `json:"id,omitempty" tfsdk:"id"`
+	FromName  string   `json:"from_name" tfsdk:"from_name"`
+	FromEmail string   `json:"from_email" tfsdk:"from_email"`
+	Provider  []string `json:"sender_names" tfsdk:"provider"`
+}
+
+type SmsSenderConfig struct {
+	Id       string   `json:"id,omitempty" tfsdk:"id"`
+	FromName string   `json:"from_name" tfsdk:"from_name"`
+	Provider []string `json:"sender_names" tfsdk:"provider"`
+}
+
+type IVRSenderConfig struct {
+	Id       string   `json:"id,omitempty" tfsdk:"id"`
+	Provider []string `json:"sender_names" tfsdk:"provider"`
+}
+
+type PushSenderConfig struct {
+	Id       string   `json:"id,omitempty" tfsdk:"id"`
+	Provider []string `json:"sender_names" tfsdk:"provider"`
+}
+
 type TemplateGroup struct {
-	GroupId string `json:"group_id"`
+	Id                string            `json:"id,omitempty"`
+	GroupId           string            `json:"group_id"`
+	EmailSenderConfig EmailSenderConfig `json:"email_sender_config"`
+	SmsSenderConfig   SmsSenderConfig   `json:"sms_sender_config"`
+	IVRSenderConfig   IVRSenderConfig   `json:"ivr_sender_config"`
+	PushSenderConfig  PushSenderConfig  `json:"push_sender_config"`
 }
 
 type Template struct {
