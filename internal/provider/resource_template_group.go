@@ -222,21 +222,29 @@ func (r templateGroupResource) Update(ctx context.Context, req resource.UpdateRe
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
+	resp.Diagnostics.Append(diags...)
 
-	plan.SmsSenderConfig.As(ctx, &group.SmsSenderConfig, struct {
+	diags = plan.SmsSenderConfig.As(ctx, &group.SmsSenderConfig, struct {
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
+	resp.Diagnostics.Append(diags...)
 
-	plan.IVRSenderConfig.As(ctx, &group.IVRSenderConfig, struct {
+	diags = plan.IVRSenderConfig.As(ctx, &group.IVRSenderConfig, struct {
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
+	resp.Diagnostics.Append(diags...)
 
-	plan.PushSenderConfig.As(ctx, &group.PushSenderConfig, struct {
+	diags = plan.PushSenderConfig.As(ctx, &group.PushSenderConfig, struct {
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	err := r.provider.client.UpdateTemplateGroup(&group)
 

@@ -83,6 +83,8 @@ type App struct {
 	AppKey                           types.Object `tfsdk:"app_key"`
 	TemplateGroupId                  types.String `tfsdk:"template_group_id"`
 
+	AllowedGroups                types.List       `tfsdk:"allowed_groups"`
+	OperationsAllowedGroups      types.List       `tfsdk:"operations_allowed_groups"`
 	AllowLoginWith               []string         `tfsdk:"allow_login_with"`
 	RedirectUris                 []string         `tfsdk:"redirect_uris"`
 	AllowedLogoutUrls            []string         `tfsdk:"allowed_logout_urls"`

@@ -57,8 +57,10 @@ description: |-
 
 - `accent_color` (String)
 - `allowed_fields` (List of String)
+- `allowed_groups` (Attributes List) (see [below for nested schema](#nestedatt--allowed_groups))
 - `allowed_mfa` (List of String)
 - `client_display_name` (String)
+- `operations_allowed_groups` (Attributes List) (see [below for nested schema](#nestedatt--operations_allowed_groups))
 - `password_policy` (String)
 - `primary_color` (String)
 - `required_fields` (List of String)
@@ -81,6 +83,26 @@ Required:
 Read-Only:
 
 - `provider_type` (String)
+
+
+<a id="nestedatt--allowed_groups"></a>
+### Nested Schema for `allowed_groups`
+
+Required:
+
+- `default_roles` (List of String)
+- `group_id` (String)
+- `roles` (List of String)
+
+
+<a id="nestedatt--operations_allowed_groups"></a>
+### Nested Schema for `operations_allowed_groups`
+
+Required:
+
+- `default_roles` (List of String)
+- `group_id` (String)
+- `roles` (List of String)
 
 
 <a id="nestedatt--app_key"></a>

@@ -55,6 +55,12 @@ type AppKey struct {
 	PublicKey  string `json:"publicKey"`
 }
 
+type AllowedGroup struct {
+	GroupId      string   `json:"groupId" tfsdk:"group_id"`
+	Roles        []string `json:"roles" tfsdk:"roles"`
+	DefaultRoles []string `json:"default_roles" tfsdk:"default_roles"`
+}
+
 type App struct {
 	ID                               string  `json:"id"`
 	ClientId                         string  `json:"client_id"`
@@ -91,6 +97,8 @@ type App struct {
 	AppKey *AppKey `json:"appKey,omitempty"`
 
 	AllowLoginWith               []string         `json:"allow_login_with"`
+	OperationsAllowedGroups      []AllowedGroup   `json:"operations_allowed_groups"`
+	AllowedGroups                []AllowedGroup   `json:"allowed_groups"`
 	RedirectUris                 []string         `json:"redirect_uris"`
 	AllowedLogoutUrls            []string         `json:"allowed_logout_urls"`
 	AllowedScopes                []string         `json:"allowed_scopes"`

@@ -258,9 +258,43 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Required: true,
 			},
 
-			// Groupes & Roles
-			// TODO
-
+			// Groups & Roles
+			"allowed_groups": schema.ListNestedAttribute{
+				Optional: true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"group_id": schema.StringAttribute{
+							Required: true,
+						},
+						"roles": schema.ListAttribute{
+							Required:    true,
+							ElementType: types.StringType,
+						},
+						"default_roles": schema.ListAttribute{
+							Required:    true,
+							ElementType: types.StringType,
+						},
+					},
+				},
+			},
+			"operations_allowed_groups": schema.ListNestedAttribute{
+				Optional: true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"group_id": schema.StringAttribute{
+							Required: true,
+						},
+						"roles": schema.ListAttribute{
+							Required:    true,
+							ElementType: types.StringType,
+						},
+						"default_roles": schema.ListAttribute{
+							Required:    true,
+							ElementType: types.StringType,
+						},
+					},
+				},
+			},
 			// Encryption Settings
 			"jwe_enabled": schema.BoolAttribute{
 				Required: true,
@@ -346,7 +380,12 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	plannedApp := planToApp(ctx, &plan, &plan)
+	plannedApp, diags := planToApp(ctx, &plan, &plan)
+	resp.Diagnostics.Append(diags...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	app, err := r.provider.client.CreateApp(plannedApp)
 	if err != nil {
@@ -430,7 +469,12 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	resp.Diagnostics.Append(diags...)
 
-	plannedApp := planToApp(ctx, &plan, &state)
+	plannedApp, diags := planToApp(ctx, &plan, &state)
+
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	app, err := r.provider.client.UpdateApp(*plannedApp)
 
@@ -534,6 +578,26 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.JweEnabled = types.BoolValue(app.JweEnabled)
 	state.AlwaysAskMfa = types.BoolValue(app.AlwaysAskMfa)
 
+	state.AllowedGroups, diags = types.ListValueFrom(ctx, types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"group_id":      types.StringType,
+			"roles":         types.ListType{ElemType: types.StringType},
+			"default_roles": types.ListType{ElemType: types.StringType},
+		},
+	}, app.AllowedGroups)
+
+	ret.Append(diags...)
+
+	state.OperationsAllowedGroups, diags = types.ListValueFrom(ctx, types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"group_id":      types.StringType,
+			"roles":         types.ListType{ElemType: types.StringType},
+			"default_roles": types.ListType{ElemType: types.StringType},
+		},
+	}, app.OperationsAllowedGroups)
+
+	ret.Append(diags...)
+
 	tfsdk.ValueFrom(ctx, app.RegisterWithLoginInformation, types.BoolType, &state.RegisterWithLoginInformation)
 	tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
 	tfsdk.ValueFrom(ctx, app.TemplateGroupId, types.StringType, &state.TemplateGroupId)
@@ -578,7 +642,10 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	return ret
 }
 
-func planToApp(ctx context.Context, plan *App, state *App) *client.App {
+func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Diagnostics) {
+	ret := diag.Diagnostics{}
+
+	var diags diag.Diagnostics
 	plannedApp := client.App{
 		ID:                               state.ID.ValueString(),
 		ClientSecret:                     state.ClientSecret.ValueString(),
@@ -636,8 +703,17 @@ func planToApp(ctx context.Context, plan *App, state *App) *client.App {
 		)
 	}
 
-	tfsdk.ValueAs(ctx, plan.TemplateGroupId, &plannedApp.TemplateGroupId)
-	tfsdk.ValueAs(ctx, plan.PasswordPolicy, &plannedApp.PasswordPolicy)
+	diags = tfsdk.ValueAs(ctx, plan.AllowedGroups, &plannedApp.AllowedGroups)
+	ret.Append(diags...)
 
-	return &plannedApp
+	diags = tfsdk.ValueAs(ctx, plan.OperationsAllowedGroups, &plannedApp.OperationsAllowedGroups)
+	ret.Append(diags...)
+
+	diags = tfsdk.ValueAs(ctx, plan.TemplateGroupId, &plannedApp.TemplateGroupId)
+	ret.Append(diags...)
+
+	diags = tfsdk.ValueAs(ctx, plan.PasswordPolicy, &plannedApp.PasswordPolicy)
+	ret.Append(diags...)
+
+	return &plannedApp, ret
 }

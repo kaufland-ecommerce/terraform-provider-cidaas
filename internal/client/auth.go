@@ -36,7 +36,7 @@ func (c *client) SignIn() (*authResponse, error) {
 	if res.StatusCode > http.StatusOK {
 		b, err := io.ReadAll(res.Body)
 		if err != nil {
-			return nil, fmt.Errorf("auth failed: unkown error")
+			return nil, fmt.Errorf("auth failed: unknown error")
 		}
 
 		return nil, fmt.Errorf("auth failed: %s", b)

@@ -217,6 +217,7 @@ func (r templateResource) Update(ctx context.Context, req resource.UpdateRequest
 	tfsdk.ValueFrom(ctx, template.Content, types.StringType, &templateResult.Content)
 
 	diags = resp.State.Set(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r templateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

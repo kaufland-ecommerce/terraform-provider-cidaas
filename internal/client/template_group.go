@@ -61,6 +61,10 @@ func (c *client) UpdateTemplateGroup(group *TemplateGroup) error {
 		strings.NewReader(string(rb)),
 	)
 
+	if err != nil {
+		return err
+	}
+
 	req.Header.Add("content-type", "application/json")
 
 	resp, err := c.doRequest(req)
