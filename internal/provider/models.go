@@ -49,6 +49,15 @@ type HostedPageGroup struct {
 	Pages types.Map    `tfsdk:"pages"`
 }
 
+type HostedPageGroupV3 struct {
+	ID            types.String `tfsdk:"id"`
+	CreatedTime   types.String `tfsdk:"created_time"`
+	UpdatedTime   types.String `tfsdk:"updated_time"`
+	DefaultLocale types.String `tfsdk:"default_locale"`
+	GroupOwner    types.String `tfsdk:"group_owner"`
+	HostedPages   types.List   `tfsdk:"hosted_pages"`
+}
+
 type App struct {
 	ID                               types.String `tfsdk:"id"`
 	ClientId                         types.String `tfsdk:"client_id"`

@@ -49,6 +49,22 @@ type HostedPageGroup struct {
 	Pages map[string]string
 }
 
+type HostedPageV3 struct {
+	ID      string `json:"hosted_page_id" tfsdk:"id"`
+	Content string `json:"content" tfsdk:"content"`
+	Locale  string `json:"locale" tfsdk:"locale"`
+	Url     string `json:"url" tfsdk:"url"`
+}
+
+type HostedPageGroupV3 struct {
+	ID            string         `json:"_id"`
+	CreatedTime   string         `json:"createdTime,omitempty"`
+	UpdatedTime   string         `json:"updatedTime,omitempty"`
+	DefaultLocale string         `json:"default_locale"`
+	GroupOwner    string         `json:"groupOwner"`
+	HostedPages   []HostedPageV3 `json:"hosted_pages"`
+}
+
 type AppKey struct {
 	ID         string `json:"id"`
 	PrivateKey string `json:"privateKey"`

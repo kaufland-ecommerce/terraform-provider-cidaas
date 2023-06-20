@@ -54,6 +54,10 @@ type Client interface {
 	DeleteHostedPagesGroup(groupName string) error
 	GetHostedPagesGroup(groupName string) (*HostedPageGroup, error)
 
+	UpsertHostedPagesGroupV3(group HostedPageGroupV3) (*HostedPageGroupV3, error)
+	DeleteHostedPagesGroupV3(id string) error
+	GetHostedPagesGroupV3(id string) (*HostedPageGroupV3, error)
+
 	CreateApp(app *App) (*App, error)
 	GetApp(ClientId string) (*App, error)
 	UpdateApp(app App) (*App, error)
@@ -107,7 +111,7 @@ func (c *client) doRequest(req *http.Request) ([]byte, error) {
 		return nil, err
 	}
 
-	if res.StatusCode == http.StatusOK {
+	if res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated {
 		return body, err
 	}
 
