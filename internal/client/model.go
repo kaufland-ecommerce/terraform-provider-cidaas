@@ -44,9 +44,20 @@ type PasswordPolicy struct {
 	NoOfSpecialChars  int64  `json:"noOfSpecialChars"`
 }
 
+type HostedPage struct {
+	ID      string `json:"hosted_page_id" tfsdk:"id"`
+	Content string `json:"content" tfsdk:"content"`
+	Locale  string `json:"locale" tfsdk:"locale"`
+	Url     string `json:"url" tfsdk:"url"`
+}
+
 type HostedPageGroup struct {
-	Name  string
-	Pages map[string]string
+	ID            string       `json:"_id"`
+	CreatedTime   string       `json:"createdTime,omitempty"`
+	UpdatedTime   string       `json:"updatedTime,omitempty"`
+	DefaultLocale string       `json:"default_locale"`
+	GroupOwner    string       `json:"groupOwner"`
+	HostedPages   []HostedPage `json:"hosted_pages"`
 }
 
 type AppKey struct {
