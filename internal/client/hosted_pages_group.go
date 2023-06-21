@@ -58,6 +58,10 @@ func (c *client) GetHostedPagesGroup(id string) (*HostedPageGroup, error) {
 
 	body, err := c.doRequest(req)
 
+	if err != nil {
+		return nil, err
+	}
+
 	var response hpgroupResponse
 
 	err = json.Unmarshal(body, &response)

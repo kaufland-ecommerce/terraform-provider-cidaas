@@ -159,6 +159,11 @@ func (r hostedPageGroupResource) Create(ctx context.Context, req resource.Create
 		},
 	}, group.HostedPages)
 
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
@@ -268,6 +273,11 @@ func (r hostedPageGroupResource) Update(ctx context.Context, req resource.Update
 			"url":     types.StringType,
 		},
 	}, group.HostedPages)
+
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
