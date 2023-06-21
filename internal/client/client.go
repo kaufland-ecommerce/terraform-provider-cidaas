@@ -49,14 +49,9 @@ type Client interface {
 
 	GetTenantInfo() (*TenantInfo, error)
 
-	CreateHostedPagesGroup(group HostedPageGroup) error
-	UpdateHostedPagesGroup(group HostedPageGroup) error
-	DeleteHostedPagesGroup(groupName string) error
-	GetHostedPagesGroup(groupName string) (*HostedPageGroup, error)
-
-	UpsertHostedPagesGroupV3(group HostedPageGroupV3) (*HostedPageGroupV3, error)
-	DeleteHostedPagesGroupV3(id string) error
-	GetHostedPagesGroupV3(id string) (*HostedPageGroupV3, error)
+	UpsertHostedPagesGroup(group HostedPageGroup) (*HostedPageGroup, error)
+	DeleteHostedPagesGroup(id string) error
+	GetHostedPagesGroup(id string) (*HostedPageGroup, error)
 
 	CreateApp(app *App) (*App, error)
 	GetApp(ClientId string) (*App, error)

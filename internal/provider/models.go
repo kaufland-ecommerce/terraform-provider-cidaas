@@ -45,11 +45,6 @@ type PasswordPolicy struct {
 }
 
 type HostedPageGroup struct {
-	Name  types.String `tfsdk:"name"`
-	Pages types.Map    `tfsdk:"pages"`
-}
-
-type HostedPageGroupV3 struct {
 	ID            types.String `tfsdk:"id"`
 	CreatedTime   types.String `tfsdk:"created_time"`
 	UpdatedTime   types.String `tfsdk:"updated_time"`

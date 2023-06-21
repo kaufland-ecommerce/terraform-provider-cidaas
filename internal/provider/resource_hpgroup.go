@@ -14,25 +14,25 @@ import (
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
 
-type hostedPageGroupV3Resource struct {
+type hostedPageGroupResource struct {
 	provider *cidaasProvider
 }
 
-var _ resource.Resource = (*hostedPageGroupV3Resource)(nil)
+var _ resource.Resource = (*hostedPageGroupResource)(nil)
 
-func NewHostedPageGrouV3Resource() resource.Resource {
-	return &hostedPageGroupV3Resource{}
+func NewHostedPageGroupResource() resource.Resource {
+	return &hostedPageGroupResource{}
 }
 
-func (r *hostedPageGroupV3Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *hostedPageGroupResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_hpgroup"
 }
 
-func (r *hostedPageGroupV3Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *hostedPageGroupResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	r.provider, resp.Diagnostics = toProvider(req.ProviderData)
 }
 
-func (r *hostedPageGroupV3Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *hostedPageGroupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -45,13 +45,13 @@ func (r *hostedPageGroupV3Resource) Schema(_ context.Context, _ resource.SchemaR
 			"created_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "Time the hosted page was created",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"updated_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "Time the hosted page was last updated",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"default_locale": schema.StringAttribute{
 				Required:    true,
@@ -98,7 +98,7 @@ func (r *hostedPageGroupV3Resource) Schema(_ context.Context, _ resource.SchemaR
 	}
 }
 
-func (r hostedPageGroupV3Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r hostedPageGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -107,8 +107,8 @@ func (r hostedPageGroupV3Resource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	var plan HostedPageGroupV3
-	var plannedGroup client.HostedPageGroupV3
+	var plan HostedPageGroup
+	var plannedGroup client.HostedPageGroup
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -127,7 +127,7 @@ func (r hostedPageGroupV3Resource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	group, err := r.provider.client.UpsertHostedPagesGroupV3(plannedGroup)
+	group, err := r.provider.client.UpsertHostedPagesGroup(plannedGroup)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating Hosted Pages group",
@@ -142,7 +142,7 @@ func (r hostedPageGroupV3Resource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	state := HostedPageGroupV3{
+	state := HostedPageGroup{
 		ID:            types.StringValue(group.ID),
 		GroupOwner:    types.StringValue(group.GroupOwner),
 		CreatedTime:   types.StringValue(group.CreatedTime),
@@ -163,7 +163,7 @@ func (r hostedPageGroupV3Resource) Create(ctx context.Context, req resource.Crea
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r hostedPageGroupV3Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r hostedPageGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var groupId string
 
 	diags := req.State.GetAttribute(ctx, path.Root("id"), &groupId)
@@ -173,7 +173,7 @@ func (r hostedPageGroupV3Resource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	group, err := r.provider.client.GetHostedPagesGroupV3(groupId)
+	group, err := r.provider.client.GetHostedPagesGroup(groupId)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -183,7 +183,7 @@ func (r hostedPageGroupV3Resource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	state := HostedPageGroupV3{
+	state := HostedPageGroup{
 		ID:            types.StringValue(group.ID),
 		GroupOwner:    types.StringValue(group.GroupOwner),
 		CreatedTime:   types.StringValue(group.CreatedTime),
@@ -211,7 +211,7 @@ func (r hostedPageGroupV3Resource) Read(ctx context.Context, req resource.ReadRe
 
 }
 
-func (r hostedPageGroupV3Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r hostedPageGroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -220,7 +220,7 @@ func (r hostedPageGroupV3Resource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	var plan HostedPageGroupV3
+	var plan HostedPageGroup
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -229,9 +229,11 @@ func (r hostedPageGroupV3Resource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	var plannedGroup client.HostedPageGroupV3
+	var plannedGroup client.HostedPageGroup
 
 	plannedGroup.ID = plan.ID.ValueString()
+	plannedGroup.GroupOwner = plan.GroupOwner.ValueString()
+	plannedGroup.DefaultLocale = plan.DefaultLocale.ValueString()
 
 	diags = plan.HostedPages.ElementsAs(ctx, &plannedGroup.HostedPages, true)
 	resp.Diagnostics.Append(diags...)
@@ -240,7 +242,7 @@ func (r hostedPageGroupV3Resource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	group, err := r.provider.client.UpsertHostedPagesGroupV3(plannedGroup)
+	group, err := r.provider.client.UpsertHostedPagesGroup(plannedGroup)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -250,7 +252,7 @@ func (r hostedPageGroupV3Resource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	state := HostedPageGroupV3{
+	state := HostedPageGroup{
 		ID:            types.StringValue(group.ID),
 		GroupOwner:    types.StringValue(group.GroupOwner),
 		CreatedTime:   types.StringValue(group.CreatedTime),
@@ -274,7 +276,7 @@ func (r hostedPageGroupV3Resource) Update(ctx context.Context, req resource.Upda
 	}
 }
 
-func (r hostedPageGroupV3Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r hostedPageGroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -283,7 +285,7 @@ func (r hostedPageGroupV3Resource) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	var state HostedPageGroupV3
+	var state HostedPageGroup
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -292,7 +294,7 @@ func (r hostedPageGroupV3Resource) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	err := r.provider.client.DeleteHostedPagesGroupV3(state.ID.ValueString())
+	err := r.provider.client.DeleteHostedPagesGroup(state.ID.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(

@@ -134,7 +134,6 @@ func (p *cidaasProvider) Resources(context.Context) []func() resource.Resource {
 		NewAppResource,
 		NewHookResource,
 		NewHostedPageGroupResource,
-		NewHostedPageGrouV3Resource,
 		NewPasswordPolicyResource,
 		NewRegistrationFieldResource,
 		NewTemplateGroupResource,
