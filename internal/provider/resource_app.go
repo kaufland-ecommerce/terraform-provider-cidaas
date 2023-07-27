@@ -194,6 +194,9 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 								stringplanmodifier.UseStateForUnknown(),
 							},
 						},
+						"name": schema.StringAttribute{
+							Optional: true,
+						},
 					},
 				},
 			},

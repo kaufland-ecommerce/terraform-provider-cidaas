@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/real-digital/terraform-provider-cidaas/internal/util"
 )
 
 type socialProviderDataSource struct {
@@ -31,6 +32,9 @@ func (d *socialProviderDataSource) Schema(_ context.Context, _ datasource.Schema
 			"provider_name": schema.StringAttribute{
 				Required: true,
 			},
+			"name": schema.StringAttribute{
+				Optional: true,
+			},
 		},
 	}
 }
@@ -44,10 +48,13 @@ func (d *socialProviderDataSource) Configure(_ context.Context, req datasource.C
 }
 
 func (d socialProviderDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var name string
+	var providerName string
+	var name *string
+
 	var state SocialProvider
 
-	diags := req.Config.GetAttribute(ctx, path.Root("provider_name"), &name)
+	diags := req.Config.GetAttribute(ctx, path.Root("provider_name"), &providerName)
+	diags = req.Config.GetAttribute(ctx, path.Root("name"), &name)
 
 	resp.Diagnostics.Append(diags...)
 
@@ -55,7 +62,11 @@ func (d socialProviderDataSource) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	socialProvider, err := d.provider.client.GetSocialProvider(name)
+	if name == nil {
+		name = util.ToStringPointer("default")
+	}
+
+	socialProvider, err := d.provider.client.GetSocialProvider(providerName, *name)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Could not fetch social socialProvider",
