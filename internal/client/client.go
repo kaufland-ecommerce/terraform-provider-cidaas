@@ -38,7 +38,7 @@ type Client interface {
 	UpsertHook(hook Hook) (*Hook, error)
 	DeleteHook(ID string) error
 
-	GetSocialProvider(name string) (*SocialProvider, error)
+	GetSocialProvider(providerName string, name string) (*SocialProvider, error)
 
 	GetConsentInstance(name string) (*ConsentInstance, error)
 

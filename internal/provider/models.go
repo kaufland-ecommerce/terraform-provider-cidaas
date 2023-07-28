@@ -28,6 +28,7 @@ type SocialProvider struct {
 	SocialId     types.String `tfsdk:"social_id"`
 	ProviderName types.String `tfsdk:"provider_name"`
 	ProviderType types.String `tfsdk:"provider_type"`
+	Name         types.String `tfsdk:"name"`
 }
 
 type ConsentInstance struct {
