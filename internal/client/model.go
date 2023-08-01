@@ -26,6 +26,7 @@ type HookApiKeyDetails struct {
 type SocialProvider struct {
 	Id           string `json:"id,omitempty"`
 	SocialId     string `json:"social_id"`
+	Name         string `json:"name"`
 	ProviderName string `json:"provider_name"`
 	ProviderType string `json:"provider_type,omitempty"`
 }

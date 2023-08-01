@@ -12,8 +12,8 @@ type socialProvidersResponse struct {
 	Data   []SocialProvider `json:"data"`
 }
 
-func (c *client) GetSocialProvider(name string) (*SocialProvider, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/providers-srv/multi/providers/list?provider_name=%s&provider_type=system", c.HostUrl, name), nil)
+func (c *client) GetSocialProvider(providerName string, name string) (*SocialProvider, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/providers-srv/multi/providers/list?provider_name=%s&provider_type=system", c.HostUrl, providerName), nil)
 
 	if err != nil {
 		return nil, err
@@ -30,6 +30,12 @@ func (c *client) GetSocialProvider(name string) (*SocialProvider, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	for _, provider := range response.Data {
+		if provider.Name == name {
+			return &provider, nil
+		}
 	}
 
 	if len(response.Data) != 1 {
