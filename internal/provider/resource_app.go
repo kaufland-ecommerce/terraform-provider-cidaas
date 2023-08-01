@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -43,6 +44,20 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+
+			"app_owner": schema.StringAttribute{
+				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+
+			"bot_provider": schema.StringAttribute{
 				Computed: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -98,10 +113,16 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			"redirect_uris": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    true,
+				Validators: []validator.List{
+					listvalidator.SizeAtLeast(1),
+				},
 			},
 			"allowed_logout_urls": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    true,
+				Validators: []validator.List{
+					listvalidator.SizeAtLeast(1),
+				},
 			},
 
 			// Company Details
@@ -553,6 +574,8 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	var diags diag.Diagnostics
 
 	state.ID = types.StringValue(app.ID)
+	state.BotProvider = types.StringValue(app.BotProvider)
+	state.AppOwner = types.StringValue(app.AppOwner)
 	state.ClientId = types.StringValue(app.ClientId)
 	state.ClientSecret = types.StringValue(app.ClientSecret)
 	state.ClientName = types.StringValue(app.ClientName)
@@ -651,6 +674,8 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Di
 	var diags diag.Diagnostics
 	plannedApp := client.App{
 		ID:                               state.ID.ValueString(),
+		AppOwner:                         state.AppOwner.ValueString(),
+		BotProvider:                      state.BotProvider.ValueString(),
 		ClientSecret:                     state.ClientSecret.ValueString(),
 		ClientId:                         state.ClientId.ValueString(),
 		ClientDisplayName:                plan.ClientDisplayName.ValueString(),

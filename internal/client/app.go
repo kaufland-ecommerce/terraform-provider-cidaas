@@ -46,6 +46,51 @@ func (c *client) CreateApp(app *App) (*App, error) {
 		response.Data.PasswordPolicy = nil
 	}
 
+	// App creation does not return those if they are empty on the initial creation
+	if response.Data.OperationsAllowedGroups == nil {
+		response.Data.OperationsAllowedGroups = []AllowedGroup{}
+	}
+
+	if response.Data.AllowedGroups == nil {
+		response.Data.AllowedGroups = []AllowedGroup{}
+	}
+
+	if response.Data.AllowedMfa == nil {
+		response.Data.AllowedMfa = []string{}
+	}
+
+	if response.Data.ConsentRefs == nil {
+		response.Data.ConsentRefs = []string{}
+	}
+
+	if response.Data.AllowedOrigins == nil {
+		response.Data.AllowedOrigins = []string{}
+	}
+
+	if response.Data.AllowedFields == nil {
+		response.Data.AllowedFields = []string{}
+	}
+
+	if response.Data.AllowedWebOrigins == nil {
+		response.Data.AllowedWebOrigins = []string{}
+	}
+
+	if response.Data.RequiredFields == nil {
+		response.Data.RequiredFields = []string{}
+	}
+
+	if response.Data.AdditionalAccessTokenPayload == nil {
+		response.Data.AdditionalAccessTokenPayload = []string{}
+	}
+
+	if response.Data.RedirectUris == nil {
+		response.Data.RedirectUris = []string{}
+	}
+
+	if response.Data.AllowedLogoutUrls == nil {
+		response.Data.AllowedLogoutUrls = []string{}
+	}
+
 	return &response.Data, nil
 }
 

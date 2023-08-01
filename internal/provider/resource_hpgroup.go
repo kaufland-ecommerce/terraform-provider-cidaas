@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -315,4 +316,40 @@ func (r hostedPageGroupResource) Delete(ctx context.Context, req resource.Delete
 	}
 
 	resp.State.RemoveResource(ctx)
+}
+
+func (r hostedPageGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	group, err := r.provider.client.GetHostedPagesGroup(req.ID)
+
+	if err != nil {
+		resp.Diagnostics.AddError("Error importing Hosted Page Group", err.Error())
+		return
+	}
+
+	var diags diag.Diagnostics
+
+	state := HostedPageGroup{
+		ID:            types.StringValue(group.ID),
+		GroupOwner:    types.StringValue(group.GroupOwner),
+		CreatedTime:   types.StringValue(group.CreatedTime),
+		UpdatedTime:   types.StringValue(group.UpdatedTime),
+		DefaultLocale: types.StringValue(group.DefaultLocale),
+	}
+
+	state.HostedPages, diags = types.ListValueFrom(ctx, types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"id":      types.StringType,
+			"content": types.StringType,
+			"locale":  types.StringType,
+			"url":     types.StringType,
+		},
+	}, group.HostedPages)
+
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	diags = resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
 }

@@ -54,6 +54,8 @@ func (d socialProviderDataSource) Read(ctx context.Context, req datasource.ReadR
 	var state SocialProvider
 
 	diags := req.Config.GetAttribute(ctx, path.Root("provider_name"), &providerName)
+	resp.Diagnostics.Append(diags...)
+
 	diags = req.Config.GetAttribute(ctx, path.Root("name"), &name)
 
 	resp.Diagnostics.Append(diags...)
