@@ -56,6 +56,8 @@ type HostedPageGroup struct {
 
 type App struct {
 	ID                               types.String `tfsdk:"id"`
+	AppOwner                         types.String `tfsdk:"app_owner"`
+	BotProvider                      types.String `tfsdk:"bot_provider"`
 	ClientId                         types.String `tfsdk:"client_id"`
 	ClientSecret                     types.String `tfsdk:"client_secret"`
 	ClientName                       types.String `tfsdk:"client_name"`

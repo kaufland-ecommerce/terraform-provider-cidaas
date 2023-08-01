@@ -74,9 +74,10 @@ type AllowedGroup struct {
 }
 
 type App struct {
-	ID                               string  `json:"id"`
-	ClientId                         string  `json:"client_id"`
-	ClientSecret                     string  `json:"client_secret"`
+	ID                               string  `json:"id,omitempty"`
+	AcceptRolesInTheRegistration     bool    `json:"accept_roles_in_the_registration"`
+	ClientId                         string  `json:"client_id,omitempty"`
+	ClientSecret                     string  `json:"client_secret,omitempty"`
 	ClientName                       string  `json:"client_name"`
 	ClientDisplayName                string  `json:"client_display_name"`
 	IsRememberMeSelected             bool    `json:"is_remember_me_selected"`
@@ -105,6 +106,8 @@ type App struct {
 	AlwaysAskMfa                     bool    `json:"always_ask_mfa"`
 	PasswordPolicy                   *string `json:"password_policy_ref,omitempty"`
 	RegisterWithLoginInformation     bool    `json:"register_with_login_information"`
+	AppOwner                         string  `json:"app_owner,omitempty"`
+	BotProvider                      string  `json:"bot_provider,omitempty"`
 
 	AppKey *AppKey `json:"appKey,omitempty"`
 
@@ -124,6 +127,7 @@ type App struct {
 	AllowedWebOrigins            []string         `json:"allowed_web_origins"`
 	AllowedOrigins               []string         `json:"allowed_origins"`
 	AllowedMfa                   []string         `json:"allowed_mfa"`
+	AllowedRoles                 []string         `json:"allowed_roles"`
 }
 
 type RegistrationField struct {
