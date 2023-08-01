@@ -25,9 +25,11 @@ data "cidaas_social_provider" "facebook" {
 
 - `provider_name` (String)
 
+### Optional
+
+- `name` (String)
+
 ### Read-Only
 
 - `provider_type` (String)
 - `social_id` (String)
-
-

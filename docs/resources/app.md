@@ -68,6 +68,8 @@ description: |-
 ### Read-Only
 
 - `app_key` (Object, Sensitive) (see [below for nested schema](#nestedatt--app_key))
+- `app_owner` (String)
+- `bot_provider` (String)
 - `client_id` (String)
 - `client_secret` (String, Sensitive)
 - `id` (String) The ID of this resource.
@@ -79,6 +81,10 @@ Required:
 
 - `provider_name` (String)
 - `social_id` (String)
+
+Optional:
+
+- `name` (String)
 
 Read-Only:
 
@@ -113,5 +119,3 @@ Read-Only:
 - `id` (String)
 - `private_key` (String)
 - `public_key` (String)
-
-

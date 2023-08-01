@@ -26,5 +26,3 @@ description: |-
 - `minimum_length` (Number)
 - `no_of_digits` (Number)
 - `no_of_special_chars` (Number)
-
-

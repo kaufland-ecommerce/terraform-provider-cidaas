@@ -25,5 +25,3 @@ data "cidaas_tenent_info" "info" {}
 - `tenant_key` (String) (internal) id of the tenant
 - `tenant_name` (String) Public visible name of the tenant
 - `version_info` (String) Currently deployed version
-
-

@@ -34,5 +34,3 @@ description: |-
 
 - `id` (String) Cidaas UUID of the Template
 - `last_seeded_by` (String)
-
-

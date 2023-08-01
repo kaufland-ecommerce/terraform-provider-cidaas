@@ -33,5 +33,3 @@ description: |-
 ### Read-Only
 
 - `id` (String) Unique identifier of the registration field
-
-
