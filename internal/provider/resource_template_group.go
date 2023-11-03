@@ -294,6 +294,25 @@ func (r templateGroupResource) Delete(ctx context.Context, req resource.DeleteRe
 	resp.State.RemoveResource(ctx)
 }
 
+func (r templateGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	group, err := r.provider.client.GetTemplateGroup(req.ID)
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading Template Group",
+			"Could not read template group with id "+req.ID+": "+err.Error(),
+		)
+		return
+	}
+
+	var state TemplateGroup
+
+	r.ModelToState(ctx, group, &state)
+
+	diags := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+}
+
 func (r templateGroupResource) ModelToState(ctx context.Context, group *client.TemplateGroup, state *TemplateGroup) {
 	state.ID = types.StringValue(group.Id)
 	state.GroupId = types.StringValue(group.GroupId)

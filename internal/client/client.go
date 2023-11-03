@@ -11,7 +11,7 @@ var _ Client = (*client)(nil)
 
 func NewClient(host *string, clientId *string, clientSecret *string) (Client, error) {
 	c := client{
-		HTTPClient: &http.Client{Timeout: 10 * time.Second},
+		HTTPClient: &http.Client{Timeout: 30 * time.Second},
 		HostUrl:    *host,
 	}
 
