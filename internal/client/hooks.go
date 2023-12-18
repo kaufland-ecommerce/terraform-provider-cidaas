@@ -53,7 +53,7 @@ func (c *client) GetHooks() ([]*Hook, error) {
 func (c *client) GetHook(ID string) (*Hook, error) {
 	req, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("%s/webhooks-srv/webhook?id=%s", c.HostUrl, ID),
+		fmt.Sprintf("%s/webhook-srv/webhook?id=%s", c.HostUrl, ID),
 		nil,
 	)
 
@@ -85,7 +85,7 @@ func (c *client) UpsertHook(hook Hook) (*Hook, error) {
 
 	req, err := http.NewRequest(
 		http.MethodPost,
-		fmt.Sprintf("%s/webhooks-srv/webhook", c.HostUrl),
+		fmt.Sprintf("%s/webhook-srv/webhook", c.HostUrl),
 		bytes.NewReader(rb),
 	)
 
@@ -113,7 +113,7 @@ func (c *client) UpsertHook(hook Hook) (*Hook, error) {
 func (c *client) DeleteHook(ID string) error {
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		fmt.Sprintf("%s/webhooks-srv/webhook/%s", c.HostUrl, ID),
+		fmt.Sprintf("%s/webhook-srv/webhook/%s", c.HostUrl, ID),
 		nil,
 	)
 

@@ -17,6 +17,7 @@ type hookResource struct {
 }
 
 var _ resource.Resource = (*hookResource)(nil)
+var _ resource.ResourceWithImportState = (*hookResource)(nil)
 
 func NewHookResource() resource.Resource {
 	return &hookResource{}
@@ -269,4 +270,26 @@ func (r hookResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 	}
 
 	resp.State.RemoveResource(ctx)
+}
+
+func (r hookResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var state Hook
+
+	hook, err := r.provider.client.GetHook(req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error importing App", err.Error())
+		return
+	}
+
+	state.ID = types.StringValue(hook.Id)
+	state.Url = hook.URL
+	state.Events = hook.Events
+	state.LastUpdate = types.StringValue(hook.UpdatedTime)
+	state.AuthType = hook.AuthType
+
+	state.APIKeyDetails.APIKeyPlaceholder = hook.ApiKeyDetails.APIKeyPlaceholder
+	state.APIKeyDetails.APIKeyPlacement = hook.ApiKeyDetails.APIKeyPlacement
+	state.APIKeyDetails.APIKey = hook.ApiKeyDetails.APIKey
+
+	resp.State.Set(ctx, state)
 }
