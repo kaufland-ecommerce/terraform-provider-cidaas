@@ -46,9 +46,6 @@ func (r *hostedPageGroupResource) Schema(_ context.Context, _ resource.SchemaReq
 			"created_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "Time the hosted page was created",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"updated_time": schema.StringAttribute{
 				Computed:    true,
