@@ -42,53 +42,10 @@ func (c *client) CreateApp(app *App) (*App, error) {
 		return nil, err
 	}
 
-	if response.Data.PasswordPolicy == nil || *response.Data.PasswordPolicy == "" {
-		response.Data.PasswordPolicy = nil
-	}
+	err = c.prepareResponse(&response.Data)
 
-	// App creation does not return those if they are empty on the initial creation
-	if response.Data.OperationsAllowedGroups == nil {
-		response.Data.OperationsAllowedGroups = []AllowedGroup{}
-	}
-
-	if response.Data.AllowedGroups == nil {
-		response.Data.AllowedGroups = []AllowedGroup{}
-	}
-
-	if response.Data.AllowedMfa == nil {
-		response.Data.AllowedMfa = []string{}
-	}
-
-	if response.Data.ConsentRefs == nil {
-		response.Data.ConsentRefs = []string{}
-	}
-
-	if response.Data.AllowedOrigins == nil {
-		response.Data.AllowedOrigins = []string{}
-	}
-
-	if response.Data.AllowedFields == nil {
-		response.Data.AllowedFields = []string{}
-	}
-
-	if response.Data.AllowedWebOrigins == nil {
-		response.Data.AllowedWebOrigins = []string{}
-	}
-
-	if response.Data.RequiredFields == nil {
-		response.Data.RequiredFields = []string{}
-	}
-
-	if response.Data.AdditionalAccessTokenPayload == nil {
-		response.Data.AdditionalAccessTokenPayload = []string{}
-	}
-
-	if response.Data.RedirectUris == nil {
-		response.Data.RedirectUris = []string{}
-	}
-
-	if response.Data.AllowedLogoutUrls == nil {
-		response.Data.AllowedLogoutUrls = []string{}
+	if err != nil {
+		return nil, err
 	}
 
 	return &response.Data, nil
@@ -114,8 +71,10 @@ func (c *client) GetApp(clientId string) (*App, error) {
 	var response appResponse
 	err = json.Unmarshal(body, &response)
 
-	if response.Data.PasswordPolicy == nil || *response.Data.PasswordPolicy == "" {
-		response.Data.PasswordPolicy = nil
+	err = c.prepareResponse(&response.Data)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &response.Data, err
@@ -152,8 +111,10 @@ func (c *client) UpdateApp(app App) (*App, error) {
 		return nil, err
 	}
 
-	if response.Data.PasswordPolicy == nil || *response.Data.PasswordPolicy == "" {
-		response.Data.PasswordPolicy = nil
+	err = c.prepareResponse(&response.Data)
+
+	if err != nil {
+		return nil, err
 	}
 
 	return &response.Data, nil
@@ -169,4 +130,58 @@ func (c *client) DeleteApp(clientId string) error {
 	_, err = c.doRequest(req)
 
 	return err
+}
+
+func (c *client) prepareResponse(app *App) error {
+
+	if app.PasswordPolicy == nil || *app.PasswordPolicy == "" {
+		app.PasswordPolicy = nil
+	}
+
+	// App creation does not return those if they are empty on the initial creation
+	if app.OperationsAllowedGroups == nil {
+		app.OperationsAllowedGroups = []AllowedGroup{}
+	}
+
+	if app.AllowedGroups == nil {
+		app.AllowedGroups = []AllowedGroup{}
+	}
+
+	if app.AllowedMfa == nil {
+		app.AllowedMfa = []string{}
+	}
+
+	if app.ConsentRefs == nil {
+		app.ConsentRefs = []string{}
+	}
+
+	if app.AllowedOrigins == nil {
+		app.AllowedOrigins = []string{}
+	}
+
+	if app.AllowedFields == nil {
+		app.AllowedFields = []string{}
+	}
+
+	if app.AllowedWebOrigins == nil {
+		app.AllowedWebOrigins = []string{}
+	}
+
+	if app.RequiredFields == nil {
+		app.RequiredFields = []string{}
+	}
+
+	if app.AdditionalAccessTokenPayload == nil {
+		app.AdditionalAccessTokenPayload = []string{}
+	}
+
+	if app.RedirectUris == nil {
+		app.RedirectUris = []string{}
+	}
+
+	if app.AllowedLogoutUrls == nil {
+		app.AllowedLogoutUrls = []string{}
+	}
+
+	return nil
 }
