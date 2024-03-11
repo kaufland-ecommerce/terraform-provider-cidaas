@@ -118,6 +118,7 @@ type App struct {
 	AllowedLogoutUrls            []string         `json:"allowed_logout_urls"`
 	AllowedScopes                []string         `json:"allowed_scopes"`
 	SocialProviders              []SocialProvider `json:"social_providers"`
+	CustomProviders              []CustomProvider `json:"custom_providers"`
 	AdditionalAccessTokenPayload []string         `json:"additional_access_token_payload"`
 	AllowedFields                []string         `json:"allowed_fields"`
 	RequiredFields               []string         `json:"required_fields"`
@@ -208,4 +209,9 @@ type Template struct {
 	UsageType      string  `json:"usageType"`
 	Subject        string  `json:"subject"`
 	Content        string  `json:"content"`
+}
+
+type CustomProvider struct {
+	DisplayName  string `json:"display_name"`
+	ProviderName string `json:"provider_name"`
 }
