@@ -2,7 +2,7 @@ module github.com/real-digital/terraform-provider-cidaas
 
 go 1.21
 
-toolchain go1.22.1
+toolchain go1.21.6
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.16.0
