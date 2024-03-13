@@ -198,6 +198,20 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Required: true,
 			},
 
+			"custom_providers": schema.ListNestedAttribute{
+				Required: true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"display_name": schema.StringAttribute{
+							Required: true,
+						},
+						"provider_name": schema.StringAttribute{
+							Required: true,
+						},
+					},
+				},
+			},
+
 			// Login Provider
 			"social_providers": schema.ListNestedAttribute{
 				Required: true,
@@ -300,6 +314,9 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 						},
 					},
 				},
+			},
+			"accept_roles_in_the_registration": schema.BoolAttribute{
+				Required: true,
 			},
 			"operations_allowed_groups": schema.ListNestedAttribute{
 				Optional: true,
@@ -592,6 +609,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.PrimaryColor = types.StringValue(app.PrimaryColor)
 	state.AccentColor = types.StringValue(app.AccentColor)
 	state.AutoLoginAfterRegister = types.BoolValue(app.AutoLoginAfterRegister)
+	state.AcceptRolesInTheRegistration = types.BoolValue(app.AcceptRolesInTheRegistration)
 	state.CompanyName = types.StringValue(app.CompanyName)
 	state.CompanyAddress = types.StringValue(app.CompanyAddress)
 	state.CompanyWebsite = types.StringValue(app.CompanyWebsite)
@@ -650,6 +668,14 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 		})
 	}
 
+	state.CustomProviders = []CustomProvider{}
+	for _, item := range app.CustomProviders {
+		state.CustomProviders = append(state.CustomProviders, CustomProvider{
+			DisplayName:  types.StringValue(item.DisplayName),
+			ProviderName: types.StringValue(item.ProviderName),
+		})
+	}
+
 	state.AppKey, diags = types.ObjectValue(
 		map[string]attr.Type{
 			"id":          types.StringType,
@@ -703,6 +729,7 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Di
 		JweEnabled:                       plan.JweEnabled.ValueBool(),
 		AlwaysAskMfa:                     plan.AlwaysAskMfa.ValueBool(),
 		RegisterWithLoginInformation:     plan.RegisterWithLoginInformation.ValueBool(),
+		AcceptRolesInTheRegistration:     plan.AcceptRolesInTheRegistration.ValueBool(),
 
 		AllowLoginWith:               plan.AllowLoginWith,
 		RedirectUris:                 plan.RedirectUris,
@@ -719,6 +746,7 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Di
 		AllowedMfa:                   plan.AllowedMfa,
 
 		SocialProviders: []client.SocialProvider{},
+		CustomProviders: []client.CustomProvider{},
 	}
 
 	for _, socialProvider := range plan.SocialProviders {
@@ -727,6 +755,16 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Di
 			client.SocialProvider{
 				SocialId:     socialProvider.SocialId.ValueString(),
 				ProviderName: socialProvider.ProviderName.ValueString(),
+			},
+		)
+	}
+
+	for _, customProvider := range plan.CustomProviders {
+		plannedApp.CustomProviders = append(
+			plannedApp.CustomProviders,
+			client.CustomProvider{
+				DisplayName:  customProvider.DisplayName.ValueString(),
+				ProviderName: customProvider.ProviderName.ValueString(),
 			},
 		)
 	}

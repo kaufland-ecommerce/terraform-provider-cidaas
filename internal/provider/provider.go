@@ -147,6 +147,7 @@ func (p *cidaasProvider) DataSources(context.Context) []func() datasource.DataSo
 		NewPasswordPolicyDataSource,
 		NewSocialProviderDataSource,
 		NewTenantInfoDataSource,
+		NewCustomProviderDataSource,
 	}
 }
 

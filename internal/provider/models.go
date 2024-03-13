@@ -31,6 +31,11 @@ type SocialProvider struct {
 	Name         types.String `tfsdk:"name"`
 }
 
+type CustomProvider struct {
+	DisplayName  types.String `tfsdk:"display_name"`
+	ProviderName types.String `tfsdk:"provider_name"`
+}
+
 type ConsentInstance struct {
 	ID          types.String `tfsdk:"id"`
 	ConsentName types.String `tfsdk:"consent_name"`
@@ -69,6 +74,7 @@ type App struct {
 	EnablePasswordlessAuth           types.Bool   `tfsdk:"enable_passwordless_auth"`
 	EnableDeduplication              types.Bool   `tfsdk:"enable_deduplication"`
 	MobileNumberVerificationRequired types.Bool   `tfsdk:"mobile_number_verification_required"`
+	AcceptRolesInTheRegistration     types.Bool   `tfsdk:"accept_roles_in_the_registration"`
 	HostedPageGroup                  types.String `tfsdk:"hosted_page_group"`
 	PrimaryColor                     types.String `tfsdk:"primary_color"`
 	AccentColor                      types.String `tfsdk:"accent_color"`
@@ -96,6 +102,7 @@ type App struct {
 	RedirectUris                 []string         `tfsdk:"redirect_uris"`
 	AllowedLogoutUrls            []string         `tfsdk:"allowed_logout_urls"`
 	SocialProviders              []SocialProvider `tfsdk:"social_providers"`
+	CustomProviders              []CustomProvider `tfsdk:"custom_providers"`
 	AdditionalAccessTokenPayload []string         `tfsdk:"additional_access_token_payload"`
 	Scopes                       []string         `tfsdk:"allowed_scopes"`
 	AllowedFields                []string         `tfsdk:"allowed_fields"`

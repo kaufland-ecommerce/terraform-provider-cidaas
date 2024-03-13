@@ -40,6 +40,8 @@ type Client interface {
 
 	GetSocialProvider(providerName string, name string) (*SocialProvider, error)
 
+	GetCustomProvider(providerName string) (*CustomProvider, error)
+
 	GetConsentInstance(name string) (*ConsentInstance, error)
 
 	UpdatePasswordPolicy(policy PasswordPolicy) (*PasswordPolicy, error)
