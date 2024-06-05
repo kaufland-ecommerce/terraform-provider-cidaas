@@ -113,9 +113,6 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			"redirect_uris": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    true,
-				Validators: []validator.List{
-					listvalidator.SizeAtLeast(1),
-				},
 			},
 			"allowed_logout_urls": schema.ListAttribute{
 				ElementType: types.StringType,
