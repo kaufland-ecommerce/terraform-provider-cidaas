@@ -21,7 +21,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - run: go mod download
-      - uses: golangci/golangci-lint-action@v4
+      - uses: golangci/golangci-lint-action@v7
 
   test:
     name: test (Go v${{ matrix.go-version }})
