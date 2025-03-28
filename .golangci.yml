@@ -8,9 +8,6 @@ linters:
     - durationcheck
     - unused
     - errcheck
-    - exportloopref
-    - gofmt
-    - gosimple
     - ineffassign
     - makezero
     - misspell
@@ -18,7 +15,5 @@ linters:
     # - paralleltest # Reference: https://github.com/kunwardeep/paralleltest/issues/14
     - predeclared
     - staticcheck
-    - tenv
     - unconvert
     - unparam
-    - vet
