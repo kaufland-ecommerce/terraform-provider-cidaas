@@ -141,6 +141,12 @@ func (c *client) prepareResponse(app *App) error {
 	// App creation does not return those if they are empty on the initial creation
 	if app.OperationsAllowedGroups == nil {
 		app.OperationsAllowedGroups = []AllowedGroup{}
+	} else {
+		for i := range app.OperationsAllowedGroups {
+			if app.OperationsAllowedGroups[i].DefaultRoles == nil {
+				app.OperationsAllowedGroups[i].DefaultRoles = []string{}
+			}
+		}
 	}
 
 	if app.AllowedGroups == nil {

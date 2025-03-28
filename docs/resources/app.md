@@ -35,7 +35,7 @@ description: |-
 - `company_website` (String)
 - `consent_refs` (List of String)
 - `custom_providers` (Attributes List) (see [below for nested schema](#nestedatt--custom_providers))
-- `email_verification_required` (Boolean)
+- `communication_medium_verification` (String)
 - `enable_bot_detection` (Boolean)
 - `enable_deduplication` (Boolean)
 - `enable_passwordless_auth` (Boolean)
@@ -46,7 +46,6 @@ description: |-
 - `is_login_success_page_enabled` (Boolean)
 - `is_remember_me_selected` (Boolean)
 - `jwe_enabled` (Boolean)
-- `mobile_number_verification_required` (Boolean)
 - `redirect_uris` (List of String)
 - `refresh_token_lifetime_in_seconds` (Number)
 - `register_with_login_information` (Boolean) Should a login with social lead to account creation if not existing

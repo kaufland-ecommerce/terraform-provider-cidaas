@@ -249,10 +249,7 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				ElementType: types.StringType,
 				Optional:    true,
 			},
-			"email_verification_required": schema.BoolAttribute{
-				Required: true,
-			},
-			"mobile_number_verification_required": schema.BoolAttribute{
+			"communication_medium_verification": schema.StringAttribute{
 				Required: true,
 			},
 
@@ -601,7 +598,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.FdsEnabled = types.BoolValue(app.FdsEnabled)
 	state.EnablePasswordlessAuth = types.BoolValue(app.EnablePasswordlessAuth)
 	state.EnableDeduplication = types.BoolValue(app.EnableDeduplication)
-	state.MobileNumberVerificationRequired = types.BoolValue(app.MobileNumberVerificationRequired)
+	state.CommunicationMediumVerification = types.StringValue(app.CommunicationMediumVerification)
 	state.HostedPageGroup = types.StringValue(app.HostedPageGroup)
 	state.PrimaryColor = types.StringValue(app.PrimaryColor)
 	state.AccentColor = types.StringValue(app.AccentColor)
@@ -613,7 +610,6 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.TokenLifetimeInSeconds = types.Int64Value(app.TokenLifetimeInSeconds)
 	state.IdTokenLifetimeInSeconds = types.Int64Value(app.IdTokenLifetimeInSeconds)
 	state.RefreshTokenLifetimeInSeconds = types.Int64Value(app.RefreshTokenLifetimeInSeconds)
-	state.EmailVerificationRequired = types.BoolValue(app.EmailVerificationRequired)
 	state.EnableBotDetection = types.BoolValue(app.EnableBotDetection)
 	state.IsLoginSuccessPageEnabled = types.BoolValue(app.IsLoginSuccessPageEnabled)
 	state.JweEnabled = types.BoolValue(app.JweEnabled)
@@ -696,37 +692,36 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Di
 
 	var diags diag.Diagnostics
 	plannedApp := client.App{
-		ID:                               state.ID.ValueString(),
-		AppOwner:                         state.AppOwner.ValueString(),
-		BotProvider:                      state.BotProvider.ValueString(),
-		ClientSecret:                     state.ClientSecret.ValueString(),
-		ClientId:                         state.ClientId.ValueString(),
-		ClientDisplayName:                plan.ClientDisplayName.ValueString(),
-		ClientName:                       plan.ClientName.ValueString(),
-		ClientType:                       plan.ClientType.ValueString(),
-		IsRememberMeSelected:             plan.IsRememberMeSelected.ValueBool(),
-		AllowDisposableEmail:             plan.AllowDisposableEmail.ValueBool(),
-		AutoLoginAfterRegister:           plan.AutoLoginAfterRegister.ValueBool(),
-		FdsEnabled:                       plan.FdsEnabled.ValueBool(),
-		EnablePasswordlessAuth:           plan.EnablePasswordlessAuth.ValueBool(),
-		EnableDeduplication:              plan.EnableDeduplication.ValueBool(),
-		MobileNumberVerificationRequired: plan.MobileNumberVerificationRequired.ValueBool(),
-		HostedPageGroup:                  plan.HostedPageGroup.ValueString(),
-		PrimaryColor:                     plan.PrimaryColor.ValueString(),
-		AccentColor:                      plan.AccentColor.ValueString(),
-		CompanyName:                      plan.CompanyName.ValueString(),
-		CompanyWebsite:                   plan.CompanyWebsite.ValueString(),
-		CompanyAddress:                   plan.CompanyAddress.ValueString(),
-		TokenLifetimeInSeconds:           plan.TokenLifetimeInSeconds.ValueInt64(),
-		IdTokenLifetimeInSeconds:         plan.IdTokenLifetimeInSeconds.ValueInt64(),
-		RefreshTokenLifetimeInSeconds:    plan.RefreshTokenLifetimeInSeconds.ValueInt64(),
-		EmailVerificationRequired:        plan.EmailVerificationRequired.ValueBool(),
-		EnableBotDetection:               plan.EnableBotDetection.ValueBool(),
-		IsLoginSuccessPageEnabled:        plan.IsLoginSuccessPageEnabled.ValueBool(),
-		JweEnabled:                       plan.JweEnabled.ValueBool(),
-		AlwaysAskMfa:                     plan.AlwaysAskMfa.ValueBool(),
-		RegisterWithLoginInformation:     plan.RegisterWithLoginInformation.ValueBool(),
-		AcceptRolesInTheRegistration:     plan.AcceptRolesInTheRegistration.ValueBool(),
+		ID:                              state.ID.ValueString(),
+		AppOwner:                        state.AppOwner.ValueString(),
+		BotProvider:                     state.BotProvider.ValueString(),
+		ClientSecret:                    state.ClientSecret.ValueString(),
+		ClientId:                        state.ClientId.ValueString(),
+		ClientDisplayName:               plan.ClientDisplayName.ValueString(),
+		ClientName:                      plan.ClientName.ValueString(),
+		ClientType:                      plan.ClientType.ValueString(),
+		IsRememberMeSelected:            plan.IsRememberMeSelected.ValueBool(),
+		AllowDisposableEmail:            plan.AllowDisposableEmail.ValueBool(),
+		AutoLoginAfterRegister:          plan.AutoLoginAfterRegister.ValueBool(),
+		FdsEnabled:                      plan.FdsEnabled.ValueBool(),
+		EnablePasswordlessAuth:          plan.EnablePasswordlessAuth.ValueBool(),
+		EnableDeduplication:             plan.EnableDeduplication.ValueBool(),
+		CommunicationMediumVerification: plan.CommunicationMediumVerification.ValueString(),
+		HostedPageGroup:                 plan.HostedPageGroup.ValueString(),
+		PrimaryColor:                    plan.PrimaryColor.ValueString(),
+		AccentColor:                     plan.AccentColor.ValueString(),
+		CompanyName:                     plan.CompanyName.ValueString(),
+		CompanyWebsite:                  plan.CompanyWebsite.ValueString(),
+		CompanyAddress:                  plan.CompanyAddress.ValueString(),
+		TokenLifetimeInSeconds:          plan.TokenLifetimeInSeconds.ValueInt64(),
+		IdTokenLifetimeInSeconds:        plan.IdTokenLifetimeInSeconds.ValueInt64(),
+		RefreshTokenLifetimeInSeconds:   plan.RefreshTokenLifetimeInSeconds.ValueInt64(),
+		EnableBotDetection:              plan.EnableBotDetection.ValueBool(),
+		IsLoginSuccessPageEnabled:       plan.IsLoginSuccessPageEnabled.ValueBool(),
+		JweEnabled:                      plan.JweEnabled.ValueBool(),
+		AlwaysAskMfa:                    plan.AlwaysAskMfa.ValueBool(),
+		RegisterWithLoginInformation:    plan.RegisterWithLoginInformation.ValueBool(),
+		AcceptRolesInTheRegistration:    plan.AcceptRolesInTheRegistration.ValueBool(),
 
 		AllowLoginWith:               plan.AllowLoginWith,
 		RedirectUris:                 plan.RedirectUris,
