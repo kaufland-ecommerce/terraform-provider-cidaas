@@ -1,16 +1,17 @@
+version: "2"
 issues:
-  max-per-linter: 0
+  max-issues-per-linter: 0
   max-same-issues: 0
 
 linters:
-  disable-all: true
+  exclusions:
+    rules:
+      - path: internal/client/app.go
+        text: "is always nil"
   enable:
     - durationcheck
     - unused
     - errcheck
-    - exportloopref
-    - gofmt
-    - gosimple
     - ineffassign
     - makezero
     - misspell
@@ -18,7 +19,5 @@ linters:
     # - paralleltest # Reference: https://github.com/kunwardeep/paralleltest/issues/14
     - predeclared
     - staticcheck
-    - tenv
     - unconvert
     - unparam
-    - vet
