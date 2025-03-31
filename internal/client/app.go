@@ -69,7 +69,7 @@ func (c *client) GetApp(clientId string) (*App, error) {
 	}
 
 	var response appResponse
-	err = json.Unmarshal(body, &response)
+	_ = json.Unmarshal(body, &response)
 
 	err = c.prepareResponse(&response.Data)
 

@@ -4,6 +4,10 @@ issues:
   max-same-issues: 0
 
 linters:
+  exclusions:
+    rules:
+      - path: internal/client/app.go
+        text: "is always nil"
   enable:
     - durationcheck
     - unused

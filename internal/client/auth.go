@@ -31,7 +31,9 @@ func (c *client) SignIn() (*authResponse, error) {
 		return nil, err
 	}
 
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(res.Body)
 
 	if res.StatusCode > http.StatusOK {
 		b, err := io.ReadAll(res.Body)
