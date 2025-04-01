@@ -165,49 +165,58 @@ type FieldDefinition struct {
 }
 
 type EmailSenderConfig struct {
-	Id        string   `json:"id,omitempty" tfsdk:"id"`
-	FromName  string   `json:"from_name" tfsdk:"from_name"`
-	FromEmail string   `json:"from_email" tfsdk:"from_email"`
-	Provider  []string `json:"sender_names" tfsdk:"provider"`
+	CommunicationMethod string `json:"communicationMethod" tfsdk:"communication_method"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty" tfsdk:"service_setup_id"`
+	SenderName          string `json:"senderName" tfsdk:"sender_name"`
+	SenderAddress       string `json:"senderAddress" tfsdk:"sender_address"`
 }
 
 type SmsSenderConfig struct {
-	Id       string   `json:"id,omitempty" tfsdk:"id"`
-	FromName string   `json:"from_name" tfsdk:"from_name"`
-	Provider []string `json:"sender_names" tfsdk:"provider"`
+	CommunicationMethod string `json:"communicationMethod" tfsdk:"communication_method"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty" tfsdk:"service_setup_id"`
+	SenderName          string `json:"senderName" tfsdk:"sender_name"`
+	SenderAddress       string `json:"senderAddress" tfsdk:"sender_address"`
 }
 
 type IVRSenderConfig struct {
-	Id       string   `json:"id,omitempty" tfsdk:"id"`
-	Provider []string `json:"sender_names" tfsdk:"provider"`
+	CommunicationMethod string   `json:"communicationMethod" tfsdk:"communication_method"`
+	ServiceSetupId      string   `json:"serviceSetupId,omitempty" tfsdk:"service_setup_id"`
+	SenderAddress       []string `json:"senderAddress" tfsdk:"sender_address"`
 }
 
 type PushSenderConfig struct {
-	Id       string   `json:"id,omitempty" tfsdk:"id"`
-	Provider []string `json:"sender_names" tfsdk:"provider"`
+	CommunicationMethod string `json:"communicationMethod" tfsdk:"communication_method"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty" tfsdk:"service_setup_id"`
+}
+
+type TemplateGroupComSettings struct {
+	Email EmailSenderConfig `json:"email"`
+	SMS   SmsSenderConfig   `json:"sms"`
+	IVR   IVRSenderConfig   `json:"ivr"`
+	Push  PushSenderConfig  `json:"push"`
 }
 
 type TemplateGroup struct {
-	Id                string            `json:"id,omitempty"`
-	GroupId           string            `json:"group_id"`
-	EmailSenderConfig EmailSenderConfig `json:"email_sender_config"`
-	SmsSenderConfig   SmsSenderConfig   `json:"sms_sender_config"`
-	IVRSenderConfig   IVRSenderConfig   `json:"ivr_sender_config"`
-	PushSenderConfig  PushSenderConfig  `json:"push_sender_config"`
+	Id            string                   `json:"id,omitempty"`
+	Description   string                   `json:"description"`
+	CommSettings  TemplateGroupComSettings `json:"commSettings"`
+	DefaultLocale string                   `json:"defaultLocale"`
 }
 
 type Template struct {
-	ID             *string `json:"id,omitempty"`
-	LastSeededBy   *string `json:"last_seeded_by,omitempty"`
-	GroupId        string  `json:"group_id"`
-	TemplateKey    string  `json:"templateKey"`
-	TemplateType   string  `json:"templateType"`
-	ProcessingType string  `json:"processingType"`
-	Locale         string  `json:"locale"`
-	Language       string  `json:"Language"`
-	UsageType      string  `json:"usageType"`
-	Subject        string  `json:"subject"`
-	Content        string  `json:"content"`
+	ID                  *string `json:"id,omitempty"`
+	LastSeededBy        *string `json:"lastSeededBy,omitempty"`
+	GroupId             string  `json:"groupId"`
+	TemplateKey         string  `json:"templateKey"`
+	CommunicationMethod string  `json:"communicationMethod"`
+	ProcessingType      string  `json:"processingType"`
+	UsageType           string  `json:"usageType"`
+	Locale              string  `json:"locale"`
+	MessageFormat       string  `json:"messageFormat"`
+	Enabled             bool    `json:"enabled"`
+	Subject             string  `json:"subject"`
+	Content             string  `json:"content"`
+	Description         string  `json:"description"`
 }
 
 type CustomProvider struct {

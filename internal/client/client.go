@@ -70,7 +70,7 @@ type Client interface {
 	DeleteTemplateGroup(groupId string) error
 
 	UpdateTemplate(template Template) (*Template, error)
-	GetTemplate(template Template) (*Template, error)
+	GetTemplate(templateId string) (*Template, error)
 }
 
 type client struct {
@@ -116,6 +116,10 @@ func (c *client) doRequest(req *http.Request) ([]byte, error) {
 
 	if res.StatusCode == http.StatusNoContent {
 		return nil, err
+	}
+
+	if res.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("resource not found")
 	}
 
 	return nil, fmt.Errorf("status %d, body %s", res.StatusCode, body)

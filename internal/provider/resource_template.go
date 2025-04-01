@@ -55,22 +55,23 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Required:    true,
 				Description: "Identifier of the template",
 			},
-			"template_type": schema.StringAttribute{
+			"communication_method": schema.StringAttribute{
 				Required:    true,
-				Description: "Which Communication type is this template for",
+				Description: "Which Communication method is this template for",
 			},
 			"processing_type": schema.StringAttribute{
 				Optional:    true,
 				Description: "Processing Type",
 			},
+			"usage_type": schema.StringAttribute{
+				Optional:    true,
+				Description: "Usage Type",
+			},
 			"locale": schema.StringAttribute{
 				Required:    true,
 				Description: "Locale",
 			},
-			"usage_type": schema.StringAttribute{
-				Optional: true,
-			},
-			"language": schema.StringAttribute{
+			"message_format": schema.StringAttribute{
 				Required:    true,
 				Description: "Language",
 			},
@@ -81,6 +82,13 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"content": schema.StringAttribute{
 				Required:    true,
 				Description: "actual content of the Template",
+			},
+			"enabled": schema.BoolAttribute{
+				Required: true,
+			},
+			"description": schema.StringAttribute{
+				Optional:    true,
+				Description: "Description of the Template",
 			},
 		},
 	}
@@ -105,17 +113,19 @@ func (r templateResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	template := client.Template{
-		ID:             nil,
-		LastSeededBy:   nil,
-		GroupId:        plan.GroupId.ValueString(),
-		TemplateKey:    plan.TemplateKey.ValueString(),
-		TemplateType:   plan.TemplateType.ValueString(),
-		ProcessingType: plan.ProcessingType.ValueString(),
-		Locale:         plan.Locale.ValueString(),
-		Language:       plan.Language.ValueString(),
-		UsageType:      plan.UsageType.ValueString(),
-		Subject:        plan.Subject.ValueString(),
-		Content:        plan.Content.ValueString(),
+		ID:                  nil,
+		LastSeededBy:        nil,
+		GroupId:             plan.GroupId.ValueString(),
+		TemplateKey:         plan.TemplateKey.ValueString(),
+		CommunicationMethod: plan.CommunicationMethod.ValueString(),
+		ProcessingType:      plan.ProcessingType.ValueString(),
+		UsageType:           plan.UsageType.ValueString(),
+		Locale:              plan.Locale.ValueString(),
+		MessageFormat:       plan.MessageFormat.ValueString(),
+		Enabled:             plan.Enabled.ValueBool(),
+		Subject:             plan.Subject.ValueString(),
+		Content:             plan.Content.ValueString(),
+		Description:         plan.Description.ValueString(),
 	}
 
 	templateResult, err := r.provider.client.UpdateTemplate(template)
@@ -145,22 +155,28 @@ func (r templateResource) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	template := &client.Template{
-		ID:             nil,
-		LastSeededBy:   nil,
-		GroupId:        state.GroupId.ValueString(),
-		TemplateKey:    state.TemplateKey.ValueString(),
-		TemplateType:   state.TemplateType.ValueString(),
-		ProcessingType: state.ProcessingType.ValueString(),
-		Locale:         state.Locale.ValueString(),
-		Language:       state.Language.ValueString(),
-		UsageType:      state.UsageType.ValueString(),
+		ID:                  nil,
+		LastSeededBy:        nil,
+		GroupId:             state.GroupId.ValueString(),
+		TemplateKey:         state.TemplateKey.ValueString(),
+		CommunicationMethod: state.CommunicationMethod.ValueString(),
+		ProcessingType:      state.ProcessingType.ValueString(),
+		Locale:              state.Locale.ValueString(),
+		MessageFormat:       state.MessageFormat.ValueString(),
+		Enabled:             state.Enabled.ValueBool(),
 	}
 
-	template, err := r.provider.client.GetTemplate(*template)
+	templateId := state.GroupId.ValueString() + ":" + state.TemplateKey.ValueString() + ":" + state.CommunicationMethod.ValueString() + ":" + state.Locale.ValueString()
+	// @FIXME: is this correct?
+	if len(state.CommunicationMethod.ValueString()) == 0 {
+		resp.Diagnostics.AddWarning("Missing Communication Method", "Missing Communication Method for template: "+templateId)
+		return
+	}
+	template, err := r.provider.client.GetTemplate(templateId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading Template",
-			"Could not read template "+state.TemplateKey.ValueString()+": "+err.Error(),
+			"Could not read template "+templateId+": "+err.Error(),
 		)
 		return
 	}
@@ -193,16 +209,16 @@ func (r templateResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	template := client.Template{
-		ID:             util.ToStringPointer(plan.ID.ValueString()),
-		GroupId:        plan.GroupId.ValueString(),
-		TemplateKey:    plan.TemplateKey.ValueString(),
-		TemplateType:   plan.TemplateType.ValueString(),
-		ProcessingType: plan.ProcessingType.ValueString(),
-		Locale:         plan.Locale.ValueString(),
-		Language:       plan.Language.ValueString(),
-		UsageType:      plan.UsageType.ValueString(),
-		Subject:        plan.Subject.ValueString(),
-		Content:        plan.Content.ValueString(),
+		ID:                  util.ToStringPointer(plan.ID.ValueString()),
+		GroupId:             plan.GroupId.ValueString(),
+		TemplateKey:         plan.TemplateKey.ValueString(),
+		CommunicationMethod: plan.CommunicationMethod.ValueString(),
+		ProcessingType:      plan.ProcessingType.ValueString(),
+		Locale:              plan.Locale.ValueString(),
+		MessageFormat:       plan.MessageFormat.ValueString(),
+		Enabled:             plan.Enabled.ValueBool(),
+		Subject:             plan.Subject.ValueString(),
+		Content:             plan.Content.ValueString(),
 	}
 
 	templateResult, err := r.provider.client.UpdateTemplate(template)

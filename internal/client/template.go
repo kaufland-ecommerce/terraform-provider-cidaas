@@ -11,17 +11,11 @@ type templateResponse struct {
 	Data Template
 }
 
-func (c *client) GetTemplate(template Template) (*Template, error) {
-	rb, err := json.Marshal(template)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (c *client) GetTemplate(templateId string) (*Template, error) {
 	req, err := http.NewRequest(
-		http.MethodPost,
-		fmt.Sprintf("%s/templates-srv/template/find", c.HostUrl),
-		strings.NewReader(string(rb)),
+		http.MethodGet,
+		fmt.Sprintf("%s/notifications-srv/templates/%s", c.HostUrl, templateId),
+		nil,
 	)
 
 	if err != nil {
@@ -54,7 +48,7 @@ func (c *client) UpdateTemplate(template Template) (*Template, error) {
 
 	req, err := http.NewRequest(
 		http.MethodPost,
-		fmt.Sprintf("%s/templates-srv/template", c.HostUrl),
+		fmt.Sprintf("%s/notifications-srv/templates/%s:%s:%s:%s", c.HostUrl, template.GroupId, template.TemplateKey, template.CommunicationMethod, template.Locale),
 		strings.NewReader(string(rb)),
 	)
 

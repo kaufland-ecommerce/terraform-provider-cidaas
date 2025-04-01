@@ -19,16 +19,17 @@ description: |-
 
 - `content` (String) actual content of the Template
 - `group_id` (String) Group of this template
-- `language` (String) Language
+- `message_format` (String) Template format
 - `locale` (String) Locale
 - `template_key` (String) Identifier of the template
-- `template_type` (String) Which Communication type is this template for
+- `communication_method` (String) Which Communication method is this template for
+- `enabled` (Boolean) Indicates if the template is enabled or not
 
 ### Optional
 
 - `processing_type` (String) Processing Type
+- `usage_type` (String) Usage Type
 - `subject` (String) Subject of the Template
-- `usage_type` (String)
 
 ### Read-Only
 
