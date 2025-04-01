@@ -190,10 +190,10 @@ type PushSenderConfig struct {
 }
 
 type TemplateGroupComSettings struct {
-	EmailSenderConfig EmailSenderConfig `json:"email"`
-	SmsSenderConfig   SmsSenderConfig   `json:"sms"`
-	IVRSenderConfig   IVRSenderConfig   `json:"ivr"`
-	PushSenderConfig  PushSenderConfig  `json:"push"`
+	Email EmailSenderConfig `json:"email"`
+	SMS   SmsSenderConfig   `json:"sms"`
+	IVR   IVRSenderConfig   `json:"ivr"`
+	Push  PushSenderConfig  `json:"push"`
 }
 
 type TemplateGroup struct {
@@ -210,11 +210,13 @@ type Template struct {
 	TemplateKey         string  `json:"templateKey"`
 	CommunicationMethod string  `json:"communicationMethod"`
 	ProcessingType      string  `json:"processingType"`
+	UsageType           string  `json:"usageType"`
 	Locale              string  `json:"locale"`
 	MessageFormat       string  `json:"messageFormat"`
 	Enabled             bool    `json:"enabled"`
 	Subject             string  `json:"subject"`
 	Content             string  `json:"content"`
+	Description         string  `json:"description"`
 }
 
 type CustomProvider struct {

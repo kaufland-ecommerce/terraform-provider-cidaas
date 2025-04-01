@@ -63,6 +63,10 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "Processing Type",
 			},
+			"usage_type": schema.StringAttribute{
+				Optional:    true,
+				Description: "Usage Type",
+			},
 			"locale": schema.StringAttribute{
 				Required:    true,
 				Description: "Locale",
@@ -79,7 +83,7 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Required:    true,
 				Description: "actual content of the Template",
 			},
-			"enabled": schema.StringAttribute{
+			"enabled": schema.BoolAttribute{
 				Required: true,
 			},
 			"description": schema.StringAttribute{
@@ -115,11 +119,13 @@ func (r templateResource) Create(ctx context.Context, req resource.CreateRequest
 		TemplateKey:         plan.TemplateKey.ValueString(),
 		CommunicationMethod: plan.CommunicationMethod.ValueString(),
 		ProcessingType:      plan.ProcessingType.ValueString(),
+		UsageType:           plan.UsageType.ValueString(),
 		Locale:              plan.Locale.ValueString(),
 		MessageFormat:       plan.MessageFormat.ValueString(),
 		Enabled:             plan.Enabled.ValueBool(),
 		Subject:             plan.Subject.ValueString(),
 		Content:             plan.Content.ValueString(),
+		Description:         plan.Description.ValueString(),
 	}
 
 	templateResult, err := r.provider.client.UpdateTemplate(template)
@@ -160,11 +166,17 @@ func (r templateResource) Read(ctx context.Context, req resource.ReadRequest, re
 		Enabled:             state.Enabled.ValueBool(),
 	}
 
-	template, err := r.provider.client.GetTemplate(*template)
+	templateId := state.GroupId.ValueString() + ":" + state.TemplateKey.ValueString() + ":" + state.CommunicationMethod.ValueString() + ":" + state.Locale.ValueString()
+	// @FIXME: is this correct?
+	if len(state.CommunicationMethod.ValueString()) == 0 {
+		resp.Diagnostics.AddWarning("Missing Communication Method", "Missing Communication Method for template: "+templateId)
+		return
+	}
+	template, err := r.provider.client.GetTemplate(templateId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading Template",
-			"Could not read template "+state.TemplateKey.ValueString()+": "+err.Error(),
+			"Could not read template "+templateId+": "+err.Error(),
 		)
 		return
 	}

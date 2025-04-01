@@ -36,9 +36,9 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 			"id": schema.StringAttribute{
 				Required:    true,
 				Description: "Unique Name of the Template Group",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+				//PlanModifiers: []planmodifier.String{
+				//	stringplanmodifier.RequiresReplace(),
+				//},
 			},
 			"comm_settings": schema.SingleNestedAttribute{
 				Required:    true,
@@ -53,7 +53,7 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 								Description: "",
 							},
 							"service_setup_id": schema.StringAttribute{
-								Required:    true,
+								Computed:    true,
 								Description: "",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
@@ -78,7 +78,7 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 								Description: "",
 							},
 							"service_setup_id": schema.StringAttribute{
-								Required:    true,
+								Computed:    true,
 								Description: "",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
@@ -99,7 +99,7 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 								Description: "",
 							},
 							"service_setup_id": schema.StringAttribute{
-								Required:    true,
+								Computed:    true,
 								Description: "",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
@@ -116,7 +116,7 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 								Description: "",
 							},
 							"service_setup_id": schema.StringAttribute{
-								Required:    true,
+								Computed:    true,
 								Description: "",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
@@ -192,6 +192,11 @@ func (r templateGroupResource) Read(ctx context.Context, req resource.ReadReques
 	templateGroup, err := r.provider.client.GetTemplateGroup(groupId)
 
 	if err != nil {
+		// @FIXME: Does it make sense to skip if template group not found?
+		if err.Error() == "resource not found" {
+			resp.Diagnostics.AddWarning("Skipped templated group not found", "Could not find template group with id "+groupId)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"Error reading Template Group",
 			"Could not read template group with id "+groupId+": "+err.Error(),
@@ -229,25 +234,7 @@ func (r templateGroupResource) Update(ctx context.Context, req resource.UpdateRe
 		DefaultLocale: plan.DefaultLocale.ValueString(),
 	}
 
-	diags = plan.EmailSenderConfig.As(ctx, &group.CommSettings.EmailSenderConfig, struct {
-		UnhandledNullAsEmpty    bool
-		UnhandledUnknownAsEmpty bool
-	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
-	resp.Diagnostics.Append(diags...)
-
-	diags = plan.SmsSenderConfig.As(ctx, &group.CommSettings.SmsSenderConfig, struct {
-		UnhandledNullAsEmpty    bool
-		UnhandledUnknownAsEmpty bool
-	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
-	resp.Diagnostics.Append(diags...)
-
-	diags = plan.IVRSenderConfig.As(ctx, &group.CommSettings.IVRSenderConfig, struct {
-		UnhandledNullAsEmpty    bool
-		UnhandledUnknownAsEmpty bool
-	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
-	resp.Diagnostics.Append(diags...)
-
-	diags = plan.PushSenderConfig.As(ctx, &group.CommSettings.PushSenderConfig, struct {
+	diags = plan.CommSettings.As(ctx, &group.CommSettings, struct {
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
@@ -327,28 +314,35 @@ func (r templateGroupResource) ImportState(ctx context.Context, req resource.Imp
 func (r templateGroupResource) ModelToState(ctx context.Context, group *client.TemplateGroup, state *TemplateGroup) {
 	state.ID = types.StringValue(group.Id)
 	state.DefaultLocale = types.StringValue(group.DefaultLocale)
-	state.EmailSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"service_setup_id":     types.StringType,
-		"sender_name":          types.StringType,
-		"sender_address":       types.StringType,
-		"communication_method": types.StringType,
-	}, group.CommSettings.EmailSenderConfig)
+	state.CommSettings, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
+		"email": types.ObjectType{},
+		"sms":   types.ObjectType{},
+		"ivr":   types.ObjectType{},
+		"push":  types.ObjectType{},
+	}, group.CommSettings)
 
-	state.SmsSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"service_setup_id":     types.StringType,
-		"communication_method": types.StringType,
-		"sender_name":          types.StringType,
-		"sender_address":       types.StringType,
-	}, group.CommSettings.SmsSenderConfig)
-
-	state.PushSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"service_setup_id":     types.StringType,
-		"communication_method": types.StringType,
-	}, group.CommSettings.PushSenderConfig)
-
-	state.IVRSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"service_setup_id":     types.StringType,
-		"communication_method": types.StringType,
-		"sender_address":       types.StringType,
-	}, group.CommSettings.IVRSenderConfig)
+	//state.EmailSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
+	//	"service_setup_id":     types.StringType,
+	//	"sender_name":          types.StringType,
+	//	"sender_address":       types.StringType,
+	//	"communication_method": types.StringType,
+	//}, group.CommSettings.Email)
+	//
+	//state.SmsSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
+	//	"service_setup_id":     types.StringType,
+	//	"communication_method": types.StringType,
+	//	"sender_name":          types.StringType,
+	//	"sender_address":       types.StringType,
+	//}, group.CommSettings.SMS)
+	//
+	//state.PushSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
+	//	"service_setup_id":     types.StringType,
+	//	"communication_method": types.StringType,
+	//}, group.CommSettings.Push)
+	//
+	//state.IVRSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
+	//	"service_setup_id":     types.StringType,
+	//	"communication_method": types.StringType,
+	//	"sender_address":       types.StringType,
+	//}, group.CommSettings.IVR)
 }

@@ -11,16 +11,10 @@ type templateResponse struct {
 	Data Template
 }
 
-func (c *client) GetTemplate(template Template) (*Template, error) {
-	_, err := json.Marshal(template)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (c *client) GetTemplate(templateId string) (*Template, error) {
 	req, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("%s/notifications-srv/templates/%s:%s:%s:%s", c.HostUrl, template.GroupId, template.TemplateKey, template.CommunicationMethod, template.Locale),
+		fmt.Sprintf("%s/notifications-srv/templates/%s", c.HostUrl, templateId),
 		nil,
 	)
 

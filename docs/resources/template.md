@@ -28,6 +28,7 @@ description: |-
 ### Optional
 
 - `processing_type` (String) Processing Type
+- `usage_type` (String) Usage Type
 - `subject` (String) Subject of the Template
 
 ### Read-Only
