@@ -18,27 +18,27 @@ description: |-
 ### Required
 
 - `email_sender_config` (Attributes) (see [below for nested schema](#nestedatt--email_sender_config))
-- `group_id` (String) Unique Name of the Templat Group
+- `default_locale` (String) Default locale for the group
 - `ivr_sender_config` (Attributes) IVR related settings (see [below for nested schema](#nestedatt--ivr_sender_config))
 - `push_sender_config` (Attributes) Push message related settings (see [below for nested schema](#nestedatt--push_sender_config))
 - `sms_sender_config` (Attributes) SMS related sender settings (see [below for nested schema](#nestedatt--sms_sender_config))
 
 ### Read-Only
 
-- `id` (String) Cidaas UUID of the Template Group
+- `id` (String) Cidaas Group Id normally is the group name
 
 <a id="nestedatt--email_sender_config"></a>
 ### Nested Schema for `email_sender_config`
 
 Required:
 
-- `from_email` (String) Sender address for E-Mails
-- `from_name` (String) Sender name for E-Mails
-- `provider` (List of String) List of providers that should be used
+- `sender_address` (String) Sender address for E-Mails
+- `sender_name` (String) Sender name for E-Mails
+- `communication_method` (String) Communication method
 
 Read-Only:
 
-- `id` (String)
+- `service_setup_id` (String)
 
 
 <a id="nestedatt--ivr_sender_config"></a>
@@ -46,11 +46,12 @@ Read-Only:
 
 Required:
 
-- `provider` (List of String) List of providers that should be used for IVR
+- `sender_address` (String) Sender address for the phone call
+- `communication_method` (String) Communication method
 
 Read-Only:
 
-- `id` (String)
+- `service_setup_id` (String)
 
 
 <a id="nestedatt--push_sender_config"></a>
@@ -58,11 +59,11 @@ Read-Only:
 
 Required:
 
-- `provider` (List of String) List of providers that should be used for Push
+- `communication_method` (String) Communication method
 
 Read-Only:
 
-- `id` (String)
+- `service_setup_id` (String)
 
 
 <a id="nestedatt--sms_sender_config"></a>
@@ -70,9 +71,10 @@ Read-Only:
 
 Required:
 
-- `from_name` (String) From name for SMS
-- `provider` (List of String) List of providers that should be used for sms communication
+- `service_setup_id` (String)
+- `sender_name` (String) Sender name for SMS
+- `sender_address` (String) Sender address for the SMS
 
 Read-Only:
 
-- `id` (String)
+- `service_setup_id` (String)

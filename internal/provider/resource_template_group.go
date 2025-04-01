@@ -34,98 +34,109 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 		Description: "`cidaas_template_group` manages Template Groups in the tenant.\n\n",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-				Description: "Cidaas UUID of the Template Group",
-			},
-			"group_id": schema.StringAttribute{
 				Required:    true,
-				Description: "Unique Name of the Templat Group",
+				Description: "Unique Name of the Template Group",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"email_sender_config": schema.SingleNestedAttribute{
+			"comm_settings": schema.SingleNestedAttribute{
 				Required:    true,
-				Description: "",
+				Description: "The communication settings for the Template Group",
 				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
+					"email": schema.SingleNestedAttribute{
+						Required:    true,
+						Description: "Email communication configuration for the Template Group",
+						Attributes: map[string]schema.Attribute{
+							"communication_method": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
+							"service_setup_id": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+								PlanModifiers: []planmodifier.String{
+									stringplanmodifier.UseStateForUnknown(),
+								},
+							},
+							"sender_name": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
+							"sender_address": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
 						},
 					},
-					"from_name": schema.StringAttribute{
+					"ivr": schema.SingleNestedAttribute{
 						Required:    true,
-						Description: "Sender name for E-Mails",
+						Description: "IVR communication for the Template Group",
+						Attributes: map[string]schema.Attribute{
+							"communication_method": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
+							"service_setup_id": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+								PlanModifiers: []planmodifier.String{
+									stringplanmodifier.UseStateForUnknown(),
+								},
+							},
+							"sender_address": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
+						},
 					},
-					"from_email": schema.StringAttribute{
+					"push": schema.SingleNestedAttribute{
 						Required:    true,
-						Description: "Sender address for E-Mails",
+						Description: "PUSH communication for the Template Group",
+						Attributes: map[string]schema.Attribute{
+							"communication_method": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
+							"service_setup_id": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+								PlanModifiers: []planmodifier.String{
+									stringplanmodifier.UseStateForUnknown(),
+								},
+							},
+						},
 					},
-					"provider": schema.ListAttribute{
+					"sms": schema.SingleNestedAttribute{
 						Required:    true,
-						ElementType: types.StringType,
-						Description: "List of providers that should be used",
+						Description: "SMS communication for the Template Group",
+						Attributes: map[string]schema.Attribute{
+							"communication_method": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
+							"service_setup_id": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+								PlanModifiers: []planmodifier.String{
+									stringplanmodifier.UseStateForUnknown(),
+								},
+							},
+							"sender_name": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
+							"sender_address": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
+						},
 					},
 				},
 			},
-			"sms_sender_config": schema.SingleNestedAttribute{
+			"default_locale": schema.StringAttribute{
 				Required:    true,
-				Description: "SMS related sender settings",
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
-					},
-					"from_name": schema.StringAttribute{
-						Required:    true,
-						Description: "From name for SMS",
-					},
-					"provider": schema.ListAttribute{
-						Required:    true,
-						ElementType: types.StringType,
-						Description: "List of providers that should be used for sms communication",
-					},
-				},
-			},
-			"ivr_sender_config": schema.SingleNestedAttribute{
-				Required:    true,
-				Description: "IVR related settings",
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
-					},
-					"provider": schema.ListAttribute{
-						Required:    true,
-						ElementType: types.StringType,
-						Description: "List of providers that should be used for IVR",
-					},
-				},
-			},
-			"push_sender_config": schema.SingleNestedAttribute{
-				Required:    true,
-				Description: "Push message related settings",
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Computed: true,
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.UseStateForUnknown(),
-						},
-					},
-					"provider": schema.ListAttribute{
-						Required:    true,
-						ElementType: types.StringType,
-						Description: "List of providers that should be used for Push",
-					},
-				},
+				Description: "Default locale for the Template Group",
 			},
 		},
 	}
@@ -149,7 +160,7 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	templateGroup, err := r.provider.client.CreateTemplateGroup(plan.GroupId.ValueString())
+	templateGroup, err := r.provider.client.CreateTemplateGroup(plan.ID.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -160,7 +171,7 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	result := TemplateGroup{
-		GroupId: types.StringValue(templateGroup.GroupId),
+		ID: types.StringValue(templateGroup.Id),
 	}
 
 	diags = resp.State.Set(ctx, result)
@@ -176,7 +187,7 @@ func (r templateGroupResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	groupId := state.GroupId.ValueString()
+	groupId := state.ID.ValueString()
 
 	templateGroup, err := r.provider.client.GetTemplateGroup(groupId)
 
@@ -214,29 +225,29 @@ func (r templateGroupResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	group := client.TemplateGroup{
-		Id:      plan.ID.ValueString(),
-		GroupId: plan.GroupId.ValueString(),
+		Id:            plan.ID.ValueString(),
+		DefaultLocale: plan.DefaultLocale.ValueString(),
 	}
 
-	diags = plan.EmailSenderConfig.As(ctx, &group.EmailSenderConfig, struct {
+	diags = plan.EmailSenderConfig.As(ctx, &group.CommSettings.EmailSenderConfig, struct {
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
 	resp.Diagnostics.Append(diags...)
 
-	diags = plan.SmsSenderConfig.As(ctx, &group.SmsSenderConfig, struct {
+	diags = plan.SmsSenderConfig.As(ctx, &group.CommSettings.SmsSenderConfig, struct {
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
 	resp.Diagnostics.Append(diags...)
 
-	diags = plan.IVRSenderConfig.As(ctx, &group.IVRSenderConfig, struct {
+	diags = plan.IVRSenderConfig.As(ctx, &group.CommSettings.IVRSenderConfig, struct {
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
 	resp.Diagnostics.Append(diags...)
 
-	diags = plan.PushSenderConfig.As(ctx, &group.PushSenderConfig, struct {
+	diags = plan.PushSenderConfig.As(ctx, &group.CommSettings.PushSenderConfig, struct {
 		UnhandledNullAsEmpty    bool
 		UnhandledUnknownAsEmpty bool
 	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
@@ -281,7 +292,7 @@ func (r templateGroupResource) Delete(ctx context.Context, req resource.DeleteRe
 		return
 	}
 
-	err := r.provider.client.DeleteTemplateGroup(state.GroupId.ValueString())
+	err := r.provider.client.DeleteTemplateGroup(state.ID.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -315,27 +326,29 @@ func (r templateGroupResource) ImportState(ctx context.Context, req resource.Imp
 
 func (r templateGroupResource) ModelToState(ctx context.Context, group *client.TemplateGroup, state *TemplateGroup) {
 	state.ID = types.StringValue(group.Id)
-	state.GroupId = types.StringValue(group.GroupId)
+	state.DefaultLocale = types.StringValue(group.DefaultLocale)
 	state.EmailSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"id":         types.StringType,
-		"from_name":  types.StringType,
-		"from_email": types.StringType,
-		"provider":   types.ListType{ElemType: types.StringType},
-	}, group.EmailSenderConfig)
+		"service_setup_id":     types.StringType,
+		"sender_name":          types.StringType,
+		"sender_address":       types.StringType,
+		"communication_method": types.StringType,
+	}, group.CommSettings.EmailSenderConfig)
 
 	state.SmsSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"id":        types.StringType,
-		"from_name": types.StringType,
-		"provider":  types.ListType{ElemType: types.StringType},
-	}, group.SmsSenderConfig)
+		"service_setup_id":     types.StringType,
+		"communication_method": types.StringType,
+		"sender_name":          types.StringType,
+		"sender_address":       types.StringType,
+	}, group.CommSettings.SmsSenderConfig)
 
 	state.PushSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"id":       types.StringType,
-		"provider": types.ListType{ElemType: types.StringType},
-	}, group.PushSenderConfig)
+		"service_setup_id":     types.StringType,
+		"communication_method": types.StringType,
+	}, group.CommSettings.PushSenderConfig)
 
 	state.IVRSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"id":       types.StringType,
-		"provider": types.ListType{ElemType: types.StringType},
-	}, group.IVRSenderConfig)
+		"service_setup_id":     types.StringType,
+		"communication_method": types.StringType,
+		"sender_address":       types.StringType,
+	}, group.CommSettings.IVRSenderConfig)
 }
