@@ -30,12 +30,12 @@ description: |-
 - `auto_login_after_register` (Boolean) If set, customers will be logged in directly after registrtion
 - `client_name` (String)
 - `client_type` (String)
+- `communication_medium_verification` (String)
 - `company_address` (String)
 - `company_name` (String)
 - `company_website` (String)
 - `consent_refs` (List of String)
 - `custom_providers` (Attributes List) (see [below for nested schema](#nestedatt--custom_providers))
-- `communication_medium_verification` (String)
 - `enable_bot_detection` (Boolean)
 - `enable_deduplication` (Boolean)
 - `enable_passwordless_auth` (Boolean)
@@ -95,10 +95,6 @@ Required:
 Optional:
 
 - `name` (String)
-
-Read-Only:
-
-- `provider_type` (String)
 
 
 <a id="nestedatt--allowed_groups"></a>

@@ -28,7 +28,7 @@ type SocialProvider struct {
 	SocialId     string `json:"social_id"`
 	Name         string `json:"name"`
 	ProviderName string `json:"provider_name"`
-	ProviderType string `json:"provider_type,omitempty"`
+	//ProviderType string `json:"provider_type,omitempty"`
 }
 
 type ConsentInstance struct {
@@ -165,28 +165,30 @@ type FieldDefinition struct {
 }
 
 type EmailSenderConfig struct {
-	CommunicationMethod string `json:"communicationMethod" tfsdk:"communication_method"`
-	ServiceSetupId      string `json:"serviceSetupId,omitempty" tfsdk:"service_setup_id"`
-	SenderName          string `json:"senderName" tfsdk:"sender_name"`
-	SenderAddress       string `json:"senderAddress" tfsdk:"sender_address"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	SenderName          string `json:"senderName"`
+	SenderAddress       string `json:"senderAddress"`
 }
 
 type SmsSenderConfig struct {
-	CommunicationMethod string `json:"communicationMethod" tfsdk:"communication_method"`
-	ServiceSetupId      string `json:"serviceSetupId,omitempty" tfsdk:"service_setup_id"`
-	SenderName          string `json:"senderName" tfsdk:"sender_name"`
-	SenderAddress       string `json:"senderAddress" tfsdk:"sender_address"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	SenderAddress       string `json:"senderAddress"`
+	SenderName          string `json:"senderName,omitempty"`
 }
 
 type IVRSenderConfig struct {
-	CommunicationMethod string   `json:"communicationMethod" tfsdk:"communication_method"`
-	ServiceSetupId      string   `json:"serviceSetupId,omitempty" tfsdk:"service_setup_id"`
-	SenderAddress       []string `json:"senderAddress" tfsdk:"sender_address"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	SenderAddress       string `json:"senderAddress"`
+	SenderName          string `json:"senderName,omitempty"`
 }
 
 type PushSenderConfig struct {
-	CommunicationMethod string `json:"communicationMethod" tfsdk:"communication_method"`
-	ServiceSetupId      string `json:"serviceSetupId,omitempty" tfsdk:"service_setup_id"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	SenderName          string `json:"senderName,omitempty"`
 }
 
 type TemplateGroupComSettings struct {
@@ -197,26 +199,45 @@ type TemplateGroupComSettings struct {
 }
 
 type TemplateGroup struct {
-	Id            string                   `json:"id,omitempty"`
+	ID            string                   `json:"_id,omitempty"`
 	Description   string                   `json:"description"`
+	TgType        string                   `json:"tgType"`
 	CommSettings  TemplateGroupComSettings `json:"commSettings"`
 	DefaultLocale string                   `json:"defaultLocale"`
 }
 
+type CreateTemplateGroupCopyLocale struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+type CreateTemplateGroupCopy struct {
+	FromGroupId string                          `json:"fromGroupID"`
+	Locale      []CreateTemplateGroupCopyLocale `json:"locale"`
+}
+type CreateTemplateGroupRequest struct {
+	ID            string                  `json:"id"`
+	Description   string                  `json:"description"`
+	DefaultLocale string                  `json:"defaultLocale"`
+	Copy          CreateTemplateGroupCopy `json:"copy"`
+	TgType        string                  `json:"tgType"`
+}
+
 type Template struct {
-	ID                  *string `json:"id,omitempty"`
+	ID                  string  `json:"_id,omitempty"`
 	LastSeededBy        *string `json:"lastSeededBy,omitempty"`
 	GroupId             string  `json:"groupId"`
 	TemplateKey         string  `json:"templateKey"`
 	CommunicationMethod string  `json:"communicationMethod"`
 	ProcessingType      string  `json:"processingType"`
 	UsageType           string  `json:"usageType"`
+	Owner               string  `json:"owner,omitempty"`
 	Locale              string  `json:"locale"`
 	MessageFormat       string  `json:"messageFormat"`
-	Enabled             bool    `json:"enabled"`
-	Subject             string  `json:"subject"`
+	Enabled             bool    `json:"enabled,omitempty"`
+	Subject             string  `json:"subject,omitempty"`
 	Content             string  `json:"content"`
 	Description         string  `json:"description"`
+	VerificationType    string  `json:"verificationType,omitempty"`
 }
 
 type CustomProvider struct {

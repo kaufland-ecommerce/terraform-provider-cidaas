@@ -111,11 +111,11 @@ func (r hookResource) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	plannedHook := client.Hook{
-		AuthType:    plan.AuthType,
-		Events:      plan.Events,
-		URL:         plan.Url,
-		CreatedTime: "",
-		UpdatedTime: "",
+		AuthType: plan.AuthType,
+		Events:   plan.Events,
+		URL:      plan.Url,
+		//CreatedTime: "",
+		//UpdatedTime: "",
 		ApiKeyDetails: client.HookApiKeyDetails{
 			APIKey:            plan.APIKeyDetails.APIKey,
 			APIKeyPlaceholder: plan.APIKeyDetails.APIKeyPlaceholder,

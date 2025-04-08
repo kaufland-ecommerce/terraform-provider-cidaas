@@ -17,21 +17,23 @@ description: |-
 
 ### Required
 
+- `communication_method` (String) Which Communication method is this template for
 - `content` (String) actual content of the Template
 - `group_id` (String) Group of this template
-- `message_format` (String) Template format
+- `id` (String) Cidaas unique ID of the Template
 - `locale` (String) Locale
+- `message_format` (String) Language
 - `template_key` (String) Identifier of the template
-- `communication_method` (String) Which Communication method is this template for
-- `enabled` (Boolean) Indicates if the template is enabled or not
 
 ### Optional
 
+- `description` (String) Description of the Template
+- `enabled` (Boolean)
 - `processing_type` (String) Processing Type
-- `usage_type` (String) Usage Type
 - `subject` (String) Subject of the Template
+- `usage_type` (String) Usage Type
+- `verification_type` (String) Verification Type
 
 ### Read-Only
 
-- `id` (String) Cidaas UUID of the Template
 - `last_seeded_by` (String)

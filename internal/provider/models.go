@@ -27,8 +27,8 @@ type HookAPIKeyDetails struct {
 type SocialProvider struct {
 	SocialId     types.String `tfsdk:"social_id"`
 	ProviderName types.String `tfsdk:"provider_name"`
-	ProviderType types.String `tfsdk:"provider_type"`
-	Name         types.String `tfsdk:"name"`
+	//ProviderType types.String `tfsdk:"provider_type"`
+	Name types.String `tfsdk:"name"`
 }
 
 type CustomProvider struct {
@@ -127,10 +127,45 @@ type RegistrationField struct {
 	Order         types.Int64  `tfsdk:"order"`
 }
 
+type EmailSenderConfig struct {
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	ServiceSetupId      types.String `tfsdk:"service_setup_id"`
+	SenderName          types.String `tfsdk:"sender_name"`
+	SenderAddress       types.String `tfsdk:"sender_address"`
+}
+
+type SmsSenderConfig struct {
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	ServiceSetupId      types.String `tfsdk:"service_setup_id"`
+	SenderName          types.String `tfsdk:"sender_name"`
+	SenderAddress       types.String `tfsdk:"sender_address"`
+}
+
+type IVRSenderConfig struct {
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	ServiceSetupId      types.String `tfsdk:"service_setup_id"`
+	SenderAddress       types.String `tfsdk:"sender_address"`
+	SenderName          types.String `tfsdk:"sender_name"`
+}
+
+type PushSenderConfig struct {
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	ServiceSetupId      types.String `tfsdk:"service_setup_id"`
+	SenderName          types.String `tfsdk:"sender_name"`
+}
+
+type TemplateGroupComSettings struct {
+	Email EmailSenderConfig `tfsdk:"email"`
+	SMS   SmsSenderConfig   `tfsdk:"sms"`
+	IVR   IVRSenderConfig   `tfsdk:"ivr"`
+	Push  PushSenderConfig  `tfsdk:"push"`
+}
 type TemplateGroup struct {
-	ID            types.String `tfsdk:"id"`
-	DefaultLocale types.String `tfsdk:"default_locale"`
-	CommSettings  types.Object `tfsdk:"comm_settings"`
+	ID            types.String             `tfsdk:"id"`
+	DefaultLocale types.String             `tfsdk:"default_locale"`
+	CommSettings  TemplateGroupComSettings `tfsdk:"comm_settings"`
+	Description   types.String             `tfsdk:"description"`
+	TgType        types.String             `tfsdk:"tg_type"`
 }
 
 type Template struct {
@@ -147,4 +182,5 @@ type Template struct {
 	Content             types.String `tfsdk:"content"`
 	MessageFormat       types.String `tfsdk:"message_format"`
 	Description         types.String `tfsdk:"description"`
+	VerificationType    types.String `tfsdk:"verification_type"`
 }

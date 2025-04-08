@@ -7,37 +7,19 @@ import (
 	"strings"
 )
 
-type templateRequestCreationCopyLocale struct {
-	From string `json:"from"`
-	To   string `json:"to"`
-}
-
-type templateCreationRequestCopyFrom struct {
-	FromGroupId string                            `json:"fromGroupId"`
-	Locale      templateRequestCreationCopyLocale `json:"locale"`
-}
-
-// @TODO: Probably this also needs to be adjusted to work with the new endpoint
-type templateGroupCreationRequest struct {
-	Id            string                          `json:"id"`
-	Description   string                          `json:"description"`
-	DefaultLocale string                          `json:"defaultLocale"`
-	Copy          templateCreationRequestCopyFrom `json:"copy"`
-}
-
 type templateGroupResponse struct {
 	Data TemplateGroup `json:"data"`
 }
 
-func (c *client) CreateTemplateGroup(groupId string) (*TemplateGroup, error) {
-	rb, err := json.Marshal(templateGroupCreationRequest{Id: groupId})
+func (c *client) CreateTemplateGroup(group CreateTemplateGroupRequest) (*TemplateGroup, error) {
+	rb, err := json.Marshal(group)
 	if err != nil {
 		return nil, err
 	}
 
 	req, err := http.NewRequest(
 		http.MethodPost,
-		fmt.Sprintf("%s/notifications-srv/templategroups/%s", c.HostUrl, groupId),
+		fmt.Sprintf("%s/notifications-srv/templategroups", c.HostUrl),
 		strings.NewReader(string(rb)),
 	)
 
@@ -63,37 +45,40 @@ func (c *client) CreateTemplateGroup(groupId string) (*TemplateGroup, error) {
 	return &templateGroup, nil
 }
 
-func (c *client) UpdateTemplateGroup(group *TemplateGroup) error {
+func (c *client) UpdateTemplateGroup(group TemplateGroup) (*TemplateGroup, error) {
+	groupID := group.ID
+	group.ID = ""
 	rb, err := json.Marshal(group)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequest(
 		http.MethodPut,
-		fmt.Sprintf("%s/templates-srv/groups/%s", c.HostUrl, group.Id),
+		fmt.Sprintf("%s/notifications-srv/templategroups/%s", c.HostUrl, groupID),
 		strings.NewReader(string(rb)),
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req.Header.Add("content-type", "application/json")
 
 	resp, err := c.doRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	//return nil, fmt.Errorf("Update template group response:" + string(resp))
+
+	var groupResponse templateGroupResponse
+	err = json.Unmarshal(resp, &groupResponse)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = json.Unmarshal(resp, group)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &groupResponse.Data, nil
 }
 
 func (c *client) GetTemplateGroup(groupId string) (*TemplateGroup, error) {
@@ -116,7 +101,6 @@ func (c *client) GetTemplateGroup(groupId string) (*TemplateGroup, error) {
 	}
 
 	var group templateGroupResponse
-
 	err = json.Unmarshal(resp, &group)
 
 	if err != nil {

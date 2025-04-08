@@ -2,13 +2,14 @@ package provider
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
+	"strings"
 )
 
 type templateGroupResource struct {
@@ -31,14 +32,11 @@ func (r *templateGroupResource) Configure(_ context.Context, req resource.Config
 
 func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "`cidaas_template_group` manages Template Groups in the tenant.\n\n",
+		Description: "`cidaas_template_group` manages Template Groups in the tenant.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Required:    true,
 				Description: "Unique Name of the Template Group",
-				//PlanModifiers: []planmodifier.String{
-				//	stringplanmodifier.RequiresReplace(),
-				//},
 			},
 			"comm_settings": schema.SingleNestedAttribute{
 				Required:    true,
@@ -73,6 +71,10 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 						Required:    true,
 						Description: "IVR communication for the Template Group",
 						Attributes: map[string]schema.Attribute{
+							"sender_name": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
 							"communication_method": schema.StringAttribute{
 								Required:    true,
 								Description: "",
@@ -94,6 +96,10 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 						Required:    true,
 						Description: "PUSH communication for the Template Group",
 						Attributes: map[string]schema.Attribute{
+							"sender_name": schema.StringAttribute{
+								Required:    true,
+								Description: "",
+							},
 							"communication_method": schema.StringAttribute{
 								Required:    true,
 								Description: "",
@@ -117,7 +123,7 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 							},
 							"service_setup_id": schema.StringAttribute{
 								Computed:    true,
-								Description: "",
+								Description: "The provider UUID used to send the notifications",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
 								},
@@ -138,6 +144,15 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 				Required:    true,
 				Description: "Default locale for the Template Group",
 			},
+			"description": schema.StringAttribute{
+				Optional:    true,
+				Description: "",
+			},
+			"tg_type": schema.StringAttribute{
+				Computed:    true,
+				Default:     stringdefault.StaticString("cidaas"),
+				Description: "",
+			},
 		},
 	}
 }
@@ -155,27 +170,65 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	templateGroup, err := r.provider.client.CreateTemplateGroup(plan.ID.ValueString())
+	if len(plan.ID.ValueString()) == 0 {
+		resp.Diagnostics.AddError("Attempting to create template group without ID", "Template group needs an ID")
+		return
+	}
+
+	existingGroup, err := r.provider.client.GetTemplateGroup(plan.ID.ValueString())
+
+	if existingGroup != nil && existingGroup.ID == plan.ID.ValueString() {
+		resp.Diagnostics.AddWarning("Attempting to create a template group with and existing ID", "Operation skipped. ID: "+plan.ID.ValueString())
+		r.UpdateStateWithNewValues(existingGroup, &plan)
+
+		diags = resp.State.Set(ctx, &plan)
+		resp.Diagnostics.Append(diags...)
+		return
+	}
+
+	createGroupRequest := client.CreateTemplateGroupRequest{
+		ID:            plan.ID.ValueString(),
+		Description:   plan.Description.ValueString(),
+		DefaultLocale: plan.DefaultLocale.ValueString(),
+		TgType:        plan.TgType.ValueString(),
+		Copy: client.CreateTemplateGroupCopy{
+			// @FIXME: Currently we are not allowing to send this property from the clients
+			FromGroupId: "default",
+			Locale:      []client.CreateTemplateGroupCopyLocale{},
+		},
+	}
+	createGroupRequest.Copy.Locale = append(createGroupRequest.Copy.Locale, client.CreateTemplateGroupCopyLocale{
+		From: plan.DefaultLocale.ValueString(),
+		To:   plan.DefaultLocale.ValueString(),
+	})
+
+	createGroupResponse, err := r.provider.client.CreateTemplateGroup(createGroupRequest)
 
 	if err != nil {
+		if strings.Contains(err.Error(), "already templates found for the locales") {
+			resp.Diagnostics.AddWarning("Template group already exists", "Skipping operation")
+			diags = resp.State.Set(ctx, &plan)
+			resp.Diagnostics.Append(diags...)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"Error creating template group",
-			"Could not create hook, unexpected error: "+err.Error(),
+			"Template group ID: "+plan.ID.ValueString()+", unexpected error: "+err.Error(),
 		)
 		return
 	}
 
-	result := TemplateGroup{
-		ID: types.StringValue(templateGroup.Id),
-	}
+	r.UpdateStateWithNewValues(createGroupResponse, &plan)
 
-	diags = resp.State.Set(ctx, result)
+	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
 func (r templateGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -189,12 +242,17 @@ func (r templateGroupResource) Read(ctx context.Context, req resource.ReadReques
 
 	groupId := state.ID.ValueString()
 
-	templateGroup, err := r.provider.client.GetTemplateGroup(groupId)
+	if len(groupId) == 0 {
+		resp.Diagnostics.AddError("Attempting to read group without ID", "Operation skipped and resource removed from state")
+		return
+	}
 
+	templateGroup, err := r.provider.client.GetTemplateGroup(groupId)
 	if err != nil {
-		// @FIXME: Does it make sense to skip if template group not found?
 		if err.Error() == "resource not found" {
-			resp.Diagnostics.AddWarning("Skipped templated group not found", "Could not find template group with id "+groupId)
+			resp.Diagnostics.AddWarning("Template group not found", "Could not find template group with id "+groupId)
+			req.State.RemoveResource(ctx)
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError(
@@ -204,10 +262,9 @@ func (r templateGroupResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	r.ModelToState(ctx, templateGroup, &state)
+	r.UpdateStateWithNewValues(templateGroup, &state)
 
 	diags = resp.State.Set(ctx, &state)
-
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -229,22 +286,44 @@ func (r templateGroupResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	group := client.TemplateGroup{
-		Id:            plan.ID.ValueString(),
+	updateGroupReq := client.TemplateGroup{
+		ID:            plan.ID.ValueString(),
+		Description:   plan.Description.ValueString(),
 		DefaultLocale: plan.DefaultLocale.ValueString(),
+		TgType:        "cidaas",
+		CommSettings: client.TemplateGroupComSettings{
+			Email: client.EmailSenderConfig{
+				SenderAddress:       plan.CommSettings.Email.SenderAddress.ValueString(),
+				ServiceSetupId:      plan.CommSettings.Email.ServiceSetupId.ValueString(),
+				SenderName:          plan.CommSettings.Email.SenderName.ValueString(),
+				CommunicationMethod: plan.CommSettings.Email.CommunicationMethod.ValueString(),
+			},
+			SMS: client.SmsSenderConfig{
+				SenderAddress:       plan.CommSettings.SMS.SenderAddress.ValueString(),
+				ServiceSetupId:      plan.CommSettings.SMS.ServiceSetupId.ValueString(),
+				SenderName:          plan.CommSettings.SMS.SenderName.ValueString(),
+				CommunicationMethod: plan.CommSettings.SMS.CommunicationMethod.ValueString(),
+			},
+			IVR: client.IVRSenderConfig{
+				SenderAddress:       plan.CommSettings.IVR.SenderAddress.ValueString(),
+				ServiceSetupId:      plan.CommSettings.IVR.ServiceSetupId.ValueString(),
+				SenderName:          plan.CommSettings.IVR.SenderName.ValueString(),
+				CommunicationMethod: plan.CommSettings.IVR.CommunicationMethod.ValueString(),
+			},
+			Push: client.PushSenderConfig{
+				CommunicationMethod: plan.CommSettings.Push.CommunicationMethod.ValueString(),
+				ServiceSetupId:      plan.CommSettings.Push.ServiceSetupId.ValueString(),
+				SenderName:          plan.CommSettings.Push.SenderName.ValueString(),
+			},
+		},
 	}
 
-	diags = plan.CommSettings.As(ctx, &group.CommSettings, struct {
-		UnhandledNullAsEmpty    bool
-		UnhandledUnknownAsEmpty bool
-	}{UnhandledNullAsEmpty: true, UnhandledUnknownAsEmpty: true})
-	resp.Diagnostics.Append(diags...)
-
-	if resp.Diagnostics.HasError() {
+	if len(updateGroupReq.ID) == 0 {
+		resp.Diagnostics.AddError("Unable to update template group with empty ID", "Make sure the template ID is set")
 		return
 	}
 
-	err := r.provider.client.UpdateTemplateGroup(&group)
+	groupResponse, err := r.provider.client.UpdateTemplateGroup(updateGroupReq)
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -253,11 +332,17 @@ func (r templateGroupResource) Update(ctx context.Context, req resource.UpdateRe
 		)
 		return
 	}
+	if groupResponse == nil {
+		resp.Diagnostics.AddError(
+			"Error updating Template Group",
+			"Empty result after update",
+		)
+		return
+	}
 
-	var state TemplateGroup
-	r.ModelToState(ctx, &group, &state)
+	r.UpdateStateWithNewValues(groupResponse, &plan)
 
-	diags = resp.State.Set(ctx, &state)
+	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -279,6 +364,12 @@ func (r templateGroupResource) Delete(ctx context.Context, req resource.DeleteRe
 		return
 	}
 
+	if len(state.ID.ValueString()) == 0 {
+		resp.Diagnostics.AddWarning("Attempting to remove template group without ID", "Operation skipped")
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	err := r.provider.client.DeleteTemplateGroup(state.ID.ValueString())
 
 	if err != nil {
@@ -297,7 +388,7 @@ func (r templateGroupResource) ImportState(ctx context.Context, req resource.Imp
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reading Template Group",
+			"Error importing Template Group",
 			"Could not read template group with id "+req.ID+": "+err.Error(),
 		)
 		return
@@ -305,44 +396,43 @@ func (r templateGroupResource) ImportState(ctx context.Context, req resource.Imp
 
 	var state TemplateGroup
 
-	r.ModelToState(ctx, group, &state)
+	r.UpdateStateWithNewValues(group, &state)
 
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
-func (r templateGroupResource) ModelToState(ctx context.Context, group *client.TemplateGroup, state *TemplateGroup) {
-	state.ID = types.StringValue(group.Id)
+func (r templateGroupResource) UpdateStateWithNewValues(group *client.TemplateGroup, state *TemplateGroup) {
+	state.ID = types.StringValue(group.ID)
 	state.DefaultLocale = types.StringValue(group.DefaultLocale)
-	state.CommSettings, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-		"email": types.ObjectType{},
-		"sms":   types.ObjectType{},
-		"ivr":   types.ObjectType{},
-		"push":  types.ObjectType{},
-	}, group.CommSettings)
-
-	//state.EmailSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-	//	"service_setup_id":     types.StringType,
-	//	"sender_name":          types.StringType,
-	//	"sender_address":       types.StringType,
-	//	"communication_method": types.StringType,
-	//}, group.CommSettings.Email)
-	//
-	//state.SmsSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-	//	"service_setup_id":     types.StringType,
-	//	"communication_method": types.StringType,
-	//	"sender_name":          types.StringType,
-	//	"sender_address":       types.StringType,
-	//}, group.CommSettings.SMS)
-	//
-	//state.PushSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-	//	"service_setup_id":     types.StringType,
-	//	"communication_method": types.StringType,
-	//}, group.CommSettings.Push)
-	//
-	//state.IVRSenderConfig, _ = types.ObjectValueFrom(ctx, map[string]attr.Type{
-	//	"service_setup_id":     types.StringType,
-	//	"communication_method": types.StringType,
-	//	"sender_address":       types.StringType,
-	//}, group.CommSettings.IVR)
+	state.TgType = types.StringValue(group.TgType)
+	state.Description = types.StringValue(group.Description)
+	state.CommSettings = TemplateGroupComSettings{
+		Email: EmailSenderConfig{
+			CommunicationMethod: types.StringValue(group.CommSettings.Email.CommunicationMethod),
+			ServiceSetupId:      types.StringValue(group.CommSettings.Email.ServiceSetupId),
+			SenderName:          types.StringValue(group.CommSettings.Email.SenderName),
+			SenderAddress:       types.StringValue(group.CommSettings.Email.SenderAddress),
+		},
+		SMS: SmsSenderConfig{
+			CommunicationMethod: types.StringValue(group.CommSettings.SMS.CommunicationMethod),
+			ServiceSetupId:      types.StringValue(group.CommSettings.SMS.ServiceSetupId),
+			SenderName:          types.StringValue(group.CommSettings.SMS.SenderName),
+			SenderAddress:       types.StringValue(group.CommSettings.SMS.SenderAddress),
+		},
+		IVR: IVRSenderConfig{
+			CommunicationMethod: types.StringValue(group.CommSettings.IVR.CommunicationMethod),
+			ServiceSetupId:      types.StringValue(group.CommSettings.IVR.ServiceSetupId),
+			SenderName:          types.StringValue(group.CommSettings.IVR.SenderName),
+			SenderAddress:       types.StringValue(group.CommSettings.IVR.SenderAddress),
+		},
+		Push: PushSenderConfig{
+			CommunicationMethod: types.StringValue(group.CommSettings.Push.CommunicationMethod),
+			ServiceSetupId:      types.StringValue(group.CommSettings.Push.ServiceSetupId),
+			SenderName:          types.StringValue(group.CommSettings.Push.SenderName),
+		},
+	}
 }
