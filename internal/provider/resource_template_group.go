@@ -179,7 +179,7 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	existingGroup, err := r.provider.client.GetTemplateGroup(plan.ID.ValueString())
+	existingGroup, _ := r.provider.client.GetTemplateGroup(plan.ID.ValueString())
 
 	if existingGroup != nil && existingGroup.ID == plan.ID.ValueString() {
 		resp.Diagnostics.AddWarning("Attempting to create a template group with and existing ID", "Operation skipped. ID: "+plan.ID.ValueString())
