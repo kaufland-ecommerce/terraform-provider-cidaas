@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
-	"github.com/real-digital/terraform-provider-cidaas/internal/util"
+	"strings"
 )
 
 type templateResource struct {
@@ -35,11 +35,8 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 		Description: "`cidaas_template_group` manages Template Groups in the tenant.\n\n",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed: true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-				Description: "Cidaas UUID of the Template",
+				Required:    true,
+				Description: "Cidaas unique ID of the Template",
 			},
 			"last_seeded_by": schema.StringAttribute{
 				Computed: true,
@@ -55,22 +52,23 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Required:    true,
 				Description: "Identifier of the template",
 			},
-			"template_type": schema.StringAttribute{
+			"communication_method": schema.StringAttribute{
 				Required:    true,
-				Description: "Which Communication type is this template for",
+				Description: "Which Communication method is this template for",
 			},
 			"processing_type": schema.StringAttribute{
 				Optional:    true,
 				Description: "Processing Type",
 			},
+			"usage_type": schema.StringAttribute{
+				Optional:    true,
+				Description: "Usage Type",
+			},
 			"locale": schema.StringAttribute{
 				Required:    true,
 				Description: "Locale",
 			},
-			"usage_type": schema.StringAttribute{
-				Optional: true,
-			},
-			"language": schema.StringAttribute{
+			"message_format": schema.StringAttribute{
 				Required:    true,
 				Description: "Language",
 			},
@@ -81,6 +79,17 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"content": schema.StringAttribute{
 				Required:    true,
 				Description: "actual content of the Template",
+			},
+			"enabled": schema.BoolAttribute{
+				Optional: true,
+			},
+			"description": schema.StringAttribute{
+				Optional:    true,
+				Description: "Description of the Template",
+			},
+			"verification_type": schema.StringAttribute{
+				Optional:    true,
+				Description: "Verification Type",
 			},
 		},
 	}
@@ -105,31 +114,40 @@ func (r templateResource) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	template := client.Template{
-		ID:             nil,
-		LastSeededBy:   nil,
-		GroupId:        plan.GroupId.ValueString(),
-		TemplateKey:    plan.TemplateKey.ValueString(),
-		TemplateType:   plan.TemplateType.ValueString(),
-		ProcessingType: plan.ProcessingType.ValueString(),
-		Locale:         plan.Locale.ValueString(),
-		Language:       plan.Language.ValueString(),
-		UsageType:      plan.UsageType.ValueString(),
-		Subject:        plan.Subject.ValueString(),
-		Content:        plan.Content.ValueString(),
+		ID:                  plan.ID.ValueString(),
+		LastSeededBy:        nil,
+		GroupId:             plan.GroupId.ValueString(),
+		TemplateKey:         plan.TemplateKey.ValueString(),
+		CommunicationMethod: plan.CommunicationMethod.ValueString(),
+		ProcessingType:      plan.ProcessingType.ValueString(),
+		UsageType:           plan.UsageType.ValueString(),
+		Locale:              plan.Locale.ValueString(),
+		MessageFormat:       plan.MessageFormat.ValueString(),
+		Owner:               "client",
+		Enabled:             plan.Enabled.ValueBool(),
+		Subject:             plan.Subject.ValueString(),
+		Content:             plan.Content.ValueString(),
+		Description:         plan.Description.ValueString(),
+		VerificationType:    plan.VerificationType.ValueString(),
 	}
 
-	templateResult, err := r.provider.client.UpdateTemplate(template)
+	templateResult, err := r.provider.client.CreateTemplate(template)
 
 	if err != nil {
+		if strings.Contains(err.Error(), "template already found") {
+			resp.Diagnostics.AddWarning("Attempt to create existing template", "Template "+template.ID+" already exists. Skipping")
+			plan.LastSeededBy = types.StringValue("")
+			diags = resp.State.Set(ctx, &plan)
+			resp.Diagnostics.Append(diags...)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"Error creating template",
-			"Could not create hook, unexpected error: "+err.Error(),
+			"Could not create template ID: "+plan.ID.ValueString()+", unexpected error: "+err.Error(),
 		)
 		return
 	}
-
-	tfsdk.ValueFrom(ctx, templateResult.ID, types.StringType, &plan.ID)
-	tfsdk.ValueFrom(ctx, templateResult.LastSeededBy, types.StringType, &plan.LastSeededBy)
+	r.resultToState(ctx, &plan, templateResult)
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -144,30 +162,27 @@ func (r templateResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	template := &client.Template{
-		ID:             nil,
-		LastSeededBy:   nil,
-		GroupId:        state.GroupId.ValueString(),
-		TemplateKey:    state.TemplateKey.ValueString(),
-		TemplateType:   state.TemplateType.ValueString(),
-		ProcessingType: state.ProcessingType.ValueString(),
-		Locale:         state.Locale.ValueString(),
-		Language:       state.Language.ValueString(),
-		UsageType:      state.UsageType.ValueString(),
+	if len(state.ID.ValueString()) == 0 {
+		resp.Diagnostics.AddWarning("Missing template ID", "Resource will be removed from state")
+		req.State.RemoveResource(ctx)
+		resp.State.RemoveResource(ctx)
+		return
 	}
-
-	template, err := r.provider.client.GetTemplate(*template)
+	template, err := r.provider.client.GetTemplate(state.ID.ValueString())
 	if err != nil {
+		if err.Error() == "resource not found" {
+			resp.Diagnostics.AddWarning("Removing missing template from state", "Template with ID"+state.ID.ValueString())
+			req.State.RemoveResource(ctx)
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError(
 			"Error reading Template",
-			"Could not read template "+state.TemplateKey.ValueString()+": "+err.Error(),
+			"Could not read template "+state.ID.ValueString()+": "+err.Error(),
 		)
 		return
 	}
-
-	tfsdk.ValueFrom(ctx, template.LastSeededBy, types.StringType, &state.LastSeededBy)
-	tfsdk.ValueFrom(ctx, template.Subject, types.StringType, &state.Subject)
-	tfsdk.ValueFrom(ctx, template.Content, types.StringType, &state.Content)
+	r.resultToState(ctx, &state, template)
 
 	diags = resp.State.Set(ctx, &state)
 
@@ -193,28 +208,29 @@ func (r templateResource) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	template := client.Template{
-		ID:             util.ToStringPointer(plan.ID.ValueString()),
-		GroupId:        plan.GroupId.ValueString(),
-		TemplateKey:    plan.TemplateKey.ValueString(),
-		TemplateType:   plan.TemplateType.ValueString(),
-		ProcessingType: plan.ProcessingType.ValueString(),
-		Locale:         plan.Locale.ValueString(),
-		Language:       plan.Language.ValueString(),
-		UsageType:      plan.UsageType.ValueString(),
-		Subject:        plan.Subject.ValueString(),
-		Content:        plan.Content.ValueString(),
+		ID:                  plan.ID.ValueString(),
+		GroupId:             plan.GroupId.ValueString(),
+		TemplateKey:         plan.TemplateKey.ValueString(),
+		CommunicationMethod: plan.CommunicationMethod.ValueString(),
+		ProcessingType:      plan.ProcessingType.ValueString(),
+		UsageType:           plan.UsageType.ValueString(),
+		Locale:              plan.Locale.ValueString(),
+		MessageFormat:       plan.MessageFormat.ValueString(),
+		Enabled:             plan.Enabled.ValueBool(),
+		Subject:             plan.Subject.ValueString(),
+		Content:             plan.Content.ValueString(),
+		Description:         plan.Description.ValueString(),
+		VerificationType:    plan.VerificationType.ValueString(),
 	}
 
 	templateResult, err := r.provider.client.UpdateTemplate(template)
 
 	if err != nil {
-		resp.Diagnostics.AddError("Could not update Template", err.Error())
+		resp.Diagnostics.AddError("Could not update Template ID:"+plan.ID.ValueString(), err.Error())
 		return
 	}
 
-	tfsdk.ValueFrom(ctx, template.LastSeededBy, types.StringType, &templateResult.LastSeededBy)
-	tfsdk.ValueFrom(ctx, template.Subject, types.StringType, &templateResult.Subject)
-	tfsdk.ValueFrom(ctx, template.Content, types.StringType, &templateResult.Content)
+	r.resultToState(ctx, &plan, templateResult)
 
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -230,4 +246,51 @@ func (r templateResource) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	resp.State.RemoveResource(ctx)
+}
+
+func (r templateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	template, err := r.provider.client.GetTemplate(req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Could not fetch template",
+			err.Error(),
+		)
+		return
+	}
+	var state Template
+	r.resultToState(ctx, &state, template)
+
+	diags := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
+func (r templateResource) resultToState(ctx context.Context, state *Template, template *client.Template) {
+	state.ID = types.StringValue(template.ID)
+	state.GroupId = types.StringValue(template.GroupId)
+	state.TemplateKey = types.StringValue(template.TemplateKey)
+	state.CommunicationMethod = types.StringValue(template.CommunicationMethod)
+	state.ProcessingType = types.StringValue(template.ProcessingType)
+	state.UsageType = types.StringValue(template.UsageType)
+	state.Locale = types.StringValue(template.Locale)
+	state.MessageFormat = types.StringValue(template.MessageFormat)
+	state.Enabled = types.BoolValue(template.Enabled)
+	state.Description = types.StringValue(template.Description)
+	if len(template.VerificationType) != 0 {
+		state.VerificationType = types.StringValue(template.VerificationType)
+	} else {
+		state.VerificationType = types.StringNull()
+	}
+
+	state.ProcessingType = types.StringValue(template.ProcessingType)
+	if len(template.UsageType) != 0 {
+		state.UsageType = types.StringValue(template.UsageType)
+	} else {
+		state.UsageType = types.StringNull()
+	}
+
+	tfsdk.ValueFrom(ctx, template.LastSeededBy, types.StringType, &state.LastSeededBy)
+	tfsdk.ValueFrom(ctx, template.Subject, types.StringType, &state.Subject)
+	tfsdk.ValueFrom(ctx, template.Content, types.StringType, &state.Content)
 }

@@ -26,9 +26,10 @@ func (d *socialProviderDataSource) Schema(_ context.Context, _ datasource.Schema
 			"social_id": schema.StringAttribute{
 				Computed: true,
 			},
-			"provider_type": schema.StringAttribute{
-				Computed: true,
-			},
+			// @deprecated
+			//"provider_type": schema.StringAttribute{
+			//	Computed: true,
+			//},
 			"provider_name": schema.StringAttribute{
 				Required: true,
 			},
@@ -79,7 +80,8 @@ func (d socialProviderDataSource) Read(ctx context.Context, req datasource.ReadR
 
 	state.SocialId = types.StringValue(socialProvider.Id)
 	state.ProviderName = types.StringValue(socialProvider.ProviderName)
-	state.ProviderType = types.StringValue(socialProvider.ProviderType)
+	// @deprecated
+	//state.ProviderType = types.StringValue(socialProvider.ProviderType)
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)

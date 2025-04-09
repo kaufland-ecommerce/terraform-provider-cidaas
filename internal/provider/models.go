@@ -27,8 +27,8 @@ type HookAPIKeyDetails struct {
 type SocialProvider struct {
 	SocialId     types.String `tfsdk:"social_id"`
 	ProviderName types.String `tfsdk:"provider_name"`
-	ProviderType types.String `tfsdk:"provider_type"`
-	Name         types.String `tfsdk:"name"`
+	//ProviderType types.String `tfsdk:"provider_type"`
+	Name types.String `tfsdk:"name"`
 }
 
 type CustomProvider struct {
@@ -127,25 +127,60 @@ type RegistrationField struct {
 	Order         types.Int64  `tfsdk:"order"`
 }
 
+type EmailSenderConfig struct {
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	ServiceSetupId      types.String `tfsdk:"service_setup_id"`
+	SenderName          types.String `tfsdk:"sender_name"`
+	SenderAddress       types.String `tfsdk:"sender_address"`
+}
+
+type SmsSenderConfig struct {
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	ServiceSetupId      types.String `tfsdk:"service_setup_id"`
+	SenderName          types.String `tfsdk:"sender_name"`
+	SenderAddress       types.String `tfsdk:"sender_address"`
+}
+
+type IVRSenderConfig struct {
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	ServiceSetupId      types.String `tfsdk:"service_setup_id"`
+	SenderAddress       types.String `tfsdk:"sender_address"`
+	SenderName          types.String `tfsdk:"sender_name"`
+}
+
+type PushSenderConfig struct {
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	ServiceSetupId      types.String `tfsdk:"service_setup_id"`
+	SenderName          types.String `tfsdk:"sender_name"`
+}
+
+type TemplateGroupComSettings struct {
+	Email EmailSenderConfig `tfsdk:"email"`
+	SMS   SmsSenderConfig   `tfsdk:"sms"`
+	IVR   IVRSenderConfig   `tfsdk:"ivr"`
+	Push  PushSenderConfig  `tfsdk:"push"`
+}
 type TemplateGroup struct {
-	ID                types.String `tfsdk:"id"`
-	GroupId           types.String `tfsdk:"group_id"`
-	SmsSenderConfig   types.Object `tfsdk:"sms_sender_config"`
-	EmailSenderConfig types.Object `tfsdk:"email_sender_config"`
-	IVRSenderConfig   types.Object `tfsdk:"ivr_sender_config"`
-	PushSenderConfig  types.Object `tfsdk:"push_sender_config"`
+	ID            types.String             `tfsdk:"id"`
+	DefaultLocale types.String             `tfsdk:"default_locale"`
+	CommSettings  TemplateGroupComSettings `tfsdk:"comm_settings"`
+	Description   types.String             `tfsdk:"description"`
+	TgType        types.String             `tfsdk:"tg_type"`
 }
 
 type Template struct {
-	ID             types.String `tfsdk:"id"`
-	LastSeededBy   types.String `tfsdk:"last_seeded_by"`
-	GroupId        types.String `tfsdk:"group_id"`
-	TemplateKey    types.String `tfsdk:"template_key"`
-	TemplateType   types.String `tfsdk:"template_type"`
-	ProcessingType types.String `tfsdk:"processing_type"`
-	Locale         types.String `tfsdk:"locale"`
-	Language       types.String `tfsdk:"language"`
-	UsageType      types.String `tfsdk:"usage_type"`
-	Subject        types.String `tfsdk:"subject"`
-	Content        types.String `tfsdk:"content"`
+	ID                  types.String `tfsdk:"id"`
+	LastSeededBy        types.String `tfsdk:"last_seeded_by"`
+	GroupId             types.String `tfsdk:"group_id"`
+	TemplateKey         types.String `tfsdk:"template_key"`
+	ProcessingType      types.String `tfsdk:"processing_type"`
+	UsageType           types.String `tfsdk:"usage_type"`
+	CommunicationMethod types.String `tfsdk:"communication_method"`
+	Locale              types.String `tfsdk:"locale"`
+	Enabled             types.Bool   `tfsdk:"enabled"`
+	Subject             types.String `tfsdk:"subject"`
+	Content             types.String `tfsdk:"content"`
+	MessageFormat       types.String `tfsdk:"message_format"`
+	Description         types.String `tfsdk:"description"`
+	VerificationType    types.String `tfsdk:"verification_type"`
 }

@@ -28,7 +28,7 @@ type SocialProvider struct {
 	SocialId     string `json:"social_id"`
 	Name         string `json:"name"`
 	ProviderName string `json:"provider_name"`
-	ProviderType string `json:"provider_type,omitempty"`
+	//ProviderType string `json:"provider_type,omitempty"`
 }
 
 type ConsentInstance struct {
@@ -165,49 +165,79 @@ type FieldDefinition struct {
 }
 
 type EmailSenderConfig struct {
-	Id        string   `json:"id,omitempty" tfsdk:"id"`
-	FromName  string   `json:"from_name" tfsdk:"from_name"`
-	FromEmail string   `json:"from_email" tfsdk:"from_email"`
-	Provider  []string `json:"sender_names" tfsdk:"provider"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	SenderName          string `json:"senderName"`
+	SenderAddress       string `json:"senderAddress"`
 }
 
 type SmsSenderConfig struct {
-	Id       string   `json:"id,omitempty" tfsdk:"id"`
-	FromName string   `json:"from_name" tfsdk:"from_name"`
-	Provider []string `json:"sender_names" tfsdk:"provider"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	SenderAddress       string `json:"senderAddress"`
+	SenderName          string `json:"senderName,omitempty"`
 }
 
 type IVRSenderConfig struct {
-	Id       string   `json:"id,omitempty" tfsdk:"id"`
-	Provider []string `json:"sender_names" tfsdk:"provider"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	SenderAddress       string `json:"senderAddress"`
+	SenderName          string `json:"senderName,omitempty"`
 }
 
 type PushSenderConfig struct {
-	Id       string   `json:"id,omitempty" tfsdk:"id"`
-	Provider []string `json:"sender_names" tfsdk:"provider"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	SenderName          string `json:"senderName,omitempty"`
+}
+
+type TemplateGroupComSettings struct {
+	Email EmailSenderConfig `json:"email"`
+	SMS   SmsSenderConfig   `json:"sms"`
+	IVR   IVRSenderConfig   `json:"ivr"`
+	Push  PushSenderConfig  `json:"push"`
 }
 
 type TemplateGroup struct {
-	Id                string            `json:"id,omitempty"`
-	GroupId           string            `json:"group_id"`
-	EmailSenderConfig EmailSenderConfig `json:"email_sender_config"`
-	SmsSenderConfig   SmsSenderConfig   `json:"sms_sender_config"`
-	IVRSenderConfig   IVRSenderConfig   `json:"ivr_sender_config"`
-	PushSenderConfig  PushSenderConfig  `json:"push_sender_config"`
+	ID            string                   `json:"_id,omitempty"`
+	Description   string                   `json:"description"`
+	TgType        string                   `json:"tgType"`
+	CommSettings  TemplateGroupComSettings `json:"commSettings"`
+	DefaultLocale string                   `json:"defaultLocale"`
+}
+
+type CreateTemplateGroupCopyLocale struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+type CreateTemplateGroupCopy struct {
+	FromGroupId string                          `json:"fromGroupID"`
+	Locale      []CreateTemplateGroupCopyLocale `json:"locale"`
+}
+type CreateTemplateGroupRequest struct {
+	ID            string                  `json:"id"`
+	Description   string                  `json:"description"`
+	DefaultLocale string                  `json:"defaultLocale"`
+	Copy          CreateTemplateGroupCopy `json:"copy"`
+	TgType        string                  `json:"tgType"`
 }
 
 type Template struct {
-	ID             *string `json:"id,omitempty"`
-	LastSeededBy   *string `json:"last_seeded_by,omitempty"`
-	GroupId        string  `json:"group_id"`
-	TemplateKey    string  `json:"templateKey"`
-	TemplateType   string  `json:"templateType"`
-	ProcessingType string  `json:"processingType"`
-	Locale         string  `json:"locale"`
-	Language       string  `json:"Language"`
-	UsageType      string  `json:"usageType"`
-	Subject        string  `json:"subject"`
-	Content        string  `json:"content"`
+	ID                  string  `json:"_id,omitempty"`
+	LastSeededBy        *string `json:"lastSeededBy,omitempty"`
+	GroupId             string  `json:"groupId"`
+	TemplateKey         string  `json:"templateKey"`
+	CommunicationMethod string  `json:"communicationMethod"`
+	ProcessingType      string  `json:"processingType"`
+	UsageType           string  `json:"usageType"`
+	Owner               string  `json:"owner,omitempty"`
+	Locale              string  `json:"locale"`
+	MessageFormat       string  `json:"messageFormat"`
+	Enabled             bool    `json:"enabled,omitempty"`
+	Subject             string  `json:"subject,omitempty"`
+	Content             string  `json:"content"`
+	Description         string  `json:"description"`
+	VerificationType    string  `json:"verificationType,omitempty"`
 }
 
 type CustomProvider struct {

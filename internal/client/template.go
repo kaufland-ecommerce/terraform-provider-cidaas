@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/real-digital/terraform-provider-cidaas/internal/util"
 	"net/http"
 	"strings"
 )
@@ -11,17 +12,11 @@ type templateResponse struct {
 	Data Template
 }
 
-func (c *client) GetTemplate(template Template) (*Template, error) {
-	rb, err := json.Marshal(template)
-
-	if err != nil {
-		return nil, err
-	}
-
+func (c *client) GetTemplate(templateId string) (*Template, error) {
 	req, err := http.NewRequest(
-		http.MethodPost,
-		fmt.Sprintf("%s/templates-srv/template/find", c.HostUrl),
-		strings.NewReader(string(rb)),
+		http.MethodGet,
+		fmt.Sprintf("%s/notifications-srv/templates/%s", c.HostUrl, templateId),
+		nil,
 	)
 
 	if err != nil {
@@ -40,6 +35,10 @@ func (c *client) GetTemplate(template Template) (*Template, error) {
 	err = json.Unmarshal(resp, &templateResponse)
 	if err != nil {
 		return nil, err
+	}
+
+	if templateResponse.Data.LastSeededBy == nil {
+		templateResponse.Data.LastSeededBy = util.ToStringPointer("")
 	}
 
 	return &templateResponse.Data, nil
@@ -53,8 +52,8 @@ func (c *client) UpdateTemplate(template Template) (*Template, error) {
 	}
 
 	req, err := http.NewRequest(
-		http.MethodPost,
-		fmt.Sprintf("%s/templates-srv/template", c.HostUrl),
+		http.MethodPut,
+		fmt.Sprintf("%s/notifications-srv/templates/%s", c.HostUrl, template.ID),
 		strings.NewReader(string(rb)),
 	)
 
@@ -74,6 +73,47 @@ func (c *client) UpdateTemplate(template Template) (*Template, error) {
 	err = json.Unmarshal(resp, &templateResponse)
 	if err != nil {
 		return nil, err
+	}
+
+	if templateResponse.Data.LastSeededBy == nil {
+		templateResponse.Data.LastSeededBy = util.ToStringPointer("")
+	}
+
+	return &templateResponse.Data, nil
+}
+
+func (c *client) CreateTemplate(template Template) (*Template, error) {
+	rb, err := json.Marshal(template)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("%s/notifications-srv/templates", c.HostUrl),
+		strings.NewReader(string(rb)),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("content-type", "application/json")
+
+	resp, err := c.doRequest(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var templateResponse templateResponse
+	err = json.Unmarshal(resp, &templateResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	if templateResponse.Data.LastSeededBy == nil {
+		templateResponse.Data.LastSeededBy = util.ToStringPointer("")
 	}
 
 	return &templateResponse.Data, nil

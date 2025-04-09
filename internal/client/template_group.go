@@ -7,23 +7,19 @@ import (
 	"strings"
 )
 
-type templateGroupCreationRequest struct {
-	GroupId string `json:"group_id"`
-}
-
 type templateGroupResponse struct {
 	Data TemplateGroup `json:"data"`
 }
 
-func (c *client) CreateTemplateGroup(groupId string) (*TemplateGroup, error) {
-	rb, err := json.Marshal(templateGroupCreationRequest{GroupId: groupId})
+func (c *client) CreateTemplateGroup(group CreateTemplateGroupRequest) (*TemplateGroup, error) {
+	rb, err := json.Marshal(group)
 	if err != nil {
 		return nil, err
 	}
 
 	req, err := http.NewRequest(
 		http.MethodPost,
-		fmt.Sprintf("%s/templates-srv/groups", c.HostUrl),
+		fmt.Sprintf("%s/notifications-srv/templategroups", c.HostUrl),
 		strings.NewReader(string(rb)),
 	)
 
@@ -49,43 +45,46 @@ func (c *client) CreateTemplateGroup(groupId string) (*TemplateGroup, error) {
 	return &templateGroup, nil
 }
 
-func (c *client) UpdateTemplateGroup(group *TemplateGroup) error {
+func (c *client) UpdateTemplateGroup(group TemplateGroup) (*TemplateGroup, error) {
+	groupID := group.ID
+	group.ID = ""
 	rb, err := json.Marshal(group)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequest(
 		http.MethodPut,
-		fmt.Sprintf("%s/templates-srv/groups/%s", c.HostUrl, group.GroupId),
+		fmt.Sprintf("%s/notifications-srv/templategroups/%s", c.HostUrl, groupID),
 		strings.NewReader(string(rb)),
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req.Header.Add("content-type", "application/json")
 
 	resp, err := c.doRequest(req)
+	if err != nil {
+		return nil, err
+	}
+	//return nil, fmt.Errorf("Update template group response:" + string(resp))
+
+	var groupResponse templateGroupResponse
+	err = json.Unmarshal(resp, &groupResponse)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = json.Unmarshal(resp, group)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &groupResponse.Data, nil
 }
 
 func (c *client) GetTemplateGroup(groupId string) (*TemplateGroup, error) {
 	req, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("%s/templates-srv/groups/%s", c.HostUrl, groupId),
+		fmt.Sprintf("%s/notifications-srv/templategroups/%s", c.HostUrl, groupId),
 		nil,
 	)
 
@@ -102,7 +101,6 @@ func (c *client) GetTemplateGroup(groupId string) (*TemplateGroup, error) {
 	}
 
 	var group templateGroupResponse
-
 	err = json.Unmarshal(resp, &group)
 
 	if err != nil {
@@ -115,7 +113,7 @@ func (c *client) GetTemplateGroup(groupId string) (*TemplateGroup, error) {
 func (c *client) DeleteTemplateGroup(groupId string) error {
 	req, err := http.NewRequest(
 		http.MethodDelete,
-		fmt.Sprintf("%s/templates-srv/groups/%s", c.HostUrl, groupId),
+		fmt.Sprintf("%s/notifications-srv/templategroups/%s", c.HostUrl, groupId),
 		nil,
 	)
 

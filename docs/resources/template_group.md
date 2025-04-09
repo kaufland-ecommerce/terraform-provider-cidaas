@@ -17,62 +17,78 @@ description: |-
 
 ### Required
 
-- `email_sender_config` (Attributes) (see [below for nested schema](#nestedatt--email_sender_config))
-- `group_id` (String) Unique Name of the Templat Group
-- `ivr_sender_config` (Attributes) IVR related settings (see [below for nested schema](#nestedatt--ivr_sender_config))
-- `push_sender_config` (Attributes) Push message related settings (see [below for nested schema](#nestedatt--push_sender_config))
-- `sms_sender_config` (Attributes) SMS related sender settings (see [below for nested schema](#nestedatt--sms_sender_config))
+- `comm_settings` (Attributes) The communication settings for the Template Group (see [below for nested schema](#nestedatt--comm_settings))
+- `default_locale` (String) Default locale for the Template Group
+- `id` (String) Unique Name of the Template Group
+
+### Optional
+
+- `description` (String)
 
 ### Read-Only
 
-- `id` (String) Cidaas UUID of the Template Group
+- `tg_type` (String)
 
-<a id="nestedatt--email_sender_config"></a>
-### Nested Schema for `email_sender_config`
-
-Required:
-
-- `from_email` (String) Sender address for E-Mails
-- `from_name` (String) Sender name for E-Mails
-- `provider` (List of String) List of providers that should be used
-
-Read-Only:
-
-- `id` (String)
-
-
-<a id="nestedatt--ivr_sender_config"></a>
-### Nested Schema for `ivr_sender_config`
+<a id="nestedatt--comm_settings"></a>
+### Nested Schema for `comm_settings`
 
 Required:
 
-- `provider` (List of String) List of providers that should be used for IVR
+- `email` (Attributes) Email communication configuration for the Template Group (see [below for nested schema](#nestedatt--comm_settings--email))
+- `ivr` (Attributes) IVR communication for the Template Group (see [below for nested schema](#nestedatt--comm_settings--ivr))
+- `push` (Attributes) PUSH communication for the Template Group (see [below for nested schema](#nestedatt--comm_settings--push))
+- `sms` (Attributes) SMS communication for the Template Group (see [below for nested schema](#nestedatt--comm_settings--sms))
 
-Read-Only:
-
-- `id` (String)
-
-
-<a id="nestedatt--push_sender_config"></a>
-### Nested Schema for `push_sender_config`
+<a id="nestedatt--comm_settings--email"></a>
+### Nested Schema for `comm_settings.email`
 
 Required:
 
-- `provider` (List of String) List of providers that should be used for Push
+- `communication_method` (String)
+- `sender_address` (String)
+- `sender_name` (String)
 
 Read-Only:
 
-- `id` (String)
+- `service_setup_id` (String)
 
 
-<a id="nestedatt--sms_sender_config"></a>
-### Nested Schema for `sms_sender_config`
+<a id="nestedatt--comm_settings--ivr"></a>
+### Nested Schema for `comm_settings.ivr`
 
 Required:
 
-- `from_name` (String) From name for SMS
-- `provider` (List of String) List of providers that should be used for sms communication
+- `communication_method` (String)
+- `sender_address` (String)
+- `sender_name` (String)
 
 Read-Only:
 
-- `id` (String)
+- `service_setup_id` (String)
+
+
+<a id="nestedatt--comm_settings--push"></a>
+### Nested Schema for `comm_settings.push`
+
+Required:
+
+- `communication_method` (String)
+- `sender_name` (String)
+
+Read-Only:
+
+- `service_setup_id` (String)
+
+
+<a id="nestedatt--comm_settings--sms"></a>
+### Nested Schema for `comm_settings.sms`
+
+Required:
+
+- `communication_method` (String)
+- `sender_address` (String)
+- `sender_name` (String)
+
+Read-Only:
+
+- `service_setup_id` (String) The provider UUID used to send the notifications

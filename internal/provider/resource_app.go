@@ -220,12 +220,13 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 						"provider_name": schema.StringAttribute{
 							Required: true,
 						},
-						"provider_type": schema.StringAttribute{
-							Computed: true,
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
-							},
-						},
+						// @deprecated
+						//"provider_type": schema.StringAttribute{
+						//	Computed: true,
+						//	PlanModifiers: []planmodifier.String{
+						//		stringplanmodifier.UseStateForUnknown(),
+						//	},
+						//},
 						"name": schema.StringAttribute{
 							Optional: true,
 						},
@@ -513,10 +514,17 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	app, err := r.provider.client.UpdateApp(*plannedApp)
 
+	//@FIXME: The property is being ignored from the update, setting to planned value will fix the inconsistencies
+	app.AllowedOrigins = plannedApp.AllowedOrigins
 	if err != nil {
 		resp.Diagnostics.AddError("Error Updating app", err.Error())
 		return
 	}
+	////@FIXME: Check this
+	//if app.PasswordPolicy != plannedApp.PasswordPolicy {
+	//	resp.Diagnostics.AddWarning("Password policy was updated in cidaas", "Setting password policy to the value after update: "+*app.PasswordPolicy)
+	//	state.PasswordPolicy = types.StringPointerValue(app.PasswordPolicy)
+	//}
 
 	diags = applyAppToState(ctx, &state, app)
 	resp.Diagnostics.Append(diags...)

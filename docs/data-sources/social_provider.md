@@ -31,5 +31,4 @@ data "cidaas_social_provider" "facebook" {
 
 ### Read-Only
 
-- `provider_type` (String)
 - `social_id` (String)
