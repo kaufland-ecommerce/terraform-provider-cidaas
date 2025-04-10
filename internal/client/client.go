@@ -44,6 +44,7 @@ type Client interface {
 
 	GetConsentInstance(name string) (*ConsentInstance, error)
 
+	CreatePasswordPolicy(policy CreatePolicyRequest) (*PasswordPolicy, error)
 	UpdatePasswordPolicy(policy PasswordPolicy) (*PasswordPolicy, error)
 	GetPasswordPolicy(id string) (*PasswordPolicy, error)
 	GetPasswordPolicyByName(name string) (*PasswordPolicy, error)

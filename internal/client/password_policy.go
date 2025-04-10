@@ -18,8 +18,38 @@ type passwordPoliciesResponse struct {
 	Data   []PasswordPolicy `json:"data"`
 }
 
+func (c *client) CreatePasswordPolicy(policy CreatePolicyRequest) (*PasswordPolicy, error) {
+	rb, err := json.Marshal(policy)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("%s/verification-actions-srv/policies", c.HostUrl),
+		bytes.NewReader(rb),
+	)
+
+	req.Header.Add("content-type", "application/json")
+
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.doRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var response passwordPolicyResponse
+	err = json.Unmarshal(body, &response)
+
+	return &response.Data, err
+
+}
+
 func (c *client) GetPasswordPolicy(id string) (*PasswordPolicy, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/password-policy-srv/policy/%s", c.HostUrl, id), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/verification-actions-srv/policies/%s", c.HostUrl, id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +91,8 @@ func (c *client) UpdatePasswordPolicy(policy PasswordPolicy) (*PasswordPolicy, e
 	}
 
 	req, err := http.NewRequest(
-		http.MethodPost,
-		fmt.Sprintf("%s/password-policy-srv/policy", c.HostUrl),
+		http.MethodPut,
+		fmt.Sprintf("%s/verification-actions-srv/policies", c.HostUrl),
 		bytes.NewReader(rb),
 	)
 
@@ -72,19 +102,16 @@ func (c *client) UpdatePasswordPolicy(policy PasswordPolicy) (*PasswordPolicy, e
 		return nil, err
 	}
 
-	body, err := c.doRequest(req)
+	_, err = c.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	var response passwordPolicyResponse
-	err = json.Unmarshal(body, &response)
-
-	return &response.Data, err
+	return &policy, err
 }
 
 func (c *client) GetPasswordPolicyByName(name string) (*PasswordPolicy, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/password-policy-srv/policy/list", c.HostUrl), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/verification-actions-srv/policies", c.HostUrl), nil)
 
 	if err != nil {
 		return nil, err

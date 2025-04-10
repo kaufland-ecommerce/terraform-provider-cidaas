@@ -37,12 +37,29 @@ type ConsentInstance struct {
 }
 
 type PasswordPolicy struct {
-	ID                string `json:"id"`
-	PolicyName        string `json:"policy_name"`
-	MinimumLength     int64  `json:"minimumLength"`
-	NoOfDigits        int64  `json:"noOfDigits"`
-	LowerAndUpperCase bool   `json:"lowerAndUpperCase"`
-	NoOfSpecialChars  int64  `json:"noOfSpecialChars"`
+	ID               string           `json:"_id"`
+	PolicyName       string           `json:"policy_name"`
+	PolicyProperties PolicyProperties `json:"passwordPolicy"`
+	//@DEPRECATED Remove in future
+	MinimumLength     int64 `json:"minimumLength,omitempty"`
+	NoOfDigits        int64 `json:"noOfDigits,omitempty"`
+	LowerAndUpperCase bool  `json:"lowerAndUpperCase,omitempty"`
+	NoOfSpecialChars  int64 `json:"noOfSpecialChars,omitempty"`
+}
+
+type PolicyChangeEnforcement struct {
+	ExpirationInDays       int64 `json:"expirationInDays"`
+	NotifyUserBeforeInDays int64 `json:"notifyUserBeforeInDays"`
+}
+type PolicyProperties struct {
+	BlockCompromised  bool                    `json:"blockCompromised"`
+	DenyUsageCount    int64                   `json:"denyUsageCount"`
+	StrengthRegexes   []string                `json:"strengthRegexes"`
+	ChangeEnforcement PolicyChangeEnforcement `json:"changeEnforcement"`
+}
+type CreatePolicyRequest struct {
+	PolicyName       string           `json:"policy_name"`
+	PolicyProperties PolicyProperties `json:"passwordPolicy"`
 }
 
 type HostedPage struct {
@@ -110,24 +127,26 @@ type App struct {
 
 	AppKey *AppKey `json:"appKey,omitempty"`
 
-	AllowLoginWith               []string         `json:"allow_login_with"`
-	OperationsAllowedGroups      []AllowedGroup   `json:"operations_allowed_groups"`
-	AllowedGroups                []AllowedGroup   `json:"allowed_groups"`
-	RedirectUris                 []string         `json:"redirect_uris"`
-	AllowedLogoutUrls            []string         `json:"allowed_logout_urls"`
-	AllowedScopes                []string         `json:"allowed_scopes"`
-	SocialProviders              []SocialProvider `json:"social_providers"`
-	CustomProviders              []CustomProvider `json:"custom_providers"`
-	AdditionalAccessTokenPayload []string         `json:"additional_access_token_payload"`
-	AllowedFields                []string         `json:"allowed_fields"`
-	RequiredFields               []string         `json:"required_fields"`
-	ConsentRefs                  []string         `json:"consent_refs"`
-	ResponseTypes                []string         `json:"response_types"`
-	GrantTypes                   []string         `json:"grant_types"`
-	AllowedWebOrigins            []string         `json:"allowed_web_origins"`
-	AllowedOrigins               []string         `json:"allowed_origins"`
-	AllowedMfa                   []string         `json:"allowed_mfa"`
-	AllowedRoles                 []string         `json:"allowed_roles"`
+	AllowLoginWith                   []string         `json:"allow_login_with"`
+	OperationsAllowedGroups          []AllowedGroup   `json:"operations_allowed_groups"`
+	AllowedGroups                    []AllowedGroup   `json:"allowed_groups"`
+	RedirectUris                     []string         `json:"redirect_uris"`
+	AllowedLogoutUrls                []string         `json:"allowed_logout_urls"`
+	AllowedScopes                    []string         `json:"allowed_scopes"`
+	SocialProviders                  []SocialProvider `json:"social_providers"`
+	CustomProviders                  []CustomProvider `json:"custom_providers"`
+	AdditionalAccessTokenPayload     []string         `json:"additional_access_token_payload"`
+	AllowedFields                    []string         `json:"allowed_fields"`
+	RequiredFields                   []string         `json:"required_fields"`
+	ConsentRefs                      []string         `json:"consent_refs"`
+	ResponseTypes                    []string         `json:"response_types"`
+	GrantTypes                       []string         `json:"grant_types"`
+	AllowedWebOrigins                []string         `json:"allowed_web_origins"`
+	AllowedOrigins                   []string         `json:"allowed_origins"`
+	AllowedMfa                       []string         `json:"allowed_mfa"`
+	AllowedRoles                     []string         `json:"allowed_roles"`
+	EmailVerificationRequired        bool             `json:"email_verification_required,omitempty"`
+	MobileNumberVerificationRequired bool             `json:"mobile_number_verification_required,omitempty"`
 }
 
 type RegistrationField struct {

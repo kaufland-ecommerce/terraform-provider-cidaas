@@ -23,15 +23,37 @@ resource "cidaas_password_policy" "sample-policy" {
 
 ### Required
 
-- `lower_and_upper_case` (Boolean) Indicates if passwords are required to have lower and upper case letters
-- `minimum_length` (Number) Minimum length of the passwords
-- `no_of_digits` (Number) Number of digits that need to be included in the password
-- `no_of_special_chars` (Number) Number of special chars that need to be included in the password
+- `password_policy` (Attributes) Password policy settings (see [below for nested schema](#nestedatt--password_policy))
 - `policy_name` (String) Display name of the policy
+
+### Optional
+
+- `lower_and_upper_case` (Boolean, Deprecated) Indicates if passwords are required to have lower and upper case letters
+- `minimum_length` (Number, Deprecated) Minimum length of the passwords
+- `no_of_digits` (Number, Deprecated) Number of digits that need to be included in the password
+- `no_of_special_chars` (Number, Deprecated) Number of special chars that need to be included in the password
 
 ### Read-Only
 
 - `id` (String) Unique identifier of the policy
+
+<a id="nestedatt--password_policy"></a>
+### Nested Schema for `password_policy`
+
+Required:
+
+- `block_compromised` (Boolean) Block compromised passwords
+- `change_enforcement` (Attributes) Change enforcement settings (see [below for nested schema](#nestedatt--password_policy--change_enforcement))
+- `deny_usage_count` (Number) Number of times a password can be used before it is blocked, 0 means no limit
+- `strength_regexes` (List of String) List of regexes to validate password strength
+
+<a id="nestedatt--password_policy--change_enforcement"></a>
+### Nested Schema for `password_policy.change_enforcement`
+
+Required:
+
+- `expiration_in_days` (Number) Number of days after which the password must be changed, 0 means no expiration
+- `notify_user_before_in_days` (Number) Number of days before expiration to notify the user, 0 means no notification
 
 ## Import
 
