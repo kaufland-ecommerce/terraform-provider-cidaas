@@ -43,21 +43,58 @@ func (r *passwordPolicyResource) Schema(_ context.Context, _ resource.SchemaRequ
 				Required:    true,
 				Description: "Display name of the policy",
 			},
-			"lower_and_upper_case": schema.BoolAttribute{
+			"password_policy": schema.SingleNestedAttribute{
 				Required:    true,
-				Description: "Indicates if passwords are required to have lower and upper case letters",
+				Description: "Password policy settings",
+				Attributes: map[string]schema.Attribute{
+					"block_compromised": schema.BoolAttribute{
+						Required:    true,
+						Description: "Block compromised passwords",
+					},
+					"strength_regexes": schema.ListAttribute{
+						Required:    true,
+						Description: "List of regexes to validate password strength",
+						ElementType: types.StringType,
+					},
+					"deny_usage_count": schema.Int64Attribute{
+						Required:    true,
+						Description: "Number of times a password can be used before it is blocked, 0 means no limit",
+					},
+					"change_enforcement": schema.SingleNestedAttribute{
+						Required:    true,
+						Description: "Change enforcement settings",
+						Attributes: map[string]schema.Attribute{
+							"expiration_in_days": schema.Int64Attribute{
+								Required:    true,
+								Description: "Number of days after which the password must be changed, 0 means no expiration",
+							},
+							"notify_user_before_in_days": schema.Int64Attribute{
+								Required:    true,
+								Description: "Number of days before expiration to notify the user, 0 means no notification",
+							},
+						},
+					},
+				},
+			},
+			"lower_and_upper_case": schema.BoolAttribute{
+				Optional:           true,
+				DeprecationMessage: "Deprecated, use `password_policy` instead",
+				Description:        "Indicates if passwords are required to have lower and upper case letters",
 			},
 			"minimum_length": schema.Int64Attribute{
-				Required:    true,
-				Description: "Minimum length of the passwords",
+				Optional:           true,
+				DeprecationMessage: "Deprecated, use `password_policy` instead",
+				Description:        "Minimum length of the passwords",
 			},
 			"no_of_digits": schema.Int64Attribute{
-				Required:    true,
-				Description: "Number of digits that need to be included in the password",
+				Optional:           true,
+				DeprecationMessage: "Deprecated, use `password_policy` instead",
+				Description:        "Number of digits that need to be included in the password",
 			},
 			"no_of_special_chars": schema.Int64Attribute{
-				Required:    true,
-				Description: "Number of special chars that need to be included in the password",
+				Optional:           true,
+				DeprecationMessage: "Deprecated, use `password_policy` instead",
+				Description:        "Number of special chars that need to be included in the password",
 			},
 		},
 	}
@@ -81,15 +118,22 @@ func (r *passwordPolicyResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	plannedPolicy := client.PasswordPolicy{
-		PolicyName:        plan.PolicyName.ValueString(),
-		MinimumLength:     plan.MinimumLength.ValueInt64(),
-		NoOfDigits:        plan.NoOfDigits.ValueInt64(),
-		LowerAndUpperCase: plan.LowerAndUpperCase.ValueBool(),
-		NoOfSpecialChars:  plan.NoOfSpecialChars.ValueInt64(),
+	plannedPolicy := client.CreatePolicyRequest{
+		PolicyName: plan.PolicyName.ValueString(),
+		PolicyProperties: client.PolicyProperties{
+			BlockCompromised: plan.PolicyProperties.BlockCompromised.ValueBool(),
+			DenyUsageCount:   plan.PolicyProperties.DenyUsageCount.ValueInt64(),
+			ChangeEnforcement: client.PolicyChangeEnforcement{
+				ExpirationInDays:       plan.PolicyProperties.ChangeEnforcement.ExpirationInDays.ValueInt64(),
+				NotifyUserBeforeInDays: plan.PolicyProperties.ChangeEnforcement.NotifyUserBeforeInDays.ValueInt64(),
+			},
+		},
+	}
+	for i := range plan.PolicyProperties.StrengthRegexes {
+		plannedPolicy.PolicyProperties.StrengthRegexes[i] = plan.PolicyProperties.StrengthRegexes[i].ValueString()
 	}
 
-	policy, err := r.provider.client.UpdatePasswordPolicy(plannedPolicy)
+	policy, err := r.provider.client.CreatePasswordPolicy(plannedPolicy)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating password policy",
@@ -98,16 +142,10 @@ func (r *passwordPolicyResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	result := PasswordPolicy{
-		ID:                types.StringValue(policy.ID),
-		PolicyName:        types.StringValue(policy.PolicyName),
-		MinimumLength:     types.Int64Value(policy.MinimumLength),
-		NoOfDigits:        types.Int64Value(policy.NoOfDigits),
-		LowerAndUpperCase: types.BoolValue(policy.LowerAndUpperCase),
-		NoOfSpecialChars:  types.Int64Value(policy.NoOfSpecialChars),
-	}
+	var state PasswordPolicy
+	r.ResultToState(policy, &state)
 
-	diags = resp.State.Set(ctx, result)
+	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -124,22 +162,29 @@ func (r passwordPolicyResource) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	policyID := state.ID.ValueString()
+	if len(policyID) != 0 {
+		policy, err := r.provider.client.GetPasswordPolicy(policyID)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error reading password policy",
+				"Could not read policy with id "+policyID+": "+err.Error(),
+			)
+			return
+		}
 
-	policy, err := r.provider.client.GetPasswordPolicy(policyID)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error reading password policy",
-			"Could not read policy with id "+policyID+": "+err.Error(),
-		)
-		return
+		r.ResultToState(policy, &state)
+	} else {
+		policy, err := r.provider.client.GetPasswordPolicyByName(state.PolicyName.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"Error reading password policy",
+				"Could not read policy with name "+state.PolicyName.ValueString()+": "+err.Error(),
+			)
+			return
+		}
+
+		r.ResultToState(policy, &state)
 	}
-
-	state.ID = types.StringValue(policy.ID)
-	state.PolicyName = types.StringValue(policy.PolicyName)
-	state.LowerAndUpperCase = types.BoolValue(policy.LowerAndUpperCase)
-	state.MinimumLength = types.Int64Value(policy.MinimumLength)
-	state.NoOfDigits = types.Int64Value(policy.NoOfDigits)
-	state.NoOfSpecialChars = types.Int64Value(policy.NoOfSpecialChars)
 
 	diags = resp.State.Set(ctx, &state)
 
@@ -171,12 +216,24 @@ func (r passwordPolicyResource) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	plannedPolicy := client.PasswordPolicy{
-		ID:                state.ID.ValueString(),
-		PolicyName:        plan.PolicyName.ValueString(),
+		ID:         state.ID.ValueString(),
+		PolicyName: plan.PolicyName.ValueString(),
+		PolicyProperties: client.PolicyProperties{
+			BlockCompromised: plan.PolicyProperties.BlockCompromised.ValueBool(),
+			DenyUsageCount:   plan.PolicyProperties.DenyUsageCount.ValueInt64(),
+			ChangeEnforcement: client.PolicyChangeEnforcement{
+				ExpirationInDays:       plan.PolicyProperties.ChangeEnforcement.ExpirationInDays.ValueInt64(),
+				NotifyUserBeforeInDays: plan.PolicyProperties.ChangeEnforcement.NotifyUserBeforeInDays.ValueInt64(),
+			},
+		},
+		// @Deprecated Remove in future
 		MinimumLength:     plan.MinimumLength.ValueInt64(),
 		NoOfDigits:        plan.NoOfDigits.ValueInt64(),
 		LowerAndUpperCase: plan.LowerAndUpperCase.ValueBool(),
 		NoOfSpecialChars:  plan.NoOfSpecialChars.ValueInt64(),
+	}
+	for i := range plan.PolicyProperties.StrengthRegexes {
+		plannedPolicy.PolicyProperties.StrengthRegexes[i] = plan.PolicyProperties.StrengthRegexes[i].ValueString()
 	}
 
 	policy, err := r.provider.client.UpdatePasswordPolicy(plannedPolicy)
@@ -188,14 +245,8 @@ func (r passwordPolicyResource) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	result := PasswordPolicy{
-		ID:                state.ID,
-		PolicyName:        types.StringValue(policy.PolicyName),
-		MinimumLength:     types.Int64Value(policy.MinimumLength),
-		NoOfDigits:        types.Int64Value(policy.NoOfDigits),
-		LowerAndUpperCase: types.BoolValue(policy.LowerAndUpperCase),
-		NoOfSpecialChars:  types.Int64Value(policy.NoOfSpecialChars),
-	}
+	var result PasswordPolicy
+	r.ResultToState(policy, &result)
 
 	diags = resp.State.Set(ctx, result)
 	resp.Diagnostics.Append(diags...)
@@ -233,4 +284,35 @@ func (r passwordPolicyResource) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	resp.State.RemoveResource(ctx)
+}
+
+func (r passwordPolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	policy, err := r.provider.client.GetPasswordPolicy(req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Could not fetch password policy",
+			err.Error(),
+		)
+		return
+	}
+	var state PasswordPolicy
+
+	r.ResultToState(policy, &state)
+
+	diags := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
+func (r *passwordPolicyResource) ResultToState(policy *client.PasswordPolicy, state *PasswordPolicy) {
+	state.ID = types.StringValue(policy.ID)
+	state.PolicyName = types.StringValue(policy.PolicyName)
+	state.PolicyProperties.BlockCompromised = types.BoolValue(policy.PolicyProperties.BlockCompromised)
+	state.PolicyProperties.DenyUsageCount = types.Int64Value(policy.PolicyProperties.DenyUsageCount)
+	state.PolicyProperties.ChangeEnforcement.ExpirationInDays = types.Int64Value(policy.PolicyProperties.ChangeEnforcement.ExpirationInDays)
+	state.PolicyProperties.ChangeEnforcement.NotifyUserBeforeInDays = types.Int64Value(policy.PolicyProperties.ChangeEnforcement.NotifyUserBeforeInDays)
+	for i := range policy.PolicyProperties.StrengthRegexes {
+		state.PolicyProperties.StrengthRegexes[i] = types.StringValue(policy.PolicyProperties.StrengthRegexes[i])
+	}
 }

@@ -41,13 +41,26 @@ type ConsentInstance struct {
 	ConsentName types.String `tfsdk:"consent_name"`
 }
 
+type PolicyChangeEnforcement struct {
+	ExpirationInDays       types.Int64 `tfsdk:"expiration_in_days"`
+	NotifyUserBeforeInDays types.Int64 `tfsdk:"notify_user_before_in_days"`
+}
+type PolicyProperties struct {
+	BlockCompromised  types.Bool              `tfsdk:"block_compromised"`
+	DenyUsageCount    types.Int64             `tfsdk:"deny_usage_count"`
+	StrengthRegexes   []types.String          `tfsdk:"strength_regexes"`
+	ChangeEnforcement PolicyChangeEnforcement `tfsdk:"change_enforcement"`
+}
+
 type PasswordPolicy struct {
-	ID                types.String `tfsdk:"id"`
-	PolicyName        types.String `tfsdk:"policy_name"`
-	MinimumLength     types.Int64  `tfsdk:"minimum_length"`
-	NoOfDigits        types.Int64  `tfsdk:"no_of_digits"`
-	LowerAndUpperCase types.Bool   `tfsdk:"lower_and_upper_case"`
-	NoOfSpecialChars  types.Int64  `tfsdk:"no_of_special_chars"`
+	ID               types.String     `tfsdk:"id"`
+	PolicyName       types.String     `tfsdk:"policy_name"`
+	PolicyProperties PolicyProperties `tfsdk:"password_policy"`
+	//@Deprecated Remove in future
+	MinimumLength     types.Int64 `tfsdk:"minimum_length"`
+	NoOfDigits        types.Int64 `tfsdk:"no_of_digits"`
+	LowerAndUpperCase types.Bool  `tfsdk:"lower_and_upper_case"`
+	NoOfSpecialChars  types.Int64 `tfsdk:"no_of_special_chars"`
 }
 
 type HostedPageGroup struct {
@@ -95,23 +108,25 @@ type App struct {
 	AppKey                          types.Object `tfsdk:"app_key"`
 	TemplateGroupId                 types.String `tfsdk:"template_group_id"`
 
-	AllowedGroups                types.List       `tfsdk:"allowed_groups"`
-	OperationsAllowedGroups      types.List       `tfsdk:"operations_allowed_groups"`
-	AllowLoginWith               []string         `tfsdk:"allow_login_with"`
-	RedirectUris                 []string         `tfsdk:"redirect_uris"`
-	AllowedLogoutUrls            []string         `tfsdk:"allowed_logout_urls"`
-	SocialProviders              []SocialProvider `tfsdk:"social_providers"`
-	CustomProviders              []CustomProvider `tfsdk:"custom_providers"`
-	AdditionalAccessTokenPayload []string         `tfsdk:"additional_access_token_payload"`
-	Scopes                       []string         `tfsdk:"allowed_scopes"`
-	AllowedFields                []string         `tfsdk:"allowed_fields"`
-	RequiredFields               []string         `tfsdk:"required_fields"`
-	ConsentRefs                  []string         `tfsdk:"consent_refs"`
-	ResponseTypes                []string         `tfsdk:"response_types"`
-	GrantTypes                   []string         `tfsdk:"grant_types"`
-	AllowedWebOrigins            []string         `tfsdk:"allowed_web_origins"`
-	AllowedOrigins               []string         `tfsdk:"allowed_origins"`
-	AllowedMfa                   []string         `tfsdk:"allowed_mfa"`
+	AllowedGroups                    types.List       `tfsdk:"allowed_groups"`
+	OperationsAllowedGroups          types.List       `tfsdk:"operations_allowed_groups"`
+	AllowLoginWith                   []string         `tfsdk:"allow_login_with"`
+	RedirectUris                     []string         `tfsdk:"redirect_uris"`
+	AllowedLogoutUrls                []string         `tfsdk:"allowed_logout_urls"`
+	SocialProviders                  []SocialProvider `tfsdk:"social_providers"`
+	CustomProviders                  []CustomProvider `tfsdk:"custom_providers"`
+	AdditionalAccessTokenPayload     []string         `tfsdk:"additional_access_token_payload"`
+	Scopes                           []string         `tfsdk:"allowed_scopes"`
+	AllowedFields                    []string         `tfsdk:"allowed_fields"`
+	RequiredFields                   []string         `tfsdk:"required_fields"`
+	ConsentRefs                      []string         `tfsdk:"consent_refs"`
+	ResponseTypes                    []string         `tfsdk:"response_types"`
+	GrantTypes                       []string         `tfsdk:"grant_types"`
+	AllowedWebOrigins                []string         `tfsdk:"allowed_web_origins"`
+	AllowedOrigins                   []string         `tfsdk:"allowed_origins"`
+	AllowedMfa                       []string         `tfsdk:"allowed_mfa"`
+	EmailVerificationRequired        types.Bool       `tfsdk:"email_verification_required"`
+	MobileNumberVerificationRequired types.Bool       `tfsdk:"mobile_number_verification_required"`
 }
 
 type RegistrationField struct {

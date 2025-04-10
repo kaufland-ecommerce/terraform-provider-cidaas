@@ -61,6 +61,8 @@ description: |-
 - `allowed_groups` (Attributes List) (see [below for nested schema](#nestedatt--allowed_groups))
 - `allowed_mfa` (List of String)
 - `client_display_name` (String)
+- `email_verification_required` (Boolean, Deprecated)
+- `mobile_number_verification_required` (Boolean, Deprecated)
 - `operations_allowed_groups` (Attributes List) (see [below for nested schema](#nestedatt--operations_allowed_groups))
 - `password_policy` (String)
 - `primary_color` (String)

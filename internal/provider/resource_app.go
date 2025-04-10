@@ -253,6 +253,14 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			"communication_medium_verification": schema.StringAttribute{
 				Required: true,
 			},
+			"email_verification_required": schema.BoolAttribute{
+				Optional:           true,
+				DeprecationMessage: "This field is deprecated, use communication_medium_verification instead",
+			},
+			"mobile_number_verification_required": schema.BoolAttribute{
+				Optional:           true,
+				DeprecationMessage: "This field is deprecated, use communication_medium_verification instead",
+			},
 
 			// Captcha
 			// TODO
@@ -646,6 +654,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	tfsdk.ValueFrom(ctx, app.RegisterWithLoginInformation, types.BoolType, &state.RegisterWithLoginInformation)
 	tfsdk.ValueFrom(ctx, app.PasswordPolicy, types.StringType, &state.PasswordPolicy)
 	tfsdk.ValueFrom(ctx, app.TemplateGroupId, types.StringType, &state.TemplateGroupId)
+	tfsdk.ValueFrom(ctx, app.ID, types.StringType, &state.ID)
 
 	state.Scopes = app.AllowedScopes
 	state.RedirectUris = app.RedirectUris
