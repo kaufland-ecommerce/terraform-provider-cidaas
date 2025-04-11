@@ -17,7 +17,7 @@ description: |-
 
 ### Required
 
-- `password_policy` (Attributes) Password policy settings (see [below for nested schema](#nestedatt--password_policy))
+- `policy_name` (String) It will be used to fetch the password policy
 
 ### Optional
 
@@ -25,26 +25,7 @@ description: |-
 - `minimum_length` (Number, Deprecated)
 - `no_of_digits` (Number, Deprecated)
 - `no_of_special_chars` (Number, Deprecated)
-- `policy_name` (String, Deprecated)
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-<a id="nestedatt--password_policy"></a>
-### Nested Schema for `password_policy`
-
-Required:
-
-- `block_compromised` (Boolean) Block compromised passwords
-- `change_enforcement` (Attributes) Change enforcement settings (see [below for nested schema](#nestedatt--password_policy--change_enforcement))
-- `deny_usage_count` (Number) Number of times a password can be used before it is blocked, 0 means no limit
-- `strength_regexes` (List of String) List of regexes to validate password strength
-
-<a id="nestedatt--password_policy--change_enforcement"></a>
-### Nested Schema for `password_policy.change_enforcement`
-
-Required:
-
-- `expiration_in_days` (Number) Number of days after which the password must be changed, 0 means no expiration
-- `notify_user_before_in_days` (Number) Number of days before expiration to notify the user, 0 means no notification
