@@ -25,41 +25,8 @@ func (d *passwordPolicyDataSource) Schema(_ context.Context, _ datasource.Schema
 				Computed: true,
 			},
 			"policy_name": schema.StringAttribute{
-				Optional:           true,
-				DeprecationMessage: "This attribute is deprecated and will be removed in a future version. Use 'password_policy' instead.",
-			},
-			"password_policy": schema.SingleNestedAttribute{
 				Required:    true,
-				Description: "Password policy settings",
-				Attributes: map[string]schema.Attribute{
-					"block_compromised": schema.BoolAttribute{
-						Required:    true,
-						Description: "Block compromised passwords",
-					},
-					"strength_regexes": schema.ListAttribute{
-						Required:    true,
-						Description: "List of regexes to validate password strength",
-						ElementType: types.StringType,
-					},
-					"deny_usage_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of times a password can be used before it is blocked, 0 means no limit",
-					},
-					"change_enforcement": schema.SingleNestedAttribute{
-						Required:    true,
-						Description: "Change enforcement settings",
-						Attributes: map[string]schema.Attribute{
-							"expiration_in_days": schema.Int64Attribute{
-								Required:    true,
-								Description: "Number of days after which the password must be changed, 0 means no expiration",
-							},
-							"notify_user_before_in_days": schema.Int64Attribute{
-								Required:    true,
-								Description: "Number of days before expiration to notify the user, 0 means no notification",
-							},
-						},
-					},
-				},
+				Description: "It will be used to fetch the password policy",
 			},
 			"lower_and_upper_case": schema.BoolAttribute{
 				Optional:           true,
