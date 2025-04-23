@@ -308,11 +308,25 @@ func (r passwordPolicyResource) ImportState(ctx context.Context, req resource.Im
 func (r *passwordPolicyResource) ResultToState(policy *client.PasswordPolicy, state *PasswordPolicy) {
 	state.ID = types.StringValue(policy.ID)
 	state.PolicyName = types.StringValue(policy.PolicyName)
-	state.PolicyProperties.BlockCompromised = types.BoolValue(policy.PolicyProperties.BlockCompromised)
-	state.PolicyProperties.DenyUsageCount = types.Int64Value(policy.PolicyProperties.DenyUsageCount)
-	state.PolicyProperties.ChangeEnforcement.ExpirationInDays = types.Int64Value(policy.PolicyProperties.ChangeEnforcement.ExpirationInDays)
-	state.PolicyProperties.ChangeEnforcement.NotifyUserBeforeInDays = types.Int64Value(policy.PolicyProperties.ChangeEnforcement.NotifyUserBeforeInDays)
-	for i := range policy.PolicyProperties.StrengthRegexes {
-		state.PolicyProperties.StrengthRegexes[i] = types.StringValue(policy.PolicyProperties.StrengthRegexes[i])
+
+	r.setPolicyProperties(&policy.PolicyProperties, &state.PolicyProperties)
+}
+
+func (r *passwordPolicyResource) setPolicyProperties(clientProps *client.PolicyProperties, stateProps *PolicyProperties) {
+	stateProps.BlockCompromised = types.BoolValue(clientProps.BlockCompromised)
+	stateProps.DenyUsageCount = types.Int64Value(clientProps.DenyUsageCount)
+
+	r.setChangeEnforcement(&clientProps.ChangeEnforcement, &stateProps.ChangeEnforcement)
+
+	if len(clientProps.StrengthRegexes) == 0 {
+		return
 	}
+	for _, regex := range clientProps.StrengthRegexes {
+		stateProps.StrengthRegexes = append(stateProps.StrengthRegexes, types.StringValue(regex))
+	}
+}
+
+func (r *passwordPolicyResource) setChangeEnforcement(clientCE *client.PolicyChangeEnforcement, stateCE *PolicyChangeEnforcement) {
+	stateCE.ExpirationInDays = types.Int64Value(clientCE.ExpirationInDays)
+	stateCE.NotifyUserBeforeInDays = types.Int64Value(clientCE.NotifyUserBeforeInDays)
 }
