@@ -232,8 +232,12 @@ func (r passwordPolicyResource) Update(ctx context.Context, req resource.UpdateR
 		LowerAndUpperCase: plan.LowerAndUpperCase.ValueBool(),
 		NoOfSpecialChars:  plan.NoOfSpecialChars.ValueInt64(),
 	}
-	for i := range plan.PolicyProperties.StrengthRegexes {
-		plannedPolicy.PolicyProperties.StrengthRegexes[i] = plan.PolicyProperties.StrengthRegexes[i].ValueString()
+	if len(plan.PolicyProperties.StrengthRegexes) > 0 {
+		var policyStrengthRegexes []string
+		for _, policy := range plan.PolicyProperties.StrengthRegexes {
+			policyStrengthRegexes = append(policyStrengthRegexes, policy.ValueString())
+		}
+		plannedPolicy.PolicyProperties.StrengthRegexes = policyStrengthRegexes
 	}
 
 	policy, err := r.provider.client.UpdatePasswordPolicy(plannedPolicy)
@@ -318,11 +322,13 @@ func (r *passwordPolicyResource) setPolicyProperties(clientProps *client.PolicyP
 
 	r.setChangeEnforcement(&clientProps.ChangeEnforcement, &stateProps.ChangeEnforcement)
 
-	if len(clientProps.StrengthRegexes) == 0 {
-		return
-	}
-	for _, regex := range clientProps.StrengthRegexes {
-		stateProps.StrengthRegexes = append(stateProps.StrengthRegexes, types.StringValue(regex))
+	if len(clientProps.StrengthRegexes) > 0 {
+		var policyStrengthRegexes []types.String
+		for _, policy := range clientProps.StrengthRegexes {
+			policyStrengthRegexes = append(policyStrengthRegexes, types.StringValue(policy))
+		}
+		stateProps.StrengthRegexes = policyStrengthRegexes
+
 	}
 }
 
