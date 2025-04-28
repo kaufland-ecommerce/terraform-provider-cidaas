@@ -698,6 +698,9 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 			"public_key":  types.StringValue(app.AppKey.PublicKey),
 		},
 	)
+	// @Deprecated Remove this in the future
+	state.EmailVerificationRequired = types.BoolPointerValue(app.EmailVerificationRequired)
+	state.MobileNumberVerificationRequired = types.BoolPointerValue(app.MobileNumberVerificationRequired)
 
 	ret.Append(diags...)
 

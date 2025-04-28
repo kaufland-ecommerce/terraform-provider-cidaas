@@ -145,8 +145,8 @@ type App struct {
 	AllowedOrigins                   []string         `json:"allowed_origins"`
 	AllowedMfa                       []string         `json:"allowed_mfa"`
 	AllowedRoles                     []string         `json:"allowed_roles"`
-	EmailVerificationRequired        bool             `json:"email_verification_required,omitempty"`
-	MobileNumberVerificationRequired bool             `json:"mobile_number_verification_required,omitempty"`
+	EmailVerificationRequired        *bool            `json:"email_verification_required,omitempty"`
+	MobileNumberVerificationRequired *bool            `json:"mobile_number_verification_required,omitempty"`
 }
 
 type RegistrationField struct {
@@ -242,21 +242,20 @@ type CreateTemplateGroupRequest struct {
 }
 
 type Template struct {
-	ID                  string  `json:"_id,omitempty"`
-	LastSeededBy        *string `json:"lastSeededBy,omitempty"`
-	GroupId             string  `json:"groupId"`
-	TemplateKey         string  `json:"templateKey"`
-	CommunicationMethod string  `json:"communicationMethod"`
-	ProcessingType      string  `json:"processingType"`
-	UsageType           string  `json:"usageType"`
-	Owner               string  `json:"owner,omitempty"`
-	Locale              string  `json:"locale"`
-	MessageFormat       string  `json:"messageFormat"`
-	Enabled             bool    `json:"enabled,omitempty"`
-	Subject             string  `json:"subject,omitempty"`
-	Content             string  `json:"content"`
-	Description         string  `json:"description"`
-	VerificationType    string  `json:"verificationType,omitempty"`
+	ID                  string `json:"_id,omitempty"`
+	GroupId             string `json:"groupId"`
+	TemplateKey         string `json:"templateKey"`
+	CommunicationMethod string `json:"communicationMethod"`
+	ProcessingType      string `json:"processingType"`
+	UsageType           string `json:"usageType"`
+	Owner               string `json:"owner,omitempty"`
+	Locale              string `json:"locale"`
+	MessageFormat       string `json:"messageFormat"`
+	Enabled             bool   `json:"enabled,omitempty"`
+	Subject             string `json:"subject,omitempty"`
+	Content             string `json:"content"`
+	Description         string `json:"description"`
+	VerificationType    string `json:"verificationType,omitempty"`
 }
 
 type CustomProvider struct {
