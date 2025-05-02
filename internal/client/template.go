@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/real-digital/terraform-provider-cidaas/internal/util"
 	"net/http"
 	"strings"
 )
@@ -35,10 +34,6 @@ func (c *client) GetTemplate(templateId string) (*Template, error) {
 	err = json.Unmarshal(resp, &templateResponse)
 	if err != nil {
 		return nil, err
-	}
-
-	if templateResponse.Data.LastSeededBy == nil {
-		templateResponse.Data.LastSeededBy = util.ToStringPointer("")
 	}
 
 	return &templateResponse.Data, nil
@@ -75,10 +70,6 @@ func (c *client) UpdateTemplate(template Template) (*Template, error) {
 		return nil, err
 	}
 
-	if templateResponse.Data.LastSeededBy == nil {
-		templateResponse.Data.LastSeededBy = util.ToStringPointer("")
-	}
-
 	return &templateResponse.Data, nil
 }
 
@@ -110,10 +101,6 @@ func (c *client) CreateTemplate(template Template) (*Template, error) {
 	err = json.Unmarshal(resp, &templateResponse)
 	if err != nil {
 		return nil, err
-	}
-
-	if templateResponse.Data.LastSeededBy == nil {
-		templateResponse.Data.LastSeededBy = util.ToStringPointer("")
 	}
 
 	return &templateResponse.Data, nil

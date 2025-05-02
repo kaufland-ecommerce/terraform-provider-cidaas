@@ -185,7 +185,6 @@ type TemplateGroup struct {
 
 type Template struct {
 	ID                  types.String `tfsdk:"id"`
-	LastSeededBy        types.String `tfsdk:"last_seeded_by"`
 	GroupId             types.String `tfsdk:"group_id"`
 	TemplateKey         types.String `tfsdk:"template_key"`
 	ProcessingType      types.String `tfsdk:"processing_type"`

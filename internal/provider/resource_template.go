@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
@@ -37,12 +35,6 @@ func (r *templateResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"id": schema.StringAttribute{
 				Required:    true,
 				Description: "Cidaas unique ID of the Template",
-			},
-			"last_seeded_by": schema.StringAttribute{
-				Computed: true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"group_id": schema.StringAttribute{
 				Required:    true,
@@ -115,7 +107,6 @@ func (r templateResource) Create(ctx context.Context, req resource.CreateRequest
 
 	template := client.Template{
 		ID:                  plan.ID.ValueString(),
-		LastSeededBy:        nil,
 		GroupId:             plan.GroupId.ValueString(),
 		TemplateKey:         plan.TemplateKey.ValueString(),
 		CommunicationMethod: plan.CommunicationMethod.ValueString(),
@@ -136,7 +127,6 @@ func (r templateResource) Create(ctx context.Context, req resource.CreateRequest
 	if err != nil {
 		if strings.Contains(err.Error(), "template already found") {
 			resp.Diagnostics.AddWarning("Attempt to create existing template", "Template "+template.ID+" already exists. Skipping")
-			plan.LastSeededBy = types.StringValue("")
 			diags = resp.State.Set(ctx, &plan)
 			resp.Diagnostics.Append(diags...)
 			return
@@ -290,7 +280,6 @@ func (r templateResource) resultToState(ctx context.Context, state *Template, te
 		state.UsageType = types.StringNull()
 	}
 
-	tfsdk.ValueFrom(ctx, template.LastSeededBy, types.StringType, &state.LastSeededBy)
 	tfsdk.ValueFrom(ctx, template.Subject, types.StringType, &state.Subject)
 	tfsdk.ValueFrom(ctx, template.Content, types.StringType, &state.Content)
 }

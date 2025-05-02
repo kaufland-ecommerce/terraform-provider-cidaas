@@ -33,7 +33,3 @@ description: |-
 - `subject` (String) Subject of the Template
 - `usage_type` (String) Usage Type
 - `verification_type` (String) Verification Type
-
-### Read-Only
-
-- `last_seeded_by` (String)
