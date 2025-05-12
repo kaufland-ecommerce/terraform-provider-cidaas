@@ -76,6 +76,7 @@ description: |-
 - `client_id` (String)
 - `client_secret` (String, Sensitive)
 - `id` (String) The ID of this resource.
+- `oauth_standard` (String)
 
 <a id="nestedatt--custom_providers"></a>
 ### Nested Schema for `custom_providers`

@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -93,6 +94,10 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			},
 
 			// App Settings
+			"oauth_standard": schema.StringAttribute{
+				Computed: true,
+				Default:  stringdefault.StaticString("OAuth2.0"),
+			},
 			"client_id": schema.StringAttribute{
 				Computed: true,
 				PlanModifiers: []planmodifier.String{
@@ -528,11 +533,6 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 		resp.Diagnostics.AddError("Error Updating app", err.Error())
 		return
 	}
-	////@FIXME: Check this
-	//if app.PasswordPolicy != plannedApp.PasswordPolicy {
-	//	resp.Diagnostics.AddWarning("Password policy was updated in cidaas", "Setting password policy to the value after update: "+*app.PasswordPolicy)
-	//	state.PasswordPolicy = types.StringPointerValue(app.PasswordPolicy)
-	//}
 
 	diags = applyAppToState(ctx, &state, app)
 	resp.Diagnostics.Append(diags...)
@@ -630,6 +630,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.IsLoginSuccessPageEnabled = types.BoolValue(app.IsLoginSuccessPageEnabled)
 	state.JweEnabled = types.BoolValue(app.JweEnabled)
 	state.AlwaysAskMfa = types.BoolValue(app.AlwaysAskMfa)
+	state.OauthStandard = types.StringValue(app.OauthStandard)
 
 	state.AllowedGroups, diags = types.ListValueFrom(ctx, types.ObjectType{
 		AttrTypes: map[string]attr.Type{
@@ -742,6 +743,7 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Di
 		AlwaysAskMfa:                    plan.AlwaysAskMfa.ValueBool(),
 		RegisterWithLoginInformation:    plan.RegisterWithLoginInformation.ValueBool(),
 		AcceptRolesInTheRegistration:    plan.AcceptRolesInTheRegistration.ValueBool(),
+		OauthStandard:                   plan.OauthStandard.ValueString(),
 
 		AllowLoginWith:               plan.AllowLoginWith,
 		RedirectUris:                 plan.RedirectUris,

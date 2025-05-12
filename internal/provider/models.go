@@ -107,6 +107,7 @@ type App struct {
 	RegisterWithLoginInformation    types.Bool   `tfsdk:"register_with_login_information"`
 	AppKey                          types.Object `tfsdk:"app_key"`
 	TemplateGroupId                 types.String `tfsdk:"template_group_id"`
+	OauthStandard                   types.String `tfsdk:"oauth_standard"`
 
 	AllowedGroups                    types.List       `tfsdk:"allowed_groups"`
 	OperationsAllowedGroups          types.List       `tfsdk:"operations_allowed_groups"`

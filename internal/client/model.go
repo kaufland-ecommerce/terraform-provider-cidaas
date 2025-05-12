@@ -124,6 +124,7 @@ type App struct {
 	RegisterWithLoginInformation    bool    `json:"register_with_login_information"`
 	AppOwner                        string  `json:"app_owner,omitempty"`
 	BotProvider                     string  `json:"bot_provider,omitempty"`
+	OauthStandard                   string  `json:"oauthStandard,omitempty"`
 
 	AppKey *AppKey `json:"appKey,omitempty"`
 
