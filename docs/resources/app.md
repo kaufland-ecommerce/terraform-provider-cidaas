@@ -63,6 +63,7 @@ description: |-
 - `client_display_name` (String)
 - `email_verification_required` (Boolean, Deprecated)
 - `mobile_number_verification_required` (Boolean, Deprecated)
+- `oauth_standard` (String) Oauth standard used, default is OAuth2.1
 - `operations_allowed_groups` (Attributes List) (see [below for nested schema](#nestedatt--operations_allowed_groups))
 - `password_policy` (String)
 - `primary_color` (String)
@@ -76,7 +77,6 @@ description: |-
 - `client_id` (String)
 - `client_secret` (String, Sensitive)
 - `id` (String) The ID of this resource.
-- `oauth_standard` (String)
 
 <a id="nestedatt--custom_providers"></a>
 ### Nested Schema for `custom_providers`

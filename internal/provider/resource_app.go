@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -95,8 +94,8 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 
 			// App Settings
 			"oauth_standard": schema.StringAttribute{
-				Computed: true,
-				Default:  stringdefault.StaticString("OAuth2.0"),
+				Optional:    true,
+				Description: "Oauth standard used, default is OAuth2.1",
 			},
 			"client_id": schema.StringAttribute{
 				Computed: true,
