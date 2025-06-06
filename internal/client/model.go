@@ -186,28 +186,28 @@ type FieldDefinition struct {
 
 type EmailSenderConfig struct {
 	CommunicationMethod string `json:"communicationMethod"`
-	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	ServiceSetupId      string `json:"serviceSetupId"`
 	SenderName          string `json:"senderName"`
 	SenderAddress       string `json:"senderAddress"`
 }
 
 type SmsSenderConfig struct {
 	CommunicationMethod string `json:"communicationMethod"`
-	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	ServiceSetupId      string `json:"serviceSetupId"`
 	SenderAddress       string `json:"senderAddress"`
 	SenderName          string `json:"senderName,omitempty"`
 }
 
 type IVRSenderConfig struct {
 	CommunicationMethod string `json:"communicationMethod"`
-	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	ServiceSetupId      string `json:"serviceSetupId"`
 	SenderAddress       string `json:"senderAddress"`
 	SenderName          string `json:"senderName,omitempty"`
 }
 
 type PushSenderConfig struct {
 	CommunicationMethod string `json:"communicationMethod"`
-	ServiceSetupId      string `json:"serviceSetupId,omitempty"`
+	ServiceSetupId      string `json:"serviceSetupId"`
 	SenderName          string `json:"senderName,omitempty"`
 }
 
@@ -219,9 +219,10 @@ type TemplateGroupComSettings struct {
 }
 
 type TemplateGroup struct {
-	ID            string                   `json:"_id,omitempty"`
+	ID            string                   `json:"_id"`
 	Description   string                   `json:"description"`
 	TgType        string                   `json:"tgType"`
+	Owner         string                   `json:"owner"`
 	CommSettings  TemplateGroupComSettings `json:"commSettings"`
 	DefaultLocale string                   `json:"defaultLocale"`
 }
@@ -235,11 +236,12 @@ type CreateTemplateGroupCopy struct {
 	Locale      []CreateTemplateGroupCopyLocale `json:"locale"`
 }
 type CreateTemplateGroupRequest struct {
-	ID            string                  `json:"id"`
+	ID            string                  `json:"_id"`
 	Description   string                  `json:"description"`
 	DefaultLocale string                  `json:"defaultLocale"`
 	Copy          CreateTemplateGroupCopy `json:"copy"`
 	TgType        string                  `json:"tgType"`
+	Owner         *string                 `json:"owner,omitempty"`
 }
 
 type Template struct {

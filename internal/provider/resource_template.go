@@ -126,8 +126,17 @@ func (r templateResource) Create(ctx context.Context, req resource.CreateRequest
 
 	if err != nil {
 		if strings.Contains(err.Error(), "template already found") {
-			resp.Diagnostics.AddWarning("Attempt to create existing template", "Template "+template.ID+" already exists. Skipping")
-			diags = resp.State.Set(ctx, &plan)
+			updateResponse, errUpdate := r.provider.client.UpdateTemplate(template)
+			if errUpdate != nil {
+				resp.Diagnostics.AddError(
+					"Error creating template",
+					"Could not create template ID: "+plan.ID.ValueString()+", unexpected error: "+err.Error(),
+				)
+				return
+			}
+
+			r.resultToState(ctx, &plan, updateResponse)
+			diags = resp.State.Set(ctx, plan)
 			resp.Diagnostics.Append(diags...)
 			return
 		}
@@ -153,7 +162,7 @@ func (r templateResource) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	if len(state.ID.ValueString()) == 0 {
-		resp.Diagnostics.AddWarning("Missing template ID", "Resource will be removed from state")
+		// Resource has no ID, remove it from state without warning
 		req.State.RemoveResource(ctx)
 		resp.State.RemoveResource(ctx)
 		return
@@ -161,7 +170,7 @@ func (r templateResource) Read(ctx context.Context, req resource.ReadRequest, re
 	template, err := r.provider.client.GetTemplate(state.ID.ValueString())
 	if err != nil {
 		if err.Error() == "resource not found" {
-			resp.Diagnostics.AddWarning("Removing missing template from state", "Template with ID"+state.ID.ValueString())
+			// Resource not found, remove it from state without warning
 			req.State.RemoveResource(ctx)
 			resp.State.RemoveResource(ctx)
 			return

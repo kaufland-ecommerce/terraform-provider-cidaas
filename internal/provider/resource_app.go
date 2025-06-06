@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 	"golang.org/x/exp/slices"
+	"strings"
 )
 
 type appResource struct {
@@ -435,13 +436,36 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	app, err := r.provider.client.CreateApp(plannedApp)
+	var app *client.App
+	result, err := r.provider.client.CreateApp(plannedApp)
+	app = result
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Could not create app",
-			err.Error(),
-		)
-		return
+		if strings.Contains(err.Error(), "already exists") {
+			resp.Diagnostics.AddWarning("Attempting to create an app that already exists", "Applying update instead")
+			// try to update instead
+			existingApp, findErr := r.provider.client.GetAppByName(plannedApp.ClientName)
+			if findErr != nil {
+				resp.Diagnostics.AddError("Error upserting the app", "Could not find existing app: "+findErr.Error())
+				return
+			}
+			plannedApp.ID = existingApp.ID
+			plannedApp.ClientId = existingApp.ClientId
+			resultUpd, updErr := r.provider.client.UpdateApp(*plannedApp)
+			if updErr != nil {
+				resp.Diagnostics.AddError(
+					"Could not create app",
+					updErr.Error(),
+				)
+				return
+			}
+			app = resultUpd
+		} else {
+			resp.Diagnostics.AddError(
+				"Could not create app",
+				err.Error(),
+			)
+			return
+		}
 	}
 
 	var state App
