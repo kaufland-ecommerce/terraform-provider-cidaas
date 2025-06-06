@@ -44,7 +44,10 @@ func (c *client) CreateTemplateGroup(group CreateTemplateGroupRequest) (*Templat
 		return nil, err
 	}
 
-	if groupResponse.Data.CommSettings.SMS.ServiceSetupId == "" || groupResponse.Data.CommSettings.Push.ServiceSetupId == "" || groupResponse.Data.CommSettings.IVR.ServiceSetupId == "" {
+	// Validate that all required service setup IDs are present in the response
+	if groupResponse.Data.CommSettings.SMS.ServiceSetupId == "" ||
+		groupResponse.Data.CommSettings.Push.ServiceSetupId == "" ||
+		groupResponse.Data.CommSettings.IVR.ServiceSetupId == "" {
 		return nil, fmt.Errorf("invalid response for serviceSetupId after creating template group, payload: " + string(resp))
 	}
 
@@ -75,7 +78,8 @@ func (c *client) UpdateTemplateGroup(group TemplateGroup) (*TemplateGroup, error
 	if err != nil {
 		return nil, err
 	}
-	//return nil, fmt.Errorf("Update template group response:" + string(resp))
+	// Uncomment for debugging
+	// return nil, fmt.Errorf("Update template group response:" + string(resp))
 
 	var groupResponse templateGroupResponse
 	err = json.Unmarshal(resp, &groupResponse)

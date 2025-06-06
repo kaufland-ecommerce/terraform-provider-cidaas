@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"encoding/json"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -50,22 +49,22 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 						Attributes: map[string]schema.Attribute{
 							"communication_method": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The communication method used for email notifications",
 							},
 							"service_setup_id": schema.StringAttribute{
 								Computed:    true,
-								Description: "",
+								Description: "The service setup ID for email notifications, automatically assigned by the API",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
 								},
 							},
 							"sender_name": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The name that will appear as the sender of email notifications",
 							},
 							"sender_address": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The email address that will be used as the sender of email notifications",
 							},
 						},
 					},
@@ -75,22 +74,22 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 						Attributes: map[string]schema.Attribute{
 							"sender_name": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The name that will appear as the sender of IVR notifications",
 							},
 							"communication_method": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The communication method used for IVR notifications",
 							},
 							"service_setup_id": schema.StringAttribute{
 								Computed:    true,
-								Description: "",
+								Description: "The service setup ID for IVR notifications, automatically assigned by the API",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
 								},
 							},
 							"sender_address": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The phone number or address that will be used as the sender of IVR notifications",
 							},
 						},
 					},
@@ -100,15 +99,15 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 						Attributes: map[string]schema.Attribute{
 							"sender_name": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The name that will appear as the sender of PUSH notifications",
 							},
 							"communication_method": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The communication method used for PUSH notifications",
 							},
 							"service_setup_id": schema.StringAttribute{
 								Computed:    true,
-								Description: "",
+								Description: "The service setup ID for PUSH notifications, automatically assigned by the API",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
 								},
@@ -121,22 +120,22 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 						Attributes: map[string]schema.Attribute{
 							"communication_method": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The communication method used for SMS notifications",
 							},
 							"service_setup_id": schema.StringAttribute{
 								Computed:    true,
-								Description: "The provider UUID used to send the notifications",
+								Description: "The service setup ID for SMS notifications, automatically assigned by the API",
 								PlanModifiers: []planmodifier.String{
 									stringplanmodifier.UseStateForUnknown(),
 								},
 							},
 							"sender_name": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The name that will appear as the sender of SMS notifications",
 							},
 							"sender_address": schema.StringAttribute{
 								Required:    true,
-								Description: "",
+								Description: "The phone number or address that will be used as the sender of SMS notifications",
 							},
 						},
 					},
@@ -144,22 +143,22 @@ func (r *templateGroupResource) Schema(_ context.Context, _ resource.SchemaReque
 			},
 			"default_locale": schema.StringAttribute{
 				Required:    true,
-				Description: "Default locale for the Template Group",
+				Description: "Default locale for the Template Group (e.g., 'en-US', 'de-DE')",
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "",
+				Description: "A description of the Template Group",
 			},
 			"tg_type": schema.StringAttribute{
 				Computed:    true,
 				Default:     stringdefault.StaticString("cidaas"),
-				Description: "",
+				Description: "The type of the Template Group, defaults to 'cidaas'",
 			},
 		},
 	}
 }
 
-func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *templateGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -189,7 +188,7 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 		DefaultLocale: plan.DefaultLocale.ValueString(),
 		TgType:        plan.TgType.ValueString(),
 		Copy: client.CreateTemplateGroupCopy{
-			// @FIXME: Currently we are not allowing to send this property from the clients
+			// We use "default" as the source template group to copy from
 			FromGroupId: "default",
 			Locale:      []client.CreateTemplateGroupCopyLocale{},
 		},
@@ -202,29 +201,42 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 	})
 
 	if existingGroup != nil {
-		resp.Diagnostics.AddWarning("Attempting to create a template group with and existing ID", "Applying update instead: "+plan.ID.ValueString())
-		r.doUpsert(ctx, resp, &plan, diags, existingGroup)
+		resp.Diagnostics.AddWarning(
+			"Attempting to create a template group with an existing ID",
+			"Applying update instead for template group: "+plan.ID.ValueString(),
+		)
+		r.doUpsert(ctx, resp, &plan, existingGroup)
 		return
 	}
 
 	createdGroup, err := r.provider.client.CreateTemplateGroup(createGroupRequest)
 
 	if err != nil {
-		reqStr, _ := json.Marshal(createGroupRequest)
+		reqStr, marshalErr := json.Marshal(createGroupRequest)
+		errDetail := "Error: " + err.Error()
+
+		if marshalErr == nil {
+			errDetail += "\nRequest: " + string(reqStr)
+		}
+
 		resp.Diagnostics.AddError(
 			"Error creating template group",
-			"error: "+err.Error()+"\n Request: "+string(reqStr),
+			errDetail,
 		)
 		return
 	}
+
 	if createdGroup == nil {
-		resp.Diagnostics.AddError("Error creating template group", "No group data returned after creation")
+		resp.Diagnostics.AddError(
+			"Error creating template group",
+			"No group data returned after creation",
+		)
 		return
 	}
 
-	// As creating a template group uses a different payload in the create request we need to update the recently created group with the other paramas not sent in the create request
-	r.doUpsert(ctx, resp, &plan, diags, createdGroup)
-	return
+	// As creating a template group uses a different payload in the create request,
+	// we need to update the recently created group with the other parameters not sent in the create request
+	r.doUpsert(ctx, resp, &plan, createdGroup)
 }
 
 // buildEmailConfig creates an EmailSenderConfig from plan and existing values
@@ -322,18 +334,18 @@ func buildPushConfig(planConfig PushSenderConfig, existingCommMethod, existingSe
 }
 
 // processUpdateResponse handles the update response and updates the state
-func (r templateGroupResource) processUpdateResponse(ctx context.Context, resp *resource.CreateResponse, plan *TemplateGroup, diags diag.Diagnostics, updateResponse *client.TemplateGroup) {
+func (r *templateGroupResource) processUpdateResponse(ctx context.Context, resp *resource.CreateResponse, plan *TemplateGroup, updateResponse *client.TemplateGroup) {
 	if updateResponse == nil {
 		resp.Diagnostics.AddError(
-			"Error creating Template Group",
-			"Empty result after create",
+			"Error updating Template Group",
+			"Empty result after update operation",
 		)
 		return
 	}
 
 	r.UpdateStateWithNewValues(updateResponse, plan)
 
-	diags = resp.State.Set(ctx, plan)
+	diags := resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -397,7 +409,7 @@ func createUpdateRequest(
 	}
 }
 
-func (r templateGroupResource) doUpsert(ctx context.Context, resp *resource.CreateResponse, plan *TemplateGroup, diags diag.Diagnostics, existing *client.TemplateGroup) {
+func (r *templateGroupResource) doUpsert(ctx context.Context, resp *resource.CreateResponse, plan *TemplateGroup, existing *client.TemplateGroup) {
 	groupToUpdate := createUpdateRequest(
 		plan,
 		existing.ID,
@@ -425,17 +437,17 @@ func (r templateGroupResource) doUpsert(ctx context.Context, resp *resource.Crea
 	updateResponse, errUpdate := r.provider.client.UpdateTemplateGroup(groupToUpdate)
 	if errUpdate != nil {
 		resp.Diagnostics.AddError(
-			"Error creating template group",
+			"Error updating template group",
 			"Template group ID: "+plan.ID.ValueString()+", unexpected error: "+errUpdate.Error(),
 		)
 		return
 	}
 
 	// Process the update response
-	r.processUpdateResponse(ctx, resp, plan, diags, updateResponse)
+	r.processUpdateResponse(ctx, resp, plan, updateResponse)
 }
 
-func (r templateGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *templateGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state TemplateGroup
 	diags := req.State.Get(ctx, &state)
 
@@ -472,7 +484,7 @@ func (r templateGroupResource) Read(ctx context.Context, req resource.ReadReques
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r templateGroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *templateGroupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -550,7 +562,7 @@ func (r templateGroupResource) Update(ctx context.Context, req resource.UpdateRe
 	resp.Diagnostics.Append(diags...)
 }
 
-func (r templateGroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *templateGroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -587,7 +599,7 @@ func (r templateGroupResource) Delete(ctx context.Context, req resource.DeleteRe
 	resp.State.RemoveResource(ctx)
 }
 
-func (r templateGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *templateGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	group, err := r.provider.client.GetTemplateGroup(req.ID)
 
 	if err != nil {
@@ -609,7 +621,7 @@ func (r templateGroupResource) ImportState(ctx context.Context, req resource.Imp
 	}
 }
 
-func (r templateGroupResource) UpdateStateWithNewValues(group *client.TemplateGroup, state *TemplateGroup) {
+func (r *templateGroupResource) UpdateStateWithNewValues(group *client.TemplateGroup, state *TemplateGroup) {
 	state.ID = types.StringValue(group.ID)
 	state.DefaultLocale = types.StringValue(group.DefaultLocale)
 	state.TgType = types.StringValue(group.TgType)

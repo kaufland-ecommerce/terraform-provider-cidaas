@@ -18,16 +18,16 @@ description: |-
 ### Required
 
 - `comm_settings` (Attributes) The communication settings for the Template Group (see [below for nested schema](#nestedatt--comm_settings))
-- `default_locale` (String) Default locale for the Template Group
+- `default_locale` (String) Default locale for the Template Group (e.g., 'en-US', 'de-DE')
 - `id` (String) Unique Name of the Template Group
 
 ### Optional
 
-- `description` (String)
+- `description` (String) A description of the Template Group
 
 ### Read-Only
 
-- `tg_type` (String)
+- `tg_type` (String) The type of the Template Group, defaults to 'cidaas'
 
 <a id="nestedatt--comm_settings"></a>
 ### Nested Schema for `comm_settings`
@@ -44,13 +44,13 @@ Required:
 
 Required:
 
-- `communication_method` (String)
-- `sender_address` (String)
-- `sender_name` (String)
+- `communication_method` (String) The communication method used for email notifications
+- `sender_address` (String) The email address that will be used as the sender of email notifications
+- `sender_name` (String) The name that will appear as the sender of email notifications
 
 Read-Only:
 
-- `service_setup_id` (String)
+- `service_setup_id` (String) The service setup ID for email notifications, automatically assigned by the API
 
 
 <a id="nestedatt--comm_settings--ivr"></a>
@@ -58,13 +58,13 @@ Read-Only:
 
 Required:
 
-- `communication_method` (String)
-- `sender_address` (String)
-- `sender_name` (String)
+- `communication_method` (String) The communication method used for IVR notifications
+- `sender_address` (String) The phone number or address that will be used as the sender of IVR notifications
+- `sender_name` (String) The name that will appear as the sender of IVR notifications
 
 Read-Only:
 
-- `service_setup_id` (String)
+- `service_setup_id` (String) The service setup ID for IVR notifications, automatically assigned by the API
 
 
 <a id="nestedatt--comm_settings--push"></a>
@@ -72,12 +72,12 @@ Read-Only:
 
 Required:
 
-- `communication_method` (String)
-- `sender_name` (String)
+- `communication_method` (String) The communication method used for PUSH notifications
+- `sender_name` (String) The name that will appear as the sender of PUSH notifications
 
 Read-Only:
 
-- `service_setup_id` (String)
+- `service_setup_id` (String) The service setup ID for PUSH notifications, automatically assigned by the API
 
 
 <a id="nestedatt--comm_settings--sms"></a>
@@ -85,10 +85,10 @@ Read-Only:
 
 Required:
 
-- `communication_method` (String)
-- `sender_address` (String)
-- `sender_name` (String)
+- `communication_method` (String) The communication method used for SMS notifications
+- `sender_address` (String) The phone number or address that will be used as the sender of SMS notifications
+- `sender_name` (String) The name that will appear as the sender of SMS notifications
 
 Read-Only:
 
-- `service_setup_id` (String) The provider UUID used to send the notifications
+- `service_setup_id` (String) The service setup ID for SMS notifications, automatically assigned by the API
