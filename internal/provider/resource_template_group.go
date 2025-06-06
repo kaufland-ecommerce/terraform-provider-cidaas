@@ -2,6 +2,8 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -9,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
-	"strings"
+	"github.com/real-digital/terraform-provider-cidaas/internal/util"
 )
 
 type templateGroupResource struct {
@@ -181,15 +183,6 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 
 	existingGroup, _ := r.provider.client.GetTemplateGroup(plan.ID.ValueString())
 
-	if existingGroup != nil && existingGroup.ID == plan.ID.ValueString() {
-		resp.Diagnostics.AddWarning("Attempting to create a template group with and existing ID", "Operation skipped. ID: "+plan.ID.ValueString())
-		r.UpdateStateWithNewValues(existingGroup, &plan)
-
-		diags = resp.State.Set(ctx, &plan)
-		resp.Diagnostics.Append(diags...)
-		return
-	}
-
 	createGroupRequest := client.CreateTemplateGroupRequest{
 		ID:            plan.ID.ValueString(),
 		Description:   plan.Description.ValueString(),
@@ -200,35 +193,246 @@ func (r templateGroupResource) Create(ctx context.Context, req resource.CreateRe
 			FromGroupId: "default",
 			Locale:      []client.CreateTemplateGroupCopyLocale{},
 		},
+		Owner: util.ToStringPointer("client"),
 	}
+
 	createGroupRequest.Copy.Locale = append(createGroupRequest.Copy.Locale, client.CreateTemplateGroupCopyLocale{
 		From: plan.DefaultLocale.ValueString(),
 		To:   plan.DefaultLocale.ValueString(),
 	})
 
-	createGroupResponse, err := r.provider.client.CreateTemplateGroup(createGroupRequest)
+	if existingGroup != nil {
+		resp.Diagnostics.AddWarning("Attempting to create a template group with and existing ID", "Applying update instead: "+plan.ID.ValueString())
+		r.doUpsert(ctx, resp, &plan, diags, existingGroup)
+		return
+	}
+
+	createdGroup, err := r.provider.client.CreateTemplateGroup(createGroupRequest)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "already templates found for the locales") {
-			resp.Diagnostics.AddWarning("Template group already exists", "Skipping operation")
-			diags = resp.State.Set(ctx, &plan)
-			resp.Diagnostics.Append(diags...)
-			return
-		}
+		reqStr, _ := json.Marshal(createGroupRequest)
 		resp.Diagnostics.AddError(
 			"Error creating template group",
-			"Template group ID: "+plan.ID.ValueString()+", unexpected error: "+err.Error(),
+			"error: "+err.Error()+"\n Request: "+string(reqStr),
+		)
+		return
+	}
+	if createdGroup == nil {
+		resp.Diagnostics.AddError("Error creating template group", "No group data returned after creation")
+		return
+	}
+
+	// As creating a template group uses a different payload in the create request we need to update the recently created group with the other paramas not sent in the create request
+	r.doUpsert(ctx, resp, &plan, diags, createdGroup)
+	return
+}
+
+// buildEmailConfig creates an EmailSenderConfig from plan and existing values
+func buildEmailConfig(planConfig EmailSenderConfig, existingCommMethod, existingSenderName, existingSenderAddress, serviceSetupId string) client.EmailSenderConfig {
+	commMethod := existingCommMethod
+	if planConfig.CommunicationMethod.ValueString() != "" {
+		commMethod = planConfig.CommunicationMethod.ValueString()
+	}
+
+	senderName := existingSenderName
+	if planConfig.SenderName.ValueString() != "" {
+		senderName = planConfig.SenderName.ValueString()
+	}
+
+	senderAddress := existingSenderAddress
+	if planConfig.SenderAddress.ValueString() != "" {
+		senderAddress = planConfig.SenderAddress.ValueString()
+	}
+
+	return client.EmailSenderConfig{
+		CommunicationMethod: commMethod,
+		SenderName:          senderName,
+		SenderAddress:       senderAddress,
+		ServiceSetupId:      serviceSetupId,
+	}
+}
+
+// buildSmsConfig creates a SmsSenderConfig from plan and existing values
+func buildSmsConfig(planConfig SmsSenderConfig, existingCommMethod, existingSenderName, existingSenderAddress, serviceSetupId string) client.SmsSenderConfig {
+	commMethod := existingCommMethod
+	if planConfig.CommunicationMethod.ValueString() != "" {
+		commMethod = planConfig.CommunicationMethod.ValueString()
+	}
+
+	senderName := existingSenderName
+	if planConfig.SenderName.ValueString() != "" {
+		senderName = planConfig.SenderName.ValueString()
+	}
+
+	senderAddress := existingSenderAddress
+	if planConfig.SenderAddress.ValueString() != "" {
+		senderAddress = planConfig.SenderAddress.ValueString()
+	}
+
+	return client.SmsSenderConfig{
+		CommunicationMethod: commMethod,
+		SenderName:          senderName,
+		SenderAddress:       senderAddress,
+		ServiceSetupId:      serviceSetupId,
+	}
+}
+
+// buildIvrConfig creates an IVRSenderConfig from plan and existing values
+func buildIvrConfig(planConfig IVRSenderConfig, existingCommMethod, existingSenderName, existingSenderAddress, serviceSetupId string) client.IVRSenderConfig {
+	commMethod := existingCommMethod
+	if planConfig.CommunicationMethod.ValueString() != "" {
+		commMethod = planConfig.CommunicationMethod.ValueString()
+	}
+
+	senderName := existingSenderName
+	if planConfig.SenderName.ValueString() != "" {
+		senderName = planConfig.SenderName.ValueString()
+	}
+
+	senderAddress := existingSenderAddress
+	if planConfig.SenderAddress.ValueString() != "" {
+		senderAddress = planConfig.SenderAddress.ValueString()
+	}
+
+	return client.IVRSenderConfig{
+		CommunicationMethod: commMethod,
+		SenderName:          senderName,
+		SenderAddress:       senderAddress,
+		ServiceSetupId:      serviceSetupId,
+	}
+}
+
+// buildPushConfig creates a PushSenderConfig from plan and existing values
+func buildPushConfig(planConfig PushSenderConfig, existingCommMethod, existingSenderName, serviceSetupId string) client.PushSenderConfig {
+	commMethod := existingCommMethod
+	if planConfig.CommunicationMethod.ValueString() != "" {
+		commMethod = planConfig.CommunicationMethod.ValueString()
+	}
+
+	senderName := existingSenderName
+	if planConfig.SenderName.ValueString() != "" {
+		senderName = planConfig.SenderName.ValueString()
+	}
+
+	return client.PushSenderConfig{
+		CommunicationMethod: commMethod,
+		SenderName:          senderName,
+		ServiceSetupId:      serviceSetupId,
+	}
+}
+
+// processUpdateResponse handles the update response and updates the state
+func (r templateGroupResource) processUpdateResponse(ctx context.Context, resp *resource.CreateResponse, plan *TemplateGroup, diags diag.Diagnostics, updateResponse *client.TemplateGroup) {
+	if updateResponse == nil {
+		resp.Diagnostics.AddError(
+			"Error creating Template Group",
+			"Empty result after create",
 		)
 		return
 	}
 
-	r.UpdateStateWithNewValues(createGroupResponse, &plan)
+	r.UpdateStateWithNewValues(updateResponse, plan)
 
-	diags = resp.State.Set(ctx, &plan)
+	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
+}
+
+// createUpdateRequest creates a client.TemplateGroup for updating based on the existing group
+func createUpdateRequest(
+	plan *TemplateGroup,
+	id string,
+	description string,
+	tgType string,
+	defaultLocale string,
+	emailServiceSetupId string,
+	emailCommMethod string,
+	emailSenderName string,
+	emailSenderAddress string,
+	smsServiceSetupId string,
+	smsCommMethod string,
+	smsSenderName string,
+	smsSenderAddress string,
+	ivrServiceSetupId string,
+	ivrCommMethod string,
+	ivrSenderName string,
+	ivrSenderAddress string,
+	pushServiceSetupId string,
+	pushCommMethod string,
+	pushSenderName string,
+) client.TemplateGroup {
+	return client.TemplateGroup{
+		ID:            id,
+		Description:   description,
+		TgType:        tgType,
+		DefaultLocale: defaultLocale,
+		CommSettings: client.TemplateGroupComSettings{
+			Email: buildEmailConfig(
+				plan.CommSettings.Email,
+				emailCommMethod,
+				emailSenderName,
+				emailSenderAddress,
+				emailServiceSetupId,
+			),
+			SMS: buildSmsConfig(
+				plan.CommSettings.SMS,
+				smsCommMethod,
+				smsSenderName,
+				smsSenderAddress,
+				smsServiceSetupId,
+			),
+			IVR: buildIvrConfig(
+				plan.CommSettings.IVR,
+				ivrCommMethod,
+				ivrSenderName,
+				ivrSenderAddress,
+				ivrServiceSetupId,
+			),
+			Push: buildPushConfig(
+				plan.CommSettings.Push,
+				pushCommMethod,
+				pushSenderName,
+				pushServiceSetupId,
+			),
+		},
+	}
+}
+
+func (r templateGroupResource) doUpsert(ctx context.Context, resp *resource.CreateResponse, plan *TemplateGroup, diags diag.Diagnostics, existing *client.TemplateGroup) {
+	groupToUpdate := createUpdateRequest(
+		plan,
+		existing.ID,
+		existing.Description,
+		existing.TgType,
+		existing.DefaultLocale,
+		existing.CommSettings.Email.ServiceSetupId,
+		existing.CommSettings.Email.CommunicationMethod,
+		existing.CommSettings.Email.SenderName,
+		existing.CommSettings.Email.SenderAddress,
+		existing.CommSettings.SMS.ServiceSetupId,
+		existing.CommSettings.SMS.CommunicationMethod,
+		existing.CommSettings.SMS.SenderName,
+		existing.CommSettings.SMS.SenderAddress,
+		existing.CommSettings.IVR.ServiceSetupId,
+		existing.CommSettings.IVR.CommunicationMethod,
+		existing.CommSettings.IVR.SenderName,
+		existing.CommSettings.IVR.SenderAddress,
+		existing.CommSettings.Push.ServiceSetupId,
+		existing.CommSettings.Push.CommunicationMethod,
+		existing.CommSettings.Push.SenderName,
+	)
+
+	// Update the template group
+	updateResponse, errUpdate := r.provider.client.UpdateTemplateGroup(groupToUpdate)
+	if errUpdate != nil {
+		resp.Diagnostics.AddError(
+			"Error creating template group",
+			"Template group ID: "+plan.ID.ValueString()+", unexpected error: "+errUpdate.Error(),
+		)
 		return
 	}
+
+	// Process the update response
+	r.processUpdateResponse(ctx, resp, plan, diags, updateResponse)
 }
 
 func (r templateGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -250,7 +454,7 @@ func (r templateGroupResource) Read(ctx context.Context, req resource.ReadReques
 	templateGroup, err := r.provider.client.GetTemplateGroup(groupId)
 	if err != nil {
 		if err.Error() == "resource not found" {
-			resp.Diagnostics.AddWarning("Template group not found", "Could not find template group with id "+groupId)
+			// Resource not found, remove it from state without warning
 			req.State.RemoveResource(ctx)
 			resp.State.RemoveResource(ctx)
 			return

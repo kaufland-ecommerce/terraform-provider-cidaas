@@ -8,7 +8,9 @@ import (
 )
 
 type templateGroupResponse struct {
-	Data TemplateGroup `json:"data"`
+	Success bool          `json:"success"`
+	Status  int           `json:"status"`
+	Data    TemplateGroup `json:"data"`
 }
 
 func (c *client) CreateTemplateGroup(group CreateTemplateGroupRequest) (*TemplateGroup, error) {
@@ -35,14 +37,18 @@ func (c *client) CreateTemplateGroup(group CreateTemplateGroupRequest) (*Templat
 		return nil, err
 	}
 
-	var templateGroup TemplateGroup
-	err = json.Unmarshal(resp, &templateGroup)
+	var groupResponse templateGroupResponse
+	err = json.Unmarshal(resp, &groupResponse)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &templateGroup, nil
+	if groupResponse.Data.CommSettings.SMS.ServiceSetupId == "" || groupResponse.Data.CommSettings.Push.ServiceSetupId == "" || groupResponse.Data.CommSettings.IVR.ServiceSetupId == "" {
+		return nil, fmt.Errorf("invalid response for serviceSetupId after creating template group, payload: " + string(resp))
+	}
+
+	return &groupResponse.Data, nil
 }
 
 func (c *client) UpdateTemplateGroup(group TemplateGroup) (*TemplateGroup, error) {

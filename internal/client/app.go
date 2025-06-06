@@ -12,6 +12,12 @@ type appResponse struct {
 	Data   App `json:"data"`
 }
 
+type appListResponse struct {
+	Success bool  `json:"success"`
+	Status  int   `json:"status"`
+	Data    []App `json:"data"`
+}
+
 func (c *client) CreateApp(app *App) (*App, error) {
 	rb, err := json.Marshal(app)
 	if err != nil {
@@ -78,6 +84,47 @@ func (c *client) GetApp(clientId string) (*App, error) {
 	}
 
 	return &response.Data, err
+}
+
+func (c *client) GetAppByName(clientName string) (*App, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/apps-srv/clients/list", c.HostUrl), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := c.doRequest(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if body == nil {
+		return nil, nil
+	}
+
+	var response appListResponse
+	err = json.Unmarshal(body, &response)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Search for the app with matching client_name
+	for _, app := range response.Data {
+		if app.ClientName == clientName {
+			// Found matching app
+			appCopy := app // Create a copy to avoid returning a reference to a loop variable
+			err = c.prepareResponse(&appCopy)
+			if err != nil {
+				return nil, err
+			}
+			return &appCopy, nil
+		}
+	}
+
+	// No matching app found
+	return nil, fmt.Errorf("no app found with client_name: %s", clientName)
 }
 
 func (c *client) UpdateApp(app App) (*App, error) {
