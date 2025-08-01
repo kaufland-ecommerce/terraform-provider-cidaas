@@ -30,7 +30,6 @@ description: |-
 - `auto_login_after_register` (Boolean) If set, customers will be logged in directly after registrtion
 - `client_name` (String)
 - `client_type` (String)
-- `communication_medium_verification` (String)
 - `company_address` (String)
 - `company_name` (String)
 - `company_website` (String)
@@ -61,6 +60,7 @@ description: |-
 - `allowed_groups` (Attributes List) (see [below for nested schema](#nestedatt--allowed_groups))
 - `allowed_mfa` (List of String)
 - `client_display_name` (String)
+- `communication_medium_verification` (String) This is made optional to enable support of two CIDAAS versions at the same time
 - `email_verification_required` (Boolean, Deprecated)
 - `mobile_number_verification_required` (Boolean, Deprecated)
 - `oauth_standard` (String) Oauth standard used, default is OAuth2.1
