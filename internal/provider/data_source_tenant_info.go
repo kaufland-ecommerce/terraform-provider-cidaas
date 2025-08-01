@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -54,7 +55,7 @@ func (c tenantInfoDataSource) Read(ctx context.Context, req datasource.ReadReque
 	info, err := c.provider.client.GetTenantInfo()
 
 	if err != nil {
-		resp.Diagnostics.AddError("Could not fetch social provider",
+		resp.Diagnostics.AddError("Could not fetch tenant info",
 			err.Error(),
 		)
 		return

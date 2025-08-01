@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
+
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/real-digital/terraform-provider-cidaas/internal/provider"
-	"log"
 )
 
 var (

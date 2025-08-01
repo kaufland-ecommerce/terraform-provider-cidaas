@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -20,7 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 	"golang.org/x/exp/slices"
-	"strings"
 )
 
 type appResource struct {
@@ -781,6 +782,10 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Di
 		AllowedWebOrigins:            plan.AllowedWebOrigins,
 		AllowedOrigins:               plan.AllowedOrigins,
 		AllowedMfa:                   plan.AllowedMfa,
+
+		// @Deprecated Remove this in the future
+		EmailVerificationRequired:        plan.EmailVerificationRequired.ValueBoolPointer(),
+		MobileNumberVerificationRequired: plan.MobileNumberVerificationRequired.ValueBoolPointer(),
 
 		SocialProviders: []client.SocialProvider{},
 		CustomProviders: []client.CustomProvider{},
