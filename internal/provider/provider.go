@@ -139,11 +139,6 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		"host":           host,
 	})
 
-	res.Diagnostics.AddWarning(
-		"is_at_least_on_v39",
-		fmt.Sprintf("%t %s", isAtLeastOnV39, host),
-	)
-
 	c, err := client.NewClient(&host, &clientId, &clientSecret)
 
 	if err != nil {
