@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -20,7 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 	"golang.org/x/exp/slices"
-	"strings"
 )
 
 type appResource struct {
@@ -256,7 +257,8 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				Optional:    true,
 			},
 			"communication_medium_verification": schema.StringAttribute{
-				Required: true,
+				Optional:    true,
+				Description: "This is made optional to enable support of two CIDAAS versions at the same time",
 			},
 			"email_verification_required": schema.BoolAttribute{
 				Optional:           true,
@@ -429,7 +431,7 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	plannedApp, diags := planToApp(ctx, &plan, &plan)
+	plannedApp, diags := planToApp(ctx, &plan, &plan, r.provider.isAtLeastOnV39)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -470,7 +472,7 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 
 	var state App
 
-	diags = applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -513,7 +515,7 @@ func (r appResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	diags = applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -541,7 +543,7 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	resp.Diagnostics.Append(diags...)
 
-	plannedApp, diags := planToApp(ctx, &plan, &state)
+	plannedApp, diags := planToApp(ctx, &plan, &state, r.provider.isAtLeastOnV39)
 
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -557,7 +559,7 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	diags = applyAppToState(ctx, &state, app)
+	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -607,18 +609,13 @@ func (r appResource) ImportState(ctx context.Context, req resource.ImportStateRe
 		return
 	}
 
-	applyAppToState(ctx, &state, app)
-
-	if err != nil {
-		resp.Diagnostics.AddError("Error importing app", err.Error())
-		return
-	}
+	applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
 
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
-func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diagnostics {
+func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeastOnV39 bool) diag.Diagnostics {
 	ret := diag.Diagnostics{}
 
 	var diags diag.Diagnostics
@@ -637,7 +634,6 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.FdsEnabled = types.BoolValue(app.FdsEnabled)
 	state.EnablePasswordlessAuth = types.BoolValue(app.EnablePasswordlessAuth)
 	state.EnableDeduplication = types.BoolValue(app.EnableDeduplication)
-	state.CommunicationMediumVerification = types.StringValue(app.CommunicationMediumVerification)
 	state.HostedPageGroup = types.StringValue(app.HostedPageGroup)
 	state.PrimaryColor = types.StringValue(app.PrimaryColor)
 	state.AccentColor = types.StringValue(app.AccentColor)
@@ -653,7 +649,6 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.IsLoginSuccessPageEnabled = types.BoolValue(app.IsLoginSuccessPageEnabled)
 	state.JweEnabled = types.BoolValue(app.JweEnabled)
 	state.AlwaysAskMfa = types.BoolValue(app.AlwaysAskMfa)
-	state.OauthStandard = types.StringValue(app.OauthStandard)
 
 	state.AllowedGroups, diags = types.ListValueFrom(ctx, types.ObjectType{
 		AttrTypes: map[string]attr.Type{
@@ -722,51 +717,53 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 			"public_key":  types.StringValue(app.AppKey.PublicKey),
 		},
 	)
-	// @Deprecated Remove this in the future
-	state.EmailVerificationRequired = types.BoolPointerValue(app.EmailVerificationRequired)
-	state.MobileNumberVerificationRequired = types.BoolPointerValue(app.MobileNumberVerificationRequired)
+	if isAtLeastOnV39 {
+		state.OauthStandard = types.StringValue(app.OauthStandard)
+		state.CommunicationMediumVerification = types.StringValue(app.CommunicationMediumVerification)
+	} else {
+		state.EmailVerificationRequired = types.BoolPointerValue(app.EmailVerificationRequired)
+		state.MobileNumberVerificationRequired = types.BoolPointerValue(app.MobileNumberVerificationRequired)
+	}
 
 	ret.Append(diags...)
 
 	return ret
 }
 
-func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Diagnostics) {
+func planToApp(ctx context.Context, plan *App, state *App, isAtLeastOnV39 bool) (*client.App, diag.Diagnostics) {
 	ret := diag.Diagnostics{}
 
 	var diags diag.Diagnostics
 	plannedApp := client.App{
-		ID:                              state.ID.ValueString(),
-		AppOwner:                        state.AppOwner.ValueString(),
-		BotProvider:                     state.BotProvider.ValueString(),
-		ClientSecret:                    state.ClientSecret.ValueString(),
-		ClientId:                        state.ClientId.ValueString(),
-		ClientDisplayName:               plan.ClientDisplayName.ValueString(),
-		ClientName:                      plan.ClientName.ValueString(),
-		ClientType:                      plan.ClientType.ValueString(),
-		IsRememberMeSelected:            plan.IsRememberMeSelected.ValueBool(),
-		AllowDisposableEmail:            plan.AllowDisposableEmail.ValueBool(),
-		AutoLoginAfterRegister:          plan.AutoLoginAfterRegister.ValueBool(),
-		FdsEnabled:                      plan.FdsEnabled.ValueBool(),
-		EnablePasswordlessAuth:          plan.EnablePasswordlessAuth.ValueBool(),
-		EnableDeduplication:             plan.EnableDeduplication.ValueBool(),
-		CommunicationMediumVerification: plan.CommunicationMediumVerification.ValueString(),
-		HostedPageGroup:                 plan.HostedPageGroup.ValueString(),
-		PrimaryColor:                    plan.PrimaryColor.ValueString(),
-		AccentColor:                     plan.AccentColor.ValueString(),
-		CompanyName:                     plan.CompanyName.ValueString(),
-		CompanyWebsite:                  plan.CompanyWebsite.ValueString(),
-		CompanyAddress:                  plan.CompanyAddress.ValueString(),
-		TokenLifetimeInSeconds:          plan.TokenLifetimeInSeconds.ValueInt64(),
-		IdTokenLifetimeInSeconds:        plan.IdTokenLifetimeInSeconds.ValueInt64(),
-		RefreshTokenLifetimeInSeconds:   plan.RefreshTokenLifetimeInSeconds.ValueInt64(),
-		EnableBotDetection:              plan.EnableBotDetection.ValueBool(),
-		IsLoginSuccessPageEnabled:       plan.IsLoginSuccessPageEnabled.ValueBool(),
-		JweEnabled:                      plan.JweEnabled.ValueBool(),
-		AlwaysAskMfa:                    plan.AlwaysAskMfa.ValueBool(),
-		RegisterWithLoginInformation:    plan.RegisterWithLoginInformation.ValueBool(),
-		AcceptRolesInTheRegistration:    plan.AcceptRolesInTheRegistration.ValueBool(),
-		OauthStandard:                   plan.OauthStandard.ValueString(),
+		ID:                            state.ID.ValueString(),
+		AppOwner:                      state.AppOwner.ValueString(),
+		BotProvider:                   state.BotProvider.ValueString(),
+		ClientSecret:                  state.ClientSecret.ValueString(),
+		ClientId:                      state.ClientId.ValueString(),
+		ClientDisplayName:             plan.ClientDisplayName.ValueString(),
+		ClientName:                    plan.ClientName.ValueString(),
+		ClientType:                    plan.ClientType.ValueString(),
+		IsRememberMeSelected:          plan.IsRememberMeSelected.ValueBool(),
+		AllowDisposableEmail:          plan.AllowDisposableEmail.ValueBool(),
+		AutoLoginAfterRegister:        plan.AutoLoginAfterRegister.ValueBool(),
+		FdsEnabled:                    plan.FdsEnabled.ValueBool(),
+		EnablePasswordlessAuth:        plan.EnablePasswordlessAuth.ValueBool(),
+		EnableDeduplication:           plan.EnableDeduplication.ValueBool(),
+		HostedPageGroup:               plan.HostedPageGroup.ValueString(),
+		PrimaryColor:                  plan.PrimaryColor.ValueString(),
+		AccentColor:                   plan.AccentColor.ValueString(),
+		CompanyName:                   plan.CompanyName.ValueString(),
+		CompanyWebsite:                plan.CompanyWebsite.ValueString(),
+		CompanyAddress:                plan.CompanyAddress.ValueString(),
+		TokenLifetimeInSeconds:        plan.TokenLifetimeInSeconds.ValueInt64(),
+		IdTokenLifetimeInSeconds:      plan.IdTokenLifetimeInSeconds.ValueInt64(),
+		RefreshTokenLifetimeInSeconds: plan.RefreshTokenLifetimeInSeconds.ValueInt64(),
+		EnableBotDetection:            plan.EnableBotDetection.ValueBool(),
+		IsLoginSuccessPageEnabled:     plan.IsLoginSuccessPageEnabled.ValueBool(),
+		JweEnabled:                    plan.JweEnabled.ValueBool(),
+		AlwaysAskMfa:                  plan.AlwaysAskMfa.ValueBool(),
+		RegisterWithLoginInformation:  plan.RegisterWithLoginInformation.ValueBool(),
+		AcceptRolesInTheRegistration:  plan.AcceptRolesInTheRegistration.ValueBool(),
 
 		AllowLoginWith:               plan.AllowLoginWith,
 		RedirectUris:                 plan.RedirectUris,
@@ -804,6 +801,14 @@ func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Di
 				ProviderName: customProvider.ProviderName.ValueString(),
 			},
 		)
+	}
+
+	if isAtLeastOnV39 {
+		plannedApp.OauthStandard = plan.OauthStandard.ValueString()
+		plannedApp.CommunicationMediumVerification = plan.CommunicationMediumVerification.ValueString()
+	} else {
+		plannedApp.EmailVerificationRequired = plan.EmailVerificationRequired.ValueBoolPointer()
+		plannedApp.MobileNumberVerificationRequired = plan.MobileNumberVerificationRequired.ValueBoolPointer()
 	}
 
 	diags = tfsdk.ValueAs(ctx, plan.AllowedGroups, &plannedApp.AllowedGroups)

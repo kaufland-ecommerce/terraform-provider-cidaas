@@ -3,11 +3,13 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"os"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -26,9 +28,10 @@ func New(version string) func() provider.Provider {
 }
 
 type cidaasProvider struct {
-	configured bool
-	client     client.Client
-	version    string
+	configured     bool
+	client         client.Client
+	version        string
+	isAtLeastOnV39 bool
 }
 
 func (p *cidaasProvider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -48,14 +51,18 @@ func (p *cidaasProvider) Schema(_ context.Context, _ provider.SchemaRequest, res
 				Optional:  true,
 				Sensitive: true,
 			},
+			"is_at_least_on_v39": schema.BoolAttribute{
+				Optional: true,
+			},
 		},
 	}
 }
 
 type providerData struct {
-	Host         types.String `tfsdk:"host"`
-	ClientId     types.String `tfsdk:"client_id"`
-	ClientSecret types.String `tfsdk:"client_secret"`
+	Host           types.String `tfsdk:"host"`
+	ClientId       types.String `tfsdk:"client_id"`
+	ClientSecret   types.String `tfsdk:"client_secret"`
+	IsAtLeastOnV39 types.Bool   `tfsdk:"is_at_least_on_v39"`
 }
 
 func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRequest, res *provider.ConfigureResponse) {
@@ -116,6 +123,22 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		clientSecret = config.ClientSecret.ValueString()
 	}
 
+	var isAtLeastOnV39 bool
+	if config.IsAtLeastOnV39.IsUnknown() {
+		tflog.Info(ctx, "IsAtLeastOnV39 is unknown, defaulting to true", map[string]any{
+			"host": host,
+		})
+
+		isAtLeastOnV39 = true
+	} else {
+		isAtLeastOnV39 = config.IsAtLeastOnV39.ValueBool()
+	}
+
+	tflog.Info(ctx, "isAtLeastOnV39 final value", map[string]any{
+		"isAtLeastOnV39": isAtLeastOnV39,
+		"host":           host,
+	})
+
 	c, err := client.NewClient(&host, &clientId, &clientSecret)
 
 	if err != nil {
@@ -127,6 +150,7 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 
 	p.client = c
 	p.configured = true
+	p.isAtLeastOnV39 = isAtLeastOnV39
 }
 
 func (p *cidaasProvider) Resources(context.Context) []func() resource.Resource {
