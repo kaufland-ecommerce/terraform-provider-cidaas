@@ -1,12 +1,12 @@
 module github.com/real-digital/terraform-provider-cidaas
 
-go 1.23.7
+go 1.24.0
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.22.0
 	github.com/hashicorp/terraform-plugin-framework v1.15.1
 	github.com/hashicorp/terraform-plugin-framework-validators v0.18.0
-	github.com/hashicorp/terraform-plugin-log v0.9.0
+	github.com/hashicorp/terraform-plugin-log v0.10.0
 	golang.org/x/exp v0.0.0-20240604190554-fc45aab8b7f8
 )
 
