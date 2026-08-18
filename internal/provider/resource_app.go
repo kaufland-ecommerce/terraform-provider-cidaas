@@ -438,36 +438,13 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	var app *client.App
-	result, err := r.provider.client.CreateApp(plannedApp)
-	app = result
+	app, warning, err := createOrUpsertApp(r.provider.client, plannedApp)
+	if warning != "" {
+		resp.Diagnostics.AddWarning("Attempting to create an app that already exists", warning)
+	}
 	if err != nil {
-		if strings.Contains(err.Error(), "already exists") {
-			resp.Diagnostics.AddWarning("Attempting to create an app that already exists", "Applying update instead")
-			// try to update instead
-			existingApp, findErr := r.provider.client.GetAppByName(plannedApp.ClientName)
-			if findErr != nil {
-				resp.Diagnostics.AddError("Error upserting the app", "Could not find existing app: "+findErr.Error())
-				return
-			}
-			plannedApp.ID = existingApp.ID
-			plannedApp.ClientId = existingApp.ClientId
-			resultUpd, updErr := r.provider.client.UpdateApp(*plannedApp)
-			if updErr != nil {
-				resp.Diagnostics.AddError(
-					"Could not create app",
-					updErr.Error(),
-				)
-				return
-			}
-			app = resultUpd
-		} else {
-			resp.Diagnostics.AddError(
-				"Could not create app",
-				err.Error(),
-			)
-			return
-		}
+		resp.Diagnostics.AddError("Could not create app", err.Error())
+		return
 	}
 
 	var state App
@@ -550,10 +527,7 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	app, err := r.provider.client.UpdateApp(*plannedApp)
-
-	//@FIXME: The property is being ignored from the update, setting to planned value will fix the inconsistencies
-	app.AllowedOrigins = plannedApp.AllowedOrigins
+	app, err := updateAndRefetchApp(r.provider.client, plannedApp)
 	if err != nil {
 		resp.Diagnostics.AddError("Error Updating app", err.Error())
 		return
@@ -568,6 +542,67 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
+}
+
+// createOrUpsertApp creates the app (falling back to an update if it already exists), then
+// re-fetches it by ID via a real GET. The create/update response body is not guaranteed to
+// reflect the full persisted object (see the prepareResponse comment in internal/client/app.go),
+// so state must never be built directly from it. The returned warning, if non-empty, should be
+// surfaced as a Terraform diagnostics warning by the caller.
+func createOrUpsertApp(c client.Client, plannedApp *client.App) (app *client.App, warning string, err error) {
+	app, err = c.CreateApp(plannedApp)
+	if err != nil {
+		if !strings.Contains(err.Error(), "already exists") {
+			return nil, "", err
+		}
+
+		warning = "Applying update instead"
+
+		existingApp, findErr := c.GetAppByName(plannedApp.ClientName)
+		if findErr != nil {
+			return nil, "", fmt.Errorf("could not find existing app: %w", findErr)
+		}
+		plannedApp.ID = existingApp.ID
+		plannedApp.ClientId = existingApp.ClientId
+
+		app, err = c.UpdateApp(*plannedApp)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+
+	app, err = c.GetApp(app.ClientId)
+	if err != nil {
+		return nil, warning, err
+	}
+	if app == nil {
+		return nil, warning, fmt.Errorf("app not found immediately after creation")
+	}
+
+	return app, warning, nil
+}
+
+// updateAndRefetchApp updates the app, then re-fetches it by ID via a real GET for the same
+// reason createOrUpsertApp does. AllowedOrigins is re-applied from the plan afterwards because
+// the API silently ignores it on update (see the long-standing @FIXME below).
+func updateAndRefetchApp(c client.Client, plannedApp *client.App) (*client.App, error) {
+	_, err := c.UpdateApp(*plannedApp)
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := c.GetApp(plannedApp.ClientId)
+	if err != nil {
+		return nil, err
+	}
+	if app == nil {
+		return nil, fmt.Errorf("app not found immediately after update")
+	}
+
+	//@FIXME: The property is being ignored from the update, setting to planned value will fix the inconsistencies
+	app.AllowedOrigins = plannedApp.AllowedOrigins
+
+	return app, nil
 }
 
 func (r appResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
