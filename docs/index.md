@@ -14,10 +14,9 @@ description: |-
 
 ```terraform
 provider "cidaas" {
-  host               = var.cidaas_host
-  client_id          = var.cidaas_client_id     # optionally use CIDAAS_CLIENT_ID env var
-  client_secret      = var.cidaas_client_secret # optionally use CIDAAS_CLIENT_SECRET env var
-  is_at_least_on_v39 = var.is_at_least_on_v39
+  host          = var.cidaas_host
+  client_id     = var.cidaas_client_id     # optionally use CIDAAS_CLIENT_ID env var
+  client_secret = var.cidaas_client_secret # optionally use CIDAAS_CLIENT_SECRET env var
 }
 ```
 
@@ -29,4 +28,3 @@ provider "cidaas" {
 - `client_id` (String)
 - `client_secret` (String, Sensitive)
 - `host` (String)
-- `is_at_least_on_v39` (Boolean)

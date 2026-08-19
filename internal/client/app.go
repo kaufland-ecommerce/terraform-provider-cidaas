@@ -18,8 +18,38 @@ type appListResponse struct {
 	Data    []App `json:"data"`
 }
 
+// basicSettingsFor builds the nested basic_settings sub-object the cidaas UI always sends
+// alongside the top-level fields. Fixes redirect_uris being dropped on write; does not fix
+// allowed_logout_urls (see nonInteractiveUnsupportedFields for that).
+func basicSettingsFor(app App) *BasicSettings {
+	return &BasicSettings{
+		ClientId:          app.ClientId,
+		RedirectUris:      app.RedirectUris,
+		AllowedLogoutUrls: app.AllowedLogoutUrls,
+		AppOwner:          app.AppOwner,
+		AllowedScopes:     app.AllowedScopes,
+		ClientSecrets:     []string{},
+	}
+}
+
 func (c *client) CreateApp(app *App) (*App, error) {
-	rb, err := json.Marshal(app)
+	toSend := *app
+
+	// cidaas's create endpoint rejects the request with "missing primaryColor or accentColor"
+	// (APP10015) if both are empty, even for NON_INTERACTIVE apps - even though it never
+	// actually persists either field for that client_type (confirmed via a follow-up GetApp).
+	// Fill in a harmless placeholder here rather than exposing this as something practitioners
+	// need to configure; it has no visible effect since it's never stored or read back.
+	// "#000000" alone did not satisfy the validation (still rejected as "missing"), so this
+	// uses a real value that's already accepted across the org's existing apps.
+	if toSend.ClientType == "NON_INTERACTIVE" && toSend.AccentColor == "" && toSend.PrimaryColor == "" {
+		toSend.AccentColor = "#ef4923"
+		toSend.PrimaryColor = "#f7941d"
+	}
+
+	toSend.BasicSettings = basicSettingsFor(toSend)
+
+	rb, err := json.Marshal(toSend)
 	if err != nil {
 		return nil, err
 	}
@@ -128,6 +158,8 @@ func (c *client) GetAppByName(clientName string) (*App, error) {
 }
 
 func (c *client) UpdateApp(app App) (*App, error) {
+	app.BasicSettings = basicSettingsFor(app)
+
 	rb, err := json.Marshal(app)
 	if err != nil {
 		return nil, err

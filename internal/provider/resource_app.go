@@ -13,8 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -80,10 +83,20 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 				},
 			},
 			"primary_color": schema.StringAttribute{
-				Optional: true,
+				Optional:    true,
+				Computed:    true,
+				Description: "Not supported for client_type = \"NON_INTERACTIVE\" apps; must be left unset there.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"accent_color": schema.StringAttribute{
-				Optional: true,
+				Optional:    true,
+				Computed:    true,
+				Description: "Not supported for client_type = \"NON_INTERACTIVE\" apps; must be left unset there.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"client_type": schema.StringAttribute{
 				Required: true,
@@ -97,7 +110,12 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			// App Settings
 			"oauth_standard": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "Oauth standard used, default is OAuth2.1",
+				Default:     stringdefault.StaticString("OAuth2.1"),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"client_id": schema.StringAttribute{
 				Computed: true,
@@ -122,7 +140,12 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			},
 			"allowed_logout_urls": schema.ListAttribute{
 				ElementType: types.StringType,
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
+				Description: "Not supported for client_type = \"NON_INTERACTIVE\" apps; must be left unset there.",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.UseStateForUnknown(),
+				},
 				Validators: []validator.List{
 					listvalidator.SizeAtLeast(1),
 				},
@@ -258,15 +281,11 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			},
 			"communication_medium_verification": schema.StringAttribute{
 				Optional:    true,
-				Description: "This is made optional to enable support of two CIDAAS versions at the same time",
-			},
-			"email_verification_required": schema.BoolAttribute{
-				Optional:           true,
-				DeprecationMessage: "This field is deprecated, use communication_medium_verification instead",
-			},
-			"mobile_number_verification_required": schema.BoolAttribute{
-				Optional:           true,
-				DeprecationMessage: "This field is deprecated, use communication_medium_verification instead",
+				Computed:    true,
+				Description: "Not supported for client_type = \"NON_INTERACTIVE\" apps; must be left unset there.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 
 			// Captcha
@@ -279,7 +298,12 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 
 			// Template Group
 			"hosted_page_group": schema.StringAttribute{
-				Required: true,
+				Optional:    true,
+				Computed:    true,
+				Description: "Not supported for client_type = \"NON_INTERACTIVE\" apps; must be left unset there.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 
 			// Bot Detection
@@ -298,7 +322,12 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 
 			// Remember Me
 			"is_remember_me_selected": schema.BoolAttribute{
-				Required: true,
+				Optional:    true,
+				Computed:    true,
+				Description: "Not supported for client_type = \"NON_INTERACTIVE\" apps; must be left unset there.",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 
 			// Success Page
@@ -396,6 +425,38 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	}
 }
 
+// nonInteractiveUnsupportedFields are fields cidaas silently drops for client_type =
+// "NON_INTERACTIVE" apps, causing a permanent "inconsistent result after apply" error if set.
+// Verified against cidaas's admin UI: accent_color, primary_color, hosted_page_group, and
+// is_remember_me_selected are absent from its save requests; communication_medium_verification
+// is sent as "none"; allowed_logout_urls has no UI field at all.
+var nonInteractiveUnsupportedFields = []string{
+	"accent_color",
+	"primary_color",
+	"hosted_page_group",
+	"communication_medium_verification",
+	"is_remember_me_selected",
+	// NON_INTERACTIVE apps have no browser session to redirect after logout. UI shows
+	// "Backchannel Logout URI" instead, no "Allowed Logout URLs" field.
+	"allowed_logout_urls",
+}
+
+// nonInteractiveFieldViolations returns the subset of nonInteractiveUnsupportedFields that are
+// set (true) in setFields, or nil if clientType isn't "NON_INTERACTIVE".
+func nonInteractiveFieldViolations(clientType string, setFields map[string]bool) []string {
+	if clientType != "NON_INTERACTIVE" {
+		return nil
+	}
+
+	var violations []string
+	for _, name := range nonInteractiveUnsupportedFields {
+		if setFields[name] {
+			violations = append(violations, name)
+		}
+	}
+	return violations
+}
+
 func (r appResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var allowedFields []string
 	var requiredFields []string
@@ -411,6 +472,70 @@ func (r appResource) ValidateConfig(ctx context.Context, req resource.ValidateCo
 			)
 		}
 	}
+
+	var clientType types.String
+	var accentColor, primaryColor, hostedPageGroup, communicationMediumVerification types.String
+	var isRememberMeSelected types.Bool
+	var allowedLogoutUrls []string
+
+	req.Config.GetAttribute(ctx, path.Root("client_type"), &clientType)
+	req.Config.GetAttribute(ctx, path.Root("accent_color"), &accentColor)
+	req.Config.GetAttribute(ctx, path.Root("primary_color"), &primaryColor)
+	req.Config.GetAttribute(ctx, path.Root("hosted_page_group"), &hostedPageGroup)
+	req.Config.GetAttribute(ctx, path.Root("communication_medium_verification"), &communicationMediumVerification)
+	req.Config.GetAttribute(ctx, path.Root("is_remember_me_selected"), &isRememberMeSelected)
+	req.Config.GetAttribute(ctx, path.Root("allowed_logout_urls"), &allowedLogoutUrls)
+
+	setFields := map[string]bool{
+		"accent_color":                      !accentColor.IsNull(),
+		"primary_color":                     !primaryColor.IsNull(),
+		"hosted_page_group":                 !hostedPageGroup.IsNull(),
+		"communication_medium_verification": !communicationMediumVerification.IsNull(),
+		"is_remember_me_selected":           !isRememberMeSelected.IsNull(),
+		"allowed_logout_urls":               allowedLogoutUrls != nil,
+	}
+
+	for _, name := range nonInteractiveFieldViolations(clientType.ValueString(), setFields) {
+		resp.Diagnostics.AddAttributeError(
+			path.Root(name),
+			"Field not supported for NON_INTERACTIVE apps",
+			fmt.Sprintf("cidaas does not persist %q for client_type = \"NON_INTERACTIVE\" apps (machine-to-machine clients have no login/hosted-page UI) — remove it from this resource's configuration.", name),
+		)
+	}
+}
+
+var _ resource.ResourceWithModifyPlan = (*appResource)(nil)
+
+// ModifyPlan rejects any attempt to change client_type on an existing app. There's no supported
+// migration path between client types, and both an in-place update (cidaas silently drops fields
+// depending on the target type) and an automatic destroy+recreate risk data loss or the
+// inconsistent-result errors this resource otherwise guards against - failing the operation
+// outright is the only safe option, leaving it to whoever's applying to decide how to proceed.
+func (r appResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		// Create or destroy; nothing to compare against.
+		return
+	}
+
+	var stateClientType, planClientType types.String
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("client_type"), &stateClientType)...)
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("client_type"), &planClientType)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if planClientType.IsUnknown() || planClientType.Equal(stateClientType) {
+		return
+	}
+
+	resp.Diagnostics.AddAttributeError(
+		path.Root("client_type"),
+		"client_type cannot be changed",
+		fmt.Sprintf(
+			"client_type is immutable once an app is created (was %q, now %q). Destroy and recreate the resource if a different client_type is needed.",
+			stateClientType.ValueString(), planClientType.ValueString(),
+		),
+	)
 }
 
 func (r appResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -431,48 +556,25 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	plannedApp, diags := planToApp(ctx, &plan, &plan, r.provider.isAtLeastOnV39)
+	plannedApp, diags := planToApp(ctx, &plan, &plan)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var app *client.App
-	result, err := r.provider.client.CreateApp(plannedApp)
-	app = result
+	app, warning, err := createOrUpsertApp(r.provider.client, plannedApp)
+	if warning != "" {
+		resp.Diagnostics.AddWarning("Attempting to create an app that already exists", warning)
+	}
 	if err != nil {
-		if strings.Contains(err.Error(), "already exists") {
-			resp.Diagnostics.AddWarning("Attempting to create an app that already exists", "Applying update instead")
-			// try to update instead
-			existingApp, findErr := r.provider.client.GetAppByName(plannedApp.ClientName)
-			if findErr != nil {
-				resp.Diagnostics.AddError("Error upserting the app", "Could not find existing app: "+findErr.Error())
-				return
-			}
-			plannedApp.ID = existingApp.ID
-			plannedApp.ClientId = existingApp.ClientId
-			resultUpd, updErr := r.provider.client.UpdateApp(*plannedApp)
-			if updErr != nil {
-				resp.Diagnostics.AddError(
-					"Could not create app",
-					updErr.Error(),
-				)
-				return
-			}
-			app = resultUpd
-		} else {
-			resp.Diagnostics.AddError(
-				"Could not create app",
-				err.Error(),
-			)
-			return
-		}
+		resp.Diagnostics.AddError("Could not create app", err.Error())
+		return
 	}
 
 	var state App
 
-	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
+	diags = applyAppToState(ctx, &state, app)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -515,7 +617,7 @@ func (r appResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
+	diags = applyAppToState(ctx, &state, app)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -543,23 +645,20 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	resp.Diagnostics.Append(diags...)
 
-	plannedApp, diags := planToApp(ctx, &plan, &state, r.provider.isAtLeastOnV39)
+	plannedApp, diags := planToApp(ctx, &plan, &state)
 
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	app, err := r.provider.client.UpdateApp(*plannedApp)
-
-	//@FIXME: The property is being ignored from the update, setting to planned value will fix the inconsistencies
-	app.AllowedOrigins = plannedApp.AllowedOrigins
+	app, err := updateAndRefetchApp(r.provider.client, plannedApp)
 	if err != nil {
 		resp.Diagnostics.AddError("Error Updating app", err.Error())
 		return
 	}
 
-	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
+	diags = applyAppToState(ctx, &state, app)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -568,6 +667,73 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
+}
+
+// createOrUpsertApp creates the app (falling back to an update if it already exists), then
+// re-fetches it by ID via a real GET. The create/update response body is not guaranteed to
+// reflect the full persisted object (see the prepareResponse comment in internal/client/app.go),
+// so state must never be built directly from it. The returned warning, if non-empty, should be
+// surfaced as a Terraform diagnostics warning by the caller.
+func createOrUpsertApp(c client.Client, plannedApp *client.App) (app *client.App, warning string, err error) {
+	app, err = c.CreateApp(plannedApp)
+	if err != nil {
+		if !strings.Contains(err.Error(), "already exists") {
+			return nil, "", err
+		}
+
+		warning = "Applying update instead"
+
+		existingApp, findErr := c.GetAppByName(plannedApp.ClientName)
+		if findErr != nil {
+			return nil, "", fmt.Errorf("could not find existing app: %w", findErr)
+		}
+		plannedApp.ID = existingApp.ID
+		plannedApp.ClientId = existingApp.ClientId
+	} else {
+		plannedApp.ID = app.ID
+		plannedApp.ClientId = app.ClientId
+	}
+
+	// CreateApp's POST doesn't reliably persist redirect_uris; a follow-up UpdateApp fixes
+	// it, matching the "already exists" fallback above. Does not fix allowed_logout_urls
+	// (see nonInteractiveUnsupportedFields).
+	_, err = c.UpdateApp(*plannedApp)
+	if err != nil {
+		return nil, warning, err
+	}
+
+	app, err = c.GetApp(plannedApp.ClientId)
+	if err != nil {
+		return nil, warning, err
+	}
+	if app == nil {
+		return nil, warning, fmt.Errorf("app not found immediately after creation")
+	}
+
+	return app, warning, nil
+}
+
+// updateAndRefetchApp updates the app, then re-fetches it by ID via a real GET for the same
+// reason createOrUpsertApp does. AllowedOrigins is re-applied from the plan afterwards because
+// the API silently ignores it on update (see the long-standing @FIXME below).
+func updateAndRefetchApp(c client.Client, plannedApp *client.App) (*client.App, error) {
+	_, err := c.UpdateApp(*plannedApp)
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := c.GetApp(plannedApp.ClientId)
+	if err != nil {
+		return nil, err
+	}
+	if app == nil {
+		return nil, fmt.Errorf("app not found immediately after update")
+	}
+
+	//@FIXME: The property is being ignored from the update, setting to planned value will fix the inconsistencies
+	app.AllowedOrigins = plannedApp.AllowedOrigins
+
+	return app, nil
 }
 
 func (r appResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -609,13 +775,13 @@ func (r appResource) ImportState(ctx context.Context, req resource.ImportStateRe
 		return
 	}
 
-	applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
+	applyAppToState(ctx, &state, app)
 
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
-func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeastOnV39 bool) diag.Diagnostics {
+func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diagnostics {
 	ret := diag.Diagnostics{}
 
 	var diags diag.Diagnostics
@@ -627,16 +793,29 @@ func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeast
 	state.ClientSecret = types.StringValue(app.ClientSecret)
 	state.ClientName = types.StringValue(app.ClientName)
 	state.ClientDisplayName = types.StringValue(app.ClientDisplayName)
-	state.IsRememberMeSelected = types.BoolValue(app.IsRememberMeSelected)
 	state.ClientType = types.StringValue(app.ClientType)
+
+	// cidaas doesn't persist these for NON_INTERACTIVE apps (see nonInteractiveUnsupportedFields) -
+	// report null rather than whatever zero/neutral value the API returns, matching what
+	// ValidateConfig requires the config to leave unset.
+	nonInteractive := app.ClientType == "NON_INTERACTIVE"
+	if nonInteractive {
+		state.IsRememberMeSelected = types.BoolNull()
+		state.HostedPageGroup = types.StringNull()
+		state.PrimaryColor = types.StringNull()
+		state.AccentColor = types.StringNull()
+	} else {
+		state.IsRememberMeSelected = types.BoolValue(app.IsRememberMeSelected)
+		state.HostedPageGroup = types.StringValue(app.HostedPageGroup)
+		state.PrimaryColor = types.StringValue(app.PrimaryColor)
+		state.AccentColor = types.StringValue(app.AccentColor)
+	}
+
 	state.AllowDisposableEmail = types.BoolValue(app.AllowDisposableEmail)
 	state.AllowGuestLogin = types.BoolValue(app.AllowGuestLogin)
 	state.FdsEnabled = types.BoolValue(app.FdsEnabled)
 	state.EnablePasswordlessAuth = types.BoolValue(app.EnablePasswordlessAuth)
 	state.EnableDeduplication = types.BoolValue(app.EnableDeduplication)
-	state.HostedPageGroup = types.StringValue(app.HostedPageGroup)
-	state.PrimaryColor = types.StringValue(app.PrimaryColor)
-	state.AccentColor = types.StringValue(app.AccentColor)
 	state.AutoLoginAfterRegister = types.BoolValue(app.AutoLoginAfterRegister)
 	state.AcceptRolesInTheRegistration = types.BoolValue(app.AcceptRolesInTheRegistration)
 	state.CompanyName = types.StringValue(app.CompanyName)
@@ -677,7 +856,12 @@ func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeast
 
 	state.Scopes = app.AllowedScopes
 	state.RedirectUris = app.RedirectUris
-	state.AllowedLogoutUrls = app.AllowedLogoutUrls
+	if nonInteractive {
+		state.AllowedLogoutUrls = types.ListNull(types.StringType)
+	} else {
+		state.AllowedLogoutUrls, diags = types.ListValueFrom(ctx, types.StringType, app.AllowedLogoutUrls)
+		ret.Append(diags...)
+	}
 	state.AdditionalAccessTokenPayload = app.AdditionalAccessTokenPayload
 	state.AllowLoginWith = app.AllowLoginWith
 	state.AllowedFields = app.AllowedFields
@@ -717,12 +901,11 @@ func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeast
 			"public_key":  types.StringValue(app.AppKey.PublicKey),
 		},
 	)
-	if isAtLeastOnV39 {
-		state.OauthStandard = types.StringValue(app.OauthStandard)
-		state.CommunicationMediumVerification = types.StringValue(app.CommunicationMediumVerification)
+	state.OauthStandard = types.StringValue(app.OauthStandard)
+	if nonInteractive {
+		state.CommunicationMediumVerification = types.StringNull()
 	} else {
-		state.EmailVerificationRequired = types.BoolPointerValue(app.EmailVerificationRequired)
-		state.MobileNumberVerificationRequired = types.BoolPointerValue(app.MobileNumberVerificationRequired)
+		state.CommunicationMediumVerification = types.StringValue(app.CommunicationMediumVerification)
 	}
 
 	ret.Append(diags...)
@@ -730,7 +913,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeast
 	return ret
 }
 
-func planToApp(ctx context.Context, plan *App, state *App, isAtLeastOnV39 bool) (*client.App, diag.Diagnostics) {
+func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Diagnostics) {
 	ret := diag.Diagnostics{}
 
 	var diags diag.Diagnostics
@@ -767,7 +950,6 @@ func planToApp(ctx context.Context, plan *App, state *App, isAtLeastOnV39 bool) 
 
 		AllowLoginWith:               plan.AllowLoginWith,
 		RedirectUris:                 plan.RedirectUris,
-		AllowedLogoutUrls:            plan.AllowedLogoutUrls,
 		AllowedScopes:                plan.Scopes,
 		AdditionalAccessTokenPayload: plan.AdditionalAccessTokenPayload,
 		AllowedFields:                plan.AllowedFields,
@@ -803,12 +985,16 @@ func planToApp(ctx context.Context, plan *App, state *App, isAtLeastOnV39 bool) 
 		)
 	}
 
-	if isAtLeastOnV39 {
-		plannedApp.OauthStandard = plan.OauthStandard.ValueString()
-		plannedApp.CommunicationMediumVerification = plan.CommunicationMediumVerification.ValueString()
-	} else {
-		plannedApp.EmailVerificationRequired = plan.EmailVerificationRequired.ValueBoolPointer()
-		plannedApp.MobileNumberVerificationRequired = plan.MobileNumberVerificationRequired.ValueBoolPointer()
+	plannedApp.OauthStandard = plan.OauthStandard.ValueString()
+	plannedApp.CommunicationMediumVerification = plan.CommunicationMediumVerification.ValueString()
+
+	// On a brand-new NON_INTERACTIVE resource with allowed_logout_urls left unset (as
+	// ValidateConfig requires), the plan value is legitimately unknown - there's no prior
+	// state for UseStateForUnknown to carry forward. []string can't represent unknown, so
+	// leave it at its zero value (nil) rather than attempting (and failing) the conversion.
+	if !plan.AllowedLogoutUrls.IsUnknown() {
+		diags = tfsdk.ValueAs(ctx, plan.AllowedLogoutUrls, &plannedApp.AllowedLogoutUrls)
+		ret.Append(diags...)
 	}
 
 	diags = tfsdk.ValueAs(ctx, plan.AllowedGroups, &plannedApp.AllowedGroups)
