@@ -124,8 +124,13 @@ func (p *cidaasProvider) Configure(ctx context.Context, req provider.ConfigureRe
 	}
 
 	var isAtLeastOnV39 bool
-	if config.IsAtLeastOnV39.IsUnknown() {
-		tflog.Info(ctx, "IsAtLeastOnV39 is unknown, defaulting to true", map[string]any{
+	if config.IsAtLeastOnV39.IsUnknown() || config.IsAtLeastOnV39.IsNull() {
+		// A provider block that never sets is_at_least_on_v39 resolves it to null (not
+		// unknown) - defaulting only on IsUnknown() silently fell through to ValueBool()'s
+		// false zero value here, which broke every field gated on isAtLeastOnV39
+		// (oauth_standard, communication_medium_verification) for any config that leaves
+		// this attribute unset, which is the common case.
+		tflog.Info(ctx, "IsAtLeastOnV39 is unset, defaulting to true", map[string]any{
 			"host": host,
 		})
 

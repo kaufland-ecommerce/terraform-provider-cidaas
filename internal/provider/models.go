@@ -113,7 +113,7 @@ type App struct {
 	OperationsAllowedGroups          types.List       `tfsdk:"operations_allowed_groups"`
 	AllowLoginWith                   []string         `tfsdk:"allow_login_with"`
 	RedirectUris                     []string         `tfsdk:"redirect_uris"`
-	AllowedLogoutUrls                []string         `tfsdk:"allowed_logout_urls"`
+	AllowedLogoutUrls                types.List       `tfsdk:"allowed_logout_urls"`
 	SocialProviders                  []SocialProvider `tfsdk:"social_providers"`
 	CustomProviders                  []CustomProvider `tfsdk:"custom_providers"`
 	AdditionalAccessTokenPayload     []string         `tfsdk:"additional_access_token_payload"`

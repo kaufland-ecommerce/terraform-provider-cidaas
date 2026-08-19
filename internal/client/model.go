@@ -90,6 +90,21 @@ type AllowedGroup struct {
 	DefaultRoles []string `json:"default_roles" tfsdk:"default_roles"`
 }
 
+// BasicSettings mirrors a subset of App's own fields in a nested sub-object that the cidaas
+// admin UI always sends (read back verbatim from a prior GET, then echoed on every save).
+// allowed_logout_urls in particular appears to be authoritative from here rather than from
+// the top-level field of the same name - confirmed via captured UI traffic and via our own
+// write attempts, where the top-level value alone was silently never persisted.
+type BasicSettings struct {
+	ClientId                string   `json:"client_id"`
+	TokenEndpointAuthMethod string   `json:"token_endpoint_auth_method"`
+	RedirectUris            []string `json:"redirect_uris"`
+	AllowedLogoutUrls       []string `json:"allowed_logout_urls"`
+	AppOwner                string   `json:"app_owner"`
+	AllowedScopes           []string `json:"allowed_scopes"`
+	ClientSecrets           []string `json:"client_secrets"`
+}
+
 type App struct {
 	ID                              string  `json:"id,omitempty"`
 	AcceptRolesInTheRegistration    bool    `json:"accept_roles_in_the_registration"`
@@ -126,7 +141,8 @@ type App struct {
 	BotProvider                     string  `json:"bot_provider,omitempty"`
 	OauthStandard                   string  `json:"oauthStandard,omitempty"`
 
-	AppKey *AppKey `json:"appKey,omitempty"`
+	AppKey        *AppKey        `json:"appKey,omitempty"`
+	BasicSettings *BasicSettings `json:"basic_settings,omitempty"`
 
 	AllowLoginWith                   []string         `json:"allow_login_with"`
 	OperationsAllowedGroups          []AllowedGroup   `json:"operations_allowed_groups"`
