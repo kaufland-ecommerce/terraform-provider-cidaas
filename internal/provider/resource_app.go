@@ -687,7 +687,7 @@ func createOrUpsertApp(c client.Client, plannedApp *client.App) (app *client.App
 	// CreateApp's POST doesn't reliably persist redirect_uris; a follow-up UpdateApp fixes
 	// it, matching the "already exists" fallback above. Does not fix allowed_logout_urls
 	// (see nonInteractiveUnsupportedFields).
-	app, err = c.UpdateApp(*plannedApp)
+	_, err = c.UpdateApp(*plannedApp)
 	if err != nil {
 		return nil, warning, err
 	}
