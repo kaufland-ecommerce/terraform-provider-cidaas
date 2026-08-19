@@ -94,13 +94,12 @@ type AllowedGroup struct {
 // every save. Fixes redirect_uris being dropped on write; does not fix allowed_logout_urls
 // (see nonInteractiveUnsupportedFields).
 type BasicSettings struct {
-	ClientId                string   `json:"client_id"`
-	TokenEndpointAuthMethod string   `json:"token_endpoint_auth_method"`
-	RedirectUris            []string `json:"redirect_uris"`
-	AllowedLogoutUrls       []string `json:"allowed_logout_urls"`
-	AppOwner                string   `json:"app_owner"`
-	AllowedScopes           []string `json:"allowed_scopes"`
-	ClientSecrets           []string `json:"client_secrets"`
+	ClientId          string   `json:"client_id"`
+	RedirectUris      []string `json:"redirect_uris"`
+	AllowedLogoutUrls []string `json:"allowed_logout_urls"`
+	AppOwner          string   `json:"app_owner"`
+	AllowedScopes     []string `json:"allowed_scopes"`
+	ClientSecrets     []string `json:"client_secrets"`
 }
 
 type App struct {

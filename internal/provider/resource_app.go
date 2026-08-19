@@ -498,6 +498,36 @@ func (r appResource) ValidateConfig(ctx context.Context, req resource.ValidateCo
 	}
 }
 
+var _ resource.ResourceWithModifyPlan = (*appResource)(nil)
+
+// ModifyPlan forces the six NON_INTERACTIVE-unsupported fields to null in the plan whenever the
+// planned client_type is "NON_INTERACTIVE". Without this, UseStateForUnknown carries forward
+// their prior known values on a client_type change away from an interactive type (they weren't
+// touched in config), while applyAppToState nulls them after apply - the same inconsistent-result
+// mismatch this resource otherwise guards against.
+func (r appResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return
+	}
+
+	var clientType types.String
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("client_type"), &clientType)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if clientType.ValueString() != "NON_INTERACTIVE" {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("accent_color"), types.StringNull())...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("primary_color"), types.StringNull())...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("hosted_page_group"), types.StringNull())...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("communication_medium_verification"), types.StringNull())...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("is_remember_me_selected"), types.BoolNull())...)
+	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("allowed_logout_urls"), types.ListNull(types.StringType))...)
+}
+
 func (r appResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
@@ -662,7 +692,7 @@ func createOrUpsertApp(c client.Client, plannedApp *client.App) (app *client.App
 		return nil, warning, err
 	}
 
-	app, err = c.GetApp(app.ClientId)
+	app, err = c.GetApp(plannedApp.ClientId)
 	if err != nil {
 		return nil, warning, err
 	}

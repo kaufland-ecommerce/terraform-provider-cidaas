@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/real-digital/terraform-provider-cidaas/internal/client"
 )
@@ -177,6 +180,35 @@ func TestCreateOrUpsertApp_GetAppNilErrorsInsteadOfPanicking(t *testing.T) {
 	_, _, err := createOrUpsertApp(fake, &client.App{})
 	if err == nil {
 		t.Fatal("expected an error when GetApp returns nil right after creation")
+	}
+}
+
+func TestCreateOrUpsertApp_RefetchesByThePlannedClientIdNotTheUpdateResponses(t *testing.T) {
+	// Regression test: the final GetApp used to read ClientId off UpdateApp's response, which
+	// this function's own doc comment says isn't guaranteed complete. If that response omits
+	// client_id, the refetch must still use the one already captured in plannedApp.
+	complete := &client.App{ClientId: "new-id", AccentColor: "#123456"}
+
+	var getAppCalledWith string
+	fake := &fakeAppClient{
+		createAppFn: func(app *client.App) (*client.App, error) {
+			return &client.App{ClientId: "new-id"}, nil
+		},
+		updateAppFn: func(app client.App) (*client.App, error) {
+			return &client.App{ClientId: ""}, nil
+		},
+		getAppFn: func(clientId string) (*client.App, error) {
+			getAppCalledWith = clientId
+			return complete, nil
+		},
+	}
+
+	_, _, err := createOrUpsertApp(fake, &client.App{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if getAppCalledWith != "new-id" {
+		t.Fatalf("expected GetApp to be called with the planned client id %q, got %q", "new-id", getAppCalledWith)
 	}
 }
 
@@ -360,5 +392,140 @@ func TestPlanToApp_UnknownAllowedLogoutUrlsDoesNotError(t *testing.T) {
 	}
 	if plannedApp.AllowedLogoutUrls != nil {
 		t.Errorf("expected AllowedLogoutUrls to stay nil when the plan value is unknown, got %v", plannedApp.AllowedLogoutUrls)
+	}
+}
+
+func TestModifyPlan_NonInteractiveClientTypeNullsUnsupportedFields(t *testing.T) {
+	// Regression test: switching an existing interactive app's client_type to NON_INTERACTIVE
+	// without touching the six unsupported fields leaves them carried forward by
+	// UseStateForUnknown (their real prior values), while applyAppToState nulls them after
+	// apply - the plan/final-state mismatch is exactly the inconsistent-result error this
+	// resource otherwise guards against. ModifyPlan must null them in the plan too.
+	ctx := context.Background()
+
+	var schemaResp resource.SchemaResponse
+	(&appResource{}).Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+	if schemaResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics building schema: %v", schemaResp.Diagnostics)
+	}
+
+	groupObjectType := types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"group_id":      types.StringType,
+			"roles":         types.ListType{ElemType: types.StringType},
+			"default_roles": types.ListType{ElemType: types.StringType},
+		},
+	}
+	appKeyType := map[string]attr.Type{
+		"id":          types.StringType,
+		"private_key": types.StringType,
+		"public_key":  types.StringType,
+	}
+
+	planned := &App{
+		ClientType:                      types.StringValue("NON_INTERACTIVE"),
+		AccentColor:                     types.StringValue("#123456"),
+		PrimaryColor:                    types.StringValue("#654321"),
+		HostedPageGroup:                 types.StringValue("some-group"),
+		CommunicationMediumVerification: types.StringValue("otp"),
+		IsRememberMeSelected:            types.BoolValue(true),
+		AllowedLogoutUrls:               types.ListValueMust(types.StringType, []attr.Value{types.StringValue("https://example.com/logout")}),
+		AllowedGroups:                   types.ListNull(groupObjectType),
+		OperationsAllowedGroups:         types.ListNull(groupObjectType),
+		AppKey:                          types.ObjectNull(appKeyType),
+	}
+
+	var plan tfsdk.Plan
+	plan.Schema = schemaResp.Schema
+	if diags := plan.Set(ctx, planned); diags.HasError() {
+		t.Fatalf("unexpected diagnostics setting plan: %v", diags)
+	}
+
+	req := resource.ModifyPlanRequest{Plan: plan}
+	resp := &resource.ModifyPlanResponse{Plan: plan}
+
+	appResource{}.ModifyPlan(ctx, req, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+
+	var accentColor, primaryColor, hostedPageGroup, commMedium types.String
+	var rememberMe types.Bool
+	var logoutUrls types.List
+
+	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("accent_color"), &accentColor)...)
+	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("primary_color"), &primaryColor)...)
+	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("hosted_page_group"), &hostedPageGroup)...)
+	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("communication_medium_verification"), &commMedium)...)
+	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("is_remember_me_selected"), &rememberMe)...)
+	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("allowed_logout_urls"), &logoutUrls)...)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics reading back plan: %v", resp.Diagnostics)
+	}
+
+	if !accentColor.IsNull() || !primaryColor.IsNull() || !hostedPageGroup.IsNull() || !commMedium.IsNull() || !rememberMe.IsNull() || !logoutUrls.IsNull() {
+		t.Errorf(
+			"expected all six NON_INTERACTIVE-unsupported fields to be null in the plan, got accent_color=%v primary_color=%v hosted_page_group=%v communication_medium_verification=%v is_remember_me_selected=%v allowed_logout_urls=%v",
+			accentColor, primaryColor, hostedPageGroup, commMedium, rememberMe, logoutUrls,
+		)
+	}
+}
+
+func TestModifyPlan_InteractiveClientTypeLeavesFieldsUntouched(t *testing.T) {
+	ctx := context.Background()
+
+	var schemaResp resource.SchemaResponse
+	(&appResource{}).Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+	if schemaResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics building schema: %v", schemaResp.Diagnostics)
+	}
+
+	groupObjectType := types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"group_id":      types.StringType,
+			"roles":         types.ListType{ElemType: types.StringType},
+			"default_roles": types.ListType{ElemType: types.StringType},
+		},
+	}
+	appKeyType := map[string]attr.Type{
+		"id":          types.StringType,
+		"private_key": types.StringType,
+		"public_key":  types.StringType,
+	}
+
+	planned := &App{
+		ClientType:                      types.StringValue("REGULAR_WEB"),
+		AccentColor:                     types.StringValue("#123456"),
+		PrimaryColor:                    types.StringValue("#654321"),
+		HostedPageGroup:                 types.StringValue("some-group"),
+		CommunicationMediumVerification: types.StringValue("otp"),
+		IsRememberMeSelected:            types.BoolValue(true),
+		AllowedLogoutUrls:               types.ListValueMust(types.StringType, []attr.Value{types.StringValue("https://example.com/logout")}),
+		AllowedGroups:                   types.ListNull(groupObjectType),
+		OperationsAllowedGroups:         types.ListNull(groupObjectType),
+		AppKey:                          types.ObjectNull(appKeyType),
+	}
+
+	var plan tfsdk.Plan
+	plan.Schema = schemaResp.Schema
+	if diags := plan.Set(ctx, planned); diags.HasError() {
+		t.Fatalf("unexpected diagnostics setting plan: %v", diags)
+	}
+
+	req := resource.ModifyPlanRequest{Plan: plan}
+	resp := &resource.ModifyPlanResponse{Plan: plan}
+
+	appResource{}.ModifyPlan(ctx, req, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+
+	var accentColor types.String
+	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("accent_color"), &accentColor)...)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics reading back plan: %v", resp.Diagnostics)
+	}
+	if accentColor.ValueString() != "#123456" {
+		t.Errorf("expected accent_color to be left untouched for an interactive app, got %v", accentColor)
 	}
 }

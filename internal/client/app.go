@@ -23,13 +23,12 @@ type appListResponse struct {
 // allowed_logout_urls (see nonInteractiveUnsupportedFields for that).
 func basicSettingsFor(app App) *BasicSettings {
 	return &BasicSettings{
-		ClientId:                app.ClientId,
-		TokenEndpointAuthMethod: "client_secret_post",
-		RedirectUris:            app.RedirectUris,
-		AllowedLogoutUrls:       app.AllowedLogoutUrls,
-		AppOwner:                app.AppOwner,
-		AllowedScopes:           app.AllowedScopes,
-		ClientSecrets:           []string{},
+		ClientId:          app.ClientId,
+		RedirectUris:      app.RedirectUris,
+		AllowedLogoutUrls: app.AllowedLogoutUrls,
+		AppOwner:          app.AppOwner,
+		AllowedScopes:     app.AllowedScopes,
+		ClientSecrets:     []string{},
 	}
 }
 
