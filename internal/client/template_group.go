@@ -48,7 +48,7 @@ func (c *client) CreateTemplateGroup(group CreateTemplateGroupRequest) (*Templat
 	if groupResponse.Data.CommSettings.SMS.ServiceSetupId == "" ||
 		groupResponse.Data.CommSettings.Push.ServiceSetupId == "" ||
 		groupResponse.Data.CommSettings.IVR.ServiceSetupId == "" {
-		return nil, fmt.Errorf("invalid response for serviceSetupId after creating template group, payload: " + string(resp))
+		return nil, fmt.Errorf("invalid response for serviceSetupId after creating template group, payload: %s", string(resp))
 	}
 
 	return &groupResponse.Data, nil
