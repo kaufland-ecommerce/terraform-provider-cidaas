@@ -506,32 +506,36 @@ func (r appResource) ValidateConfig(ctx context.Context, req resource.ValidateCo
 
 var _ resource.ResourceWithModifyPlan = (*appResource)(nil)
 
-// ModifyPlan forces the six NON_INTERACTIVE-unsupported fields to null in the plan whenever the
-// planned client_type is "NON_INTERACTIVE". Without this, UseStateForUnknown carries forward
-// their prior known values on a client_type change away from an interactive type (they weren't
-// touched in config), while applyAppToState nulls them after apply - the same inconsistent-result
-// mismatch this resource otherwise guards against.
+// ModifyPlan rejects any attempt to change client_type on an existing app. There's no supported
+// migration path between client types, and both an in-place update (cidaas silently drops fields
+// depending on the target type) and an automatic destroy+recreate risk data loss or the
+// inconsistent-result errors this resource otherwise guards against - failing the operation
+// outright is the only safe option, leaving it to whoever's applying to decide how to proceed.
 func (r appResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	if req.Plan.Raw.IsNull() {
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		// Create or destroy; nothing to compare against.
 		return
 	}
 
-	var clientType types.String
-	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("client_type"), &clientType)...)
+	var stateClientType, planClientType types.String
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, path.Root("client_type"), &stateClientType)...)
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, path.Root("client_type"), &planClientType)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if clientType.ValueString() != "NON_INTERACTIVE" {
+	if planClientType.IsUnknown() || planClientType.Equal(stateClientType) {
 		return
 	}
 
-	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("accent_color"), types.StringNull())...)
-	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("primary_color"), types.StringNull())...)
-	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("hosted_page_group"), types.StringNull())...)
-	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("communication_medium_verification"), types.StringNull())...)
-	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("is_remember_me_selected"), types.BoolNull())...)
-	resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("allowed_logout_urls"), types.ListNull(types.StringType))...)
+	resp.Diagnostics.AddAttributeError(
+		path.Root("client_type"),
+		"client_type cannot be changed",
+		fmt.Sprintf(
+			"client_type is immutable once an app is created (was %q, now %q). Destroy and recreate the resource if a different client_type is needed.",
+			stateClientType.ValueString(), planClientType.ValueString(),
+		),
+	)
 }
 
 func (r appResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

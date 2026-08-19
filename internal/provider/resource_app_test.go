@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -395,20 +394,7 @@ func TestPlanToApp_UnknownAllowedLogoutUrlsDoesNotError(t *testing.T) {
 	}
 }
 
-func TestModifyPlan_NonInteractiveClientTypeNullsUnsupportedFields(t *testing.T) {
-	// Regression test: switching an existing interactive app's client_type to NON_INTERACTIVE
-	// without touching the six unsupported fields leaves them carried forward by
-	// UseStateForUnknown (their real prior values), while applyAppToState nulls them after
-	// apply - the plan/final-state mismatch is exactly the inconsistent-result error this
-	// resource otherwise guards against. ModifyPlan must null them in the plan too.
-	ctx := context.Background()
-
-	var schemaResp resource.SchemaResponse
-	(&appResource{}).Schema(ctx, resource.SchemaRequest{}, &schemaResp)
-	if schemaResp.Diagnostics.HasError() {
-		t.Fatalf("unexpected diagnostics building schema: %v", schemaResp.Diagnostics)
-	}
-
+func minimalAppPlanValue(clientType string) *App {
 	groupObjectType := types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"group_id":      types.StringType,
@@ -422,56 +408,20 @@ func TestModifyPlan_NonInteractiveClientTypeNullsUnsupportedFields(t *testing.T)
 		"public_key":  types.StringType,
 	}
 
-	planned := &App{
-		ClientType:                      types.StringValue("NON_INTERACTIVE"),
-		AccentColor:                     types.StringValue("#123456"),
-		PrimaryColor:                    types.StringValue("#654321"),
-		HostedPageGroup:                 types.StringValue("some-group"),
-		CommunicationMediumVerification: types.StringValue("otp"),
-		IsRememberMeSelected:            types.BoolValue(true),
-		AllowedLogoutUrls:               types.ListValueMust(types.StringType, []attr.Value{types.StringValue("https://example.com/logout")}),
-		AllowedGroups:                   types.ListNull(groupObjectType),
-		OperationsAllowedGroups:         types.ListNull(groupObjectType),
-		AppKey:                          types.ObjectNull(appKeyType),
-	}
-
-	var plan tfsdk.Plan
-	plan.Schema = schemaResp.Schema
-	if diags := plan.Set(ctx, planned); diags.HasError() {
-		t.Fatalf("unexpected diagnostics setting plan: %v", diags)
-	}
-
-	req := resource.ModifyPlanRequest{Plan: plan}
-	resp := &resource.ModifyPlanResponse{Plan: plan}
-
-	appResource{}.ModifyPlan(ctx, req, resp)
-	if resp.Diagnostics.HasError() {
-		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
-	}
-
-	var accentColor, primaryColor, hostedPageGroup, commMedium types.String
-	var rememberMe types.Bool
-	var logoutUrls types.List
-
-	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("accent_color"), &accentColor)...)
-	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("primary_color"), &primaryColor)...)
-	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("hosted_page_group"), &hostedPageGroup)...)
-	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("communication_medium_verification"), &commMedium)...)
-	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("is_remember_me_selected"), &rememberMe)...)
-	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("allowed_logout_urls"), &logoutUrls)...)
-	if resp.Diagnostics.HasError() {
-		t.Fatalf("unexpected diagnostics reading back plan: %v", resp.Diagnostics)
-	}
-
-	if !accentColor.IsNull() || !primaryColor.IsNull() || !hostedPageGroup.IsNull() || !commMedium.IsNull() || !rememberMe.IsNull() || !logoutUrls.IsNull() {
-		t.Errorf(
-			"expected all six NON_INTERACTIVE-unsupported fields to be null in the plan, got accent_color=%v primary_color=%v hosted_page_group=%v communication_medium_verification=%v is_remember_me_selected=%v allowed_logout_urls=%v",
-			accentColor, primaryColor, hostedPageGroup, commMedium, rememberMe, logoutUrls,
-		)
+	return &App{
+		ClientType:              types.StringValue(clientType),
+		AllowedLogoutUrls:       types.ListNull(types.StringType),
+		AllowedGroups:           types.ListNull(groupObjectType),
+		OperationsAllowedGroups: types.ListNull(groupObjectType),
+		AppKey:                  types.ObjectNull(appKeyType),
 	}
 }
 
-func TestModifyPlan_InteractiveClientTypeLeavesFieldsUntouched(t *testing.T) {
+func TestModifyPlan_ClientTypeChangeIsRejected(t *testing.T) {
+	// Regression test: cidaas has no supported migration path between client types, and neither
+	// an in-place update (fields get silently dropped/added depending on target type) nor an
+	// automatic destroy+recreate is acceptable - changing client_type on an existing app must
+	// fail the operation outright instead.
 	ctx := context.Background()
 
 	var schemaResp resource.SchemaResponse
@@ -480,35 +430,70 @@ func TestModifyPlan_InteractiveClientTypeLeavesFieldsUntouched(t *testing.T) {
 		t.Fatalf("unexpected diagnostics building schema: %v", schemaResp.Diagnostics)
 	}
 
-	groupObjectType := types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"group_id":      types.StringType,
-			"roles":         types.ListType{ElemType: types.StringType},
-			"default_roles": types.ListType{ElemType: types.StringType},
-		},
-	}
-	appKeyType := map[string]attr.Type{
-		"id":          types.StringType,
-		"private_key": types.StringType,
-		"public_key":  types.StringType,
-	}
-
-	planned := &App{
-		ClientType:                      types.StringValue("REGULAR_WEB"),
-		AccentColor:                     types.StringValue("#123456"),
-		PrimaryColor:                    types.StringValue("#654321"),
-		HostedPageGroup:                 types.StringValue("some-group"),
-		CommunicationMediumVerification: types.StringValue("otp"),
-		IsRememberMeSelected:            types.BoolValue(true),
-		AllowedLogoutUrls:               types.ListValueMust(types.StringType, []attr.Value{types.StringValue("https://example.com/logout")}),
-		AllowedGroups:                   types.ListNull(groupObjectType),
-		OperationsAllowedGroups:         types.ListNull(groupObjectType),
-		AppKey:                          types.ObjectNull(appKeyType),
+	var state tfsdk.State
+	state.Schema = schemaResp.Schema
+	if diags := state.Set(ctx, minimalAppPlanValue("REGULAR_WEB")); diags.HasError() {
+		t.Fatalf("unexpected diagnostics setting state: %v", diags)
 	}
 
 	var plan tfsdk.Plan
 	plan.Schema = schemaResp.Schema
-	if diags := plan.Set(ctx, planned); diags.HasError() {
+	if diags := plan.Set(ctx, minimalAppPlanValue("NON_INTERACTIVE")); diags.HasError() {
+		t.Fatalf("unexpected diagnostics setting plan: %v", diags)
+	}
+
+	req := resource.ModifyPlanRequest{State: state, Plan: plan}
+	resp := &resource.ModifyPlanResponse{Plan: plan}
+
+	appResource{}.ModifyPlan(ctx, req, resp)
+	if !resp.Diagnostics.HasError() {
+		t.Fatal("expected an error when client_type changes on an existing app")
+	}
+}
+
+func TestModifyPlan_UnchangedClientTypeDoesNotError(t *testing.T) {
+	ctx := context.Background()
+
+	var schemaResp resource.SchemaResponse
+	(&appResource{}).Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+	if schemaResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics building schema: %v", schemaResp.Diagnostics)
+	}
+
+	var state tfsdk.State
+	state.Schema = schemaResp.Schema
+	if diags := state.Set(ctx, minimalAppPlanValue("REGULAR_WEB")); diags.HasError() {
+		t.Fatalf("unexpected diagnostics setting state: %v", diags)
+	}
+
+	var plan tfsdk.Plan
+	plan.Schema = schemaResp.Schema
+	if diags := plan.Set(ctx, minimalAppPlanValue("REGULAR_WEB")); diags.HasError() {
+		t.Fatalf("unexpected diagnostics setting plan: %v", diags)
+	}
+
+	req := resource.ModifyPlanRequest{State: state, Plan: plan}
+	resp := &resource.ModifyPlanResponse{Plan: plan}
+
+	appResource{}.ModifyPlan(ctx, req, resp)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
+func TestModifyPlan_NewResourceDoesNotError(t *testing.T) {
+	// No prior state means this is a Create, not a client_type change.
+	ctx := context.Background()
+
+	var schemaResp resource.SchemaResponse
+	(&appResource{}).Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+	if schemaResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics building schema: %v", schemaResp.Diagnostics)
+	}
+
+	var plan tfsdk.Plan
+	plan.Schema = schemaResp.Schema
+	if diags := plan.Set(ctx, minimalAppPlanValue("NON_INTERACTIVE")); diags.HasError() {
 		t.Fatalf("unexpected diagnostics setting plan: %v", diags)
 	}
 
@@ -518,14 +503,5 @@ func TestModifyPlan_InteractiveClientTypeLeavesFieldsUntouched(t *testing.T) {
 	appResource{}.ModifyPlan(ctx, req, resp)
 	if resp.Diagnostics.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
-	}
-
-	var accentColor types.String
-	resp.Diagnostics.Append(resp.Plan.GetAttribute(ctx, path.Root("accent_color"), &accentColor)...)
-	if resp.Diagnostics.HasError() {
-		t.Fatalf("unexpected diagnostics reading back plan: %v", resp.Diagnostics)
-	}
-	if accentColor.ValueString() != "#123456" {
-		t.Errorf("expected accent_color to be left untouched for an interactive app, got %v", accentColor)
 	}
 }
