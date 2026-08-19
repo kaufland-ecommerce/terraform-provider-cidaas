@@ -29,4 +29,3 @@ provider "cidaas" {
 - `client_id` (String)
 - `client_secret` (String, Sensitive)
 - `host` (String)
-- `is_at_least_on_v39` (Boolean)

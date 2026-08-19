@@ -276,18 +276,10 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			"communication_medium_verification": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "This is made optional to enable support of two CIDAAS versions at the same time. Not supported for client_type = \"NON_INTERACTIVE\" apps; must be left unset there.",
+				Description: "Not supported for client_type = \"NON_INTERACTIVE\" apps; must be left unset there.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
-			},
-			"email_verification_required": schema.BoolAttribute{
-				Optional:           true,
-				DeprecationMessage: "This field is deprecated, use communication_medium_verification instead",
-			},
-			"mobile_number_verification_required": schema.BoolAttribute{
-				Optional:           true,
-				DeprecationMessage: "This field is deprecated, use communication_medium_verification instead",
 			},
 
 			// Captcha
@@ -527,7 +519,7 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	plannedApp, diags := planToApp(ctx, &plan, &plan, r.provider.isAtLeastOnV39)
+	plannedApp, diags := planToApp(ctx, &plan, &plan)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -545,7 +537,7 @@ func (r appResource) Create(ctx context.Context, req resource.CreateRequest, res
 
 	var state App
 
-	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
+	diags = applyAppToState(ctx, &state, app)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -588,7 +580,7 @@ func (r appResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
+	diags = applyAppToState(ctx, &state, app)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -616,7 +608,7 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 
 	resp.Diagnostics.Append(diags...)
 
-	plannedApp, diags := planToApp(ctx, &plan, &state, r.provider.isAtLeastOnV39)
+	plannedApp, diags := planToApp(ctx, &plan, &state)
 
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -629,7 +621,7 @@ func (r appResource) Update(ctx context.Context, req resource.UpdateRequest, res
 		return
 	}
 
-	diags = applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
+	diags = applyAppToState(ctx, &state, app)
 	resp.Diagnostics.Append(diags...)
 
 	if resp.Diagnostics.HasError() {
@@ -747,13 +739,13 @@ func (r appResource) ImportState(ctx context.Context, req resource.ImportStateRe
 		return
 	}
 
-	applyAppToState(ctx, &state, app, r.provider.isAtLeastOnV39)
+	applyAppToState(ctx, &state, app)
 
 	diags := resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
-func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeastOnV39 bool) diag.Diagnostics {
+func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diagnostics {
 	ret := diag.Diagnostics{}
 
 	var diags diag.Diagnostics
@@ -874,16 +866,11 @@ func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeast
 			"public_key":  types.StringValue(app.AppKey.PublicKey),
 		},
 	)
-	if isAtLeastOnV39 {
-		state.OauthStandard = types.StringValue(app.OauthStandard)
-		if nonInteractive {
-			state.CommunicationMediumVerification = types.StringNull()
-		} else {
-			state.CommunicationMediumVerification = types.StringValue(app.CommunicationMediumVerification)
-		}
+	state.OauthStandard = types.StringValue(app.OauthStandard)
+	if nonInteractive {
+		state.CommunicationMediumVerification = types.StringNull()
 	} else {
-		state.EmailVerificationRequired = types.BoolPointerValue(app.EmailVerificationRequired)
-		state.MobileNumberVerificationRequired = types.BoolPointerValue(app.MobileNumberVerificationRequired)
+		state.CommunicationMediumVerification = types.StringValue(app.CommunicationMediumVerification)
 	}
 
 	ret.Append(diags...)
@@ -891,7 +878,7 @@ func applyAppToState(ctx context.Context, state *App, app *client.App, isAtLeast
 	return ret
 }
 
-func planToApp(ctx context.Context, plan *App, state *App, isAtLeastOnV39 bool) (*client.App, diag.Diagnostics) {
+func planToApp(ctx context.Context, plan *App, state *App) (*client.App, diag.Diagnostics) {
 	ret := diag.Diagnostics{}
 
 	var diags diag.Diagnostics
@@ -963,13 +950,8 @@ func planToApp(ctx context.Context, plan *App, state *App, isAtLeastOnV39 bool) 
 		)
 	}
 
-	if isAtLeastOnV39 {
-		plannedApp.OauthStandard = plan.OauthStandard.ValueString()
-		plannedApp.CommunicationMediumVerification = plan.CommunicationMediumVerification.ValueString()
-	} else {
-		plannedApp.EmailVerificationRequired = plan.EmailVerificationRequired.ValueBoolPointer()
-		plannedApp.MobileNumberVerificationRequired = plan.MobileNumberVerificationRequired.ValueBoolPointer()
-	}
+	plannedApp.OauthStandard = plan.OauthStandard.ValueString()
+	plannedApp.CommunicationMediumVerification = plan.CommunicationMediumVerification.ValueString()
 
 	// On a brand-new NON_INTERACTIVE resource with allowed_logout_urls left unset (as
 	// ValidateConfig requires), the plan value is legitimately unknown - there's no prior

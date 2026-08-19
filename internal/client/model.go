@@ -144,26 +144,24 @@ type App struct {
 	AppKey        *AppKey        `json:"appKey,omitempty"`
 	BasicSettings *BasicSettings `json:"basic_settings,omitempty"`
 
-	AllowLoginWith                   []string         `json:"allow_login_with"`
-	OperationsAllowedGroups          []AllowedGroup   `json:"operations_allowed_groups"`
-	AllowedGroups                    []AllowedGroup   `json:"allowed_groups"`
-	RedirectUris                     []string         `json:"redirect_uris"`
-	AllowedLogoutUrls                []string         `json:"allowed_logout_urls"`
-	AllowedScopes                    []string         `json:"allowed_scopes"`
-	SocialProviders                  []SocialProvider `json:"social_providers"`
-	CustomProviders                  []CustomProvider `json:"custom_providers"`
-	AdditionalAccessTokenPayload     []string         `json:"additional_access_token_payload"`
-	AllowedFields                    []string         `json:"allowed_fields"`
-	RequiredFields                   []string         `json:"required_fields"`
-	ConsentRefs                      []string         `json:"consent_refs"`
-	ResponseTypes                    []string         `json:"response_types"`
-	GrantTypes                       []string         `json:"grant_types"`
-	AllowedWebOrigins                []string         `json:"allowed_web_origins"`
-	AllowedOrigins                   []string         `json:"allowed_origins"`
-	AllowedMfa                       []string         `json:"allowed_mfa"`
-	AllowedRoles                     []string         `json:"allowed_roles"`
-	EmailVerificationRequired        *bool            `json:"email_verification_required,omitempty"`
-	MobileNumberVerificationRequired *bool            `json:"mobile_number_verification_required,omitempty"`
+	AllowLoginWith               []string         `json:"allow_login_with"`
+	OperationsAllowedGroups      []AllowedGroup   `json:"operations_allowed_groups"`
+	AllowedGroups                []AllowedGroup   `json:"allowed_groups"`
+	RedirectUris                 []string         `json:"redirect_uris"`
+	AllowedLogoutUrls            []string         `json:"allowed_logout_urls"`
+	AllowedScopes                []string         `json:"allowed_scopes"`
+	SocialProviders              []SocialProvider `json:"social_providers"`
+	CustomProviders              []CustomProvider `json:"custom_providers"`
+	AdditionalAccessTokenPayload []string         `json:"additional_access_token_payload"`
+	AllowedFields                []string         `json:"allowed_fields"`
+	RequiredFields               []string         `json:"required_fields"`
+	ConsentRefs                  []string         `json:"consent_refs"`
+	ResponseTypes                []string         `json:"response_types"`
+	GrantTypes                   []string         `json:"grant_types"`
+	AllowedWebOrigins            []string         `json:"allowed_web_origins"`
+	AllowedOrigins               []string         `json:"allowed_origins"`
+	AllowedMfa                   []string         `json:"allowed_mfa"`
+	AllowedRoles                 []string         `json:"allowed_roles"`
 }
 
 type RegistrationField struct {

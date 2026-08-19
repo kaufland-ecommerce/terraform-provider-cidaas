@@ -58,11 +58,9 @@ description: |-
 - `allowed_logout_urls` (List of String) Not supported for client_type = "NON_INTERACTIVE" apps; must be left unset there.
 - `allowed_mfa` (List of String)
 - `client_display_name` (String)
-- `communication_medium_verification` (String) This is made optional to enable support of two CIDAAS versions at the same time. Not supported for client_type = "NON_INTERACTIVE" apps; must be left unset there.
-- `email_verification_required` (Boolean, Deprecated)
+- `communication_medium_verification` (String) Not supported for client_type = "NON_INTERACTIVE" apps; must be left unset there.
 - `hosted_page_group` (String) Not supported for client_type = "NON_INTERACTIVE" apps; must be left unset there.
 - `is_remember_me_selected` (Boolean) Not supported for client_type = "NON_INTERACTIVE" apps; must be left unset there.
-- `mobile_number_verification_required` (Boolean, Deprecated)
 - `oauth_standard` (String) Oauth standard used, default is OAuth2.1
 - `operations_allowed_groups` (Attributes List) (see [below for nested schema](#nestedatt--operations_allowed_groups))
 - `password_policy` (String)

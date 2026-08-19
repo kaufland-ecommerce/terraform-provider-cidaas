@@ -271,7 +271,7 @@ func TestApplyAppToState_NonInteractiveAppsGetNullForUnsupportedFields(t *testin
 	}
 
 	var state App
-	diags := applyAppToState(context.Background(), &state, app, true)
+	diags := applyAppToState(context.Background(), &state, app)
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -309,7 +309,7 @@ func TestApplyAppToState_InteractiveAppsKeepRealValues(t *testing.T) {
 	}
 
 	var state App
-	diags := applyAppToState(context.Background(), &state, app, true)
+	diags := applyAppToState(context.Background(), &state, app)
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
@@ -354,7 +354,7 @@ func TestPlanToApp_UnknownAllowedLogoutUrlsDoesNotError(t *testing.T) {
 		PasswordPolicy:          types.StringNull(),
 	}
 
-	plannedApp, diags := planToApp(context.Background(), plan, plan, true)
+	plannedApp, diags := planToApp(context.Background(), plan, plan)
 	if diags.HasError() {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}

@@ -109,25 +109,23 @@ type App struct {
 	TemplateGroupId                 types.String `tfsdk:"template_group_id"`
 	OauthStandard                   types.String `tfsdk:"oauth_standard"`
 
-	AllowedGroups                    types.List       `tfsdk:"allowed_groups"`
-	OperationsAllowedGroups          types.List       `tfsdk:"operations_allowed_groups"`
-	AllowLoginWith                   []string         `tfsdk:"allow_login_with"`
-	RedirectUris                     []string         `tfsdk:"redirect_uris"`
-	AllowedLogoutUrls                types.List       `tfsdk:"allowed_logout_urls"`
-	SocialProviders                  []SocialProvider `tfsdk:"social_providers"`
-	CustomProviders                  []CustomProvider `tfsdk:"custom_providers"`
-	AdditionalAccessTokenPayload     []string         `tfsdk:"additional_access_token_payload"`
-	Scopes                           []string         `tfsdk:"allowed_scopes"`
-	AllowedFields                    []string         `tfsdk:"allowed_fields"`
-	RequiredFields                   []string         `tfsdk:"required_fields"`
-	ConsentRefs                      []string         `tfsdk:"consent_refs"`
-	ResponseTypes                    []string         `tfsdk:"response_types"`
-	GrantTypes                       []string         `tfsdk:"grant_types"`
-	AllowedWebOrigins                []string         `tfsdk:"allowed_web_origins"`
-	AllowedOrigins                   []string         `tfsdk:"allowed_origins"`
-	AllowedMfa                       []string         `tfsdk:"allowed_mfa"`
-	EmailVerificationRequired        types.Bool       `tfsdk:"email_verification_required"`
-	MobileNumberVerificationRequired types.Bool       `tfsdk:"mobile_number_verification_required"`
+	AllowedGroups                types.List       `tfsdk:"allowed_groups"`
+	OperationsAllowedGroups      types.List       `tfsdk:"operations_allowed_groups"`
+	AllowLoginWith               []string         `tfsdk:"allow_login_with"`
+	RedirectUris                 []string         `tfsdk:"redirect_uris"`
+	AllowedLogoutUrls            types.List       `tfsdk:"allowed_logout_urls"`
+	SocialProviders              []SocialProvider `tfsdk:"social_providers"`
+	CustomProviders              []CustomProvider `tfsdk:"custom_providers"`
+	AdditionalAccessTokenPayload []string         `tfsdk:"additional_access_token_payload"`
+	Scopes                       []string         `tfsdk:"allowed_scopes"`
+	AllowedFields                []string         `tfsdk:"allowed_fields"`
+	RequiredFields               []string         `tfsdk:"required_fields"`
+	ConsentRefs                  []string         `tfsdk:"consent_refs"`
+	ResponseTypes                []string         `tfsdk:"response_types"`
+	GrantTypes                   []string         `tfsdk:"grant_types"`
+	AllowedWebOrigins            []string         `tfsdk:"allowed_web_origins"`
+	AllowedOrigins               []string         `tfsdk:"allowed_origins"`
+	AllowedMfa                   []string         `tfsdk:"allowed_mfa"`
 }
 
 type RegistrationField struct {
