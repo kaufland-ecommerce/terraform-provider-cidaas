@@ -50,10 +50,9 @@ func TestCreateApp_FillsPlaceholderColorForNonInteractiveAppsWithNoColorSet(t *t
 }
 
 func TestCreateApp_SendsBasicSettingsMirroringTopLevelFields(t *testing.T) {
-	// Regression test: allowed_logout_urls is silently never persisted unless basic_settings
-	// carries the same value too - confirmed via captured request/response pairs and a real UI
-	// PUT captured from the browser, both showing basic_settings.allowed_logout_urls kept in
-	// sync with the top-level field on every write.
+	// Regression test: redirect_uris was dropped on write unless basic_settings carried the
+	// same value too. allowed_logout_urls is included for parity with what the UI sends, but
+	// basic_settings alone doesn't make cidaas persist it (see nonInteractiveUnsupportedFields).
 	var receivedBody map[string]any
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&receivedBody)

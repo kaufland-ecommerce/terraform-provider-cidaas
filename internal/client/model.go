@@ -90,11 +90,9 @@ type AllowedGroup struct {
 	DefaultRoles []string `json:"default_roles" tfsdk:"default_roles"`
 }
 
-// BasicSettings mirrors a subset of App's own fields in a nested sub-object that the cidaas
-// admin UI always sends (read back verbatim from a prior GET, then echoed on every save).
-// allowed_logout_urls in particular appears to be authoritative from here rather than from
-// the top-level field of the same name - confirmed via captured UI traffic and via our own
-// write attempts, where the top-level value alone was silently never persisted.
+// BasicSettings mirrors a subset of App's fields; the cidaas UI always echoes it back on
+// every save. Fixes redirect_uris being dropped on write; does not fix allowed_logout_urls
+// (see nonInteractiveUnsupportedFields).
 type BasicSettings struct {
 	ClientId                string   `json:"client_id"`
 	TokenEndpointAuthMethod string   `json:"token_endpoint_auth_method"`

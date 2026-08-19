@@ -18,11 +18,9 @@ type appListResponse struct {
 	Data    []App `json:"data"`
 }
 
-// basicSettingsFor builds the nested basic_settings sub-object the cidaas admin UI always
-// sends alongside the top-level fields it mirrors. allowed_logout_urls in particular seems to
-// be authoritative from here: writes that only set the top-level field were silently never
-// persisted, confirmed both via our own request/response captures and via a real UI PUT
-// captured from the browser.
+// basicSettingsFor builds the nested basic_settings sub-object the cidaas UI always sends
+// alongside the top-level fields. Fixes redirect_uris being dropped on write; does not fix
+// allowed_logout_urls (see nonInteractiveUnsupportedFields for that).
 func basicSettingsFor(app App) *BasicSettings {
 	return &BasicSettings{
 		ClientId:                app.ClientId,

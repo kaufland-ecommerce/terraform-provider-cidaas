@@ -419,22 +419,19 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	}
 }
 
-// nonInteractiveUnsupportedFields lists the Terraform attributes that cidaas does not persist
-// for client_type = "NON_INTERACTIVE" apps: verified directly against cidaas's own admin UI,
-// which never includes any of these in its save requests for that client type (a NON_INTERACTIVE
-// app is a pure machine-to-machine client_credentials client with no login/hosted-page UI).
-// Configuring them causes a permanent "Provider produced inconsistent result after apply" error,
-// since cidaas silently drops the value instead of persisting it.
+// nonInteractiveUnsupportedFields are fields cidaas silently drops for client_type =
+// "NON_INTERACTIVE" apps, causing a permanent "inconsistent result after apply" error if set.
+// Verified against cidaas's admin UI: accent_color, primary_color, hosted_page_group, and
+// is_remember_me_selected are absent from its save requests; communication_medium_verification
+// is sent as "none"; allowed_logout_urls has no UI field at all.
 var nonInteractiveUnsupportedFields = []string{
 	"accent_color",
 	"primary_color",
 	"hosted_page_group",
 	"communication_medium_verification",
 	"is_remember_me_selected",
-	// allowed_logout_urls is a redirect-based, browser-session concept - a NON_INTERACTIVE
-	// (machine-to-machine, client_credentials) app has no browser session to redirect after
-	// logout. Confirmed via the admin UI: a NON_INTERACTIVE app's OAuth2/OIDC settings show
-	// "Backchannel Logout URI" (a server-to-server callback) but no "Allowed Logout URLs".
+	// NON_INTERACTIVE apps have no browser session to redirect after logout. UI shows
+	// "Backchannel Logout URI" instead, no "Allowed Logout URLs" field.
 	"allowed_logout_urls",
 }
 
@@ -657,10 +654,9 @@ func createOrUpsertApp(c client.Client, plannedApp *client.App) (app *client.App
 		plannedApp.ClientId = app.ClientId
 	}
 
-	// CreateApp's initial POST does not reliably persist every list field (confirmed:
-	// redirect_uris/allowed_logout_urls lose their only element on a fresh create) - a
-	// follow-up UpdateApp with the same full data reliably applies them, matching the same
-	// two-step pattern the "already exists" fallback above already relied on.
+	// CreateApp's POST doesn't reliably persist redirect_uris; a follow-up UpdateApp fixes
+	// it, matching the "already exists" fallback above. Does not fix allowed_logout_urls
+	// (see nonInteractiveUnsupportedFields).
 	app, err = c.UpdateApp(*plannedApp)
 	if err != nil {
 		return nil, warning, err
@@ -759,10 +755,9 @@ func applyAppToState(ctx context.Context, state *App, app *client.App) diag.Diag
 	state.ClientDisplayName = types.StringValue(app.ClientDisplayName)
 	state.ClientType = types.StringValue(app.ClientType)
 
-	// cidaas doesn't persist these for NON_INTERACTIVE apps (verified against its own admin
-	// UI, which never sends them for that client_type) - report them as null rather than
-	// whatever zero value the API happens to return, matching what ValidateConfig requires
-	// the config to leave unset.
+	// cidaas doesn't persist these for NON_INTERACTIVE apps (see nonInteractiveUnsupportedFields) -
+	// report null rather than whatever zero/neutral value the API returns, matching what
+	// ValidateConfig requires the config to leave unset.
 	nonInteractive := app.ClientType == "NON_INTERACTIVE"
 	if nonInteractive {
 		state.IsRememberMeSelected = types.BoolNull()
