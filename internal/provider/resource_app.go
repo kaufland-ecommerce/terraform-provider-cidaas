@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -109,7 +110,12 @@ func (r *appResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 			// App Settings
 			"oauth_standard": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "Oauth standard used, default is OAuth2.1",
+				Default:     stringdefault.StaticString("OAuth2.1"),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"client_id": schema.StringAttribute{
 				Computed: true,
