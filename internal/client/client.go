@@ -56,6 +56,10 @@ type Client interface {
 	DeleteHostedPagesGroup(id string) error
 	GetHostedPagesGroup(id string) (*HostedPageGroup, error)
 
+	UpsertIdValSetting(setting IdValSetting) (*IdValSetting, error)
+	GetIdValSetting(id string) (*IdValSetting, error)
+	DeleteIdValSetting(id string) error
+
 	CreateApp(app *App) (*App, error)
 	GetApp(ClientId string) (*App, error)
 	GetAppByName(ClientName string) (*App, error)

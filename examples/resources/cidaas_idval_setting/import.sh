@@ -1,0 +1,1 @@
+terraform import cidaas_idval_setting.age_check_de b4ba52ae-87b3-4967-93b6-8e6ae8f39922

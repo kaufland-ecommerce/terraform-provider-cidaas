@@ -182,6 +182,30 @@ type TemplateGroup struct {
 	TgType        types.String             `tfsdk:"tg_type"`
 }
 
+type IdValConsent struct {
+	Name         types.String `tfsdk:"name"`
+	URL          types.String `tfsdk:"url"`
+	Mandatory    types.Bool   `tfsdk:"mandatory"`
+	Localization types.Map    `tfsdk:"localization"`
+}
+
+type IdValConsentConfig struct {
+	Enabled  types.Bool `tfsdk:"enabled"`
+	Consents types.List `tfsdk:"consents"`
+}
+
+type IdValSetting struct {
+	ID                  types.String       `tfsdk:"id"`
+	Name                types.String       `tfsdk:"name"`
+	Description         types.String       `tfsdk:"description"`
+	Mode                types.String       `tfsdk:"mode"`
+	Theme               types.String       `tfsdk:"theme"`
+	AllowedRedirectUris types.String       `tfsdk:"allowed_redirect_uris"`
+	CreatedTime         types.String       `tfsdk:"created_time"`
+	UpdatedTime         types.String       `tfsdk:"updated_time"`
+	ConsentConfig       IdValConsentConfig `tfsdk:"consent_config"`
+}
+
 type Template struct {
 	ID                  types.String `tfsdk:"id"`
 	GroupId             types.String `tfsdk:"group_id"`
