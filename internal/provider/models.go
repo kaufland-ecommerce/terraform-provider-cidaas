@@ -206,6 +206,11 @@ type IdValSetting struct {
 	ConsentConfig       IdValConsentConfig `tfsdk:"consent_config"`
 }
 
+type Theme struct {
+	Name types.String `tfsdk:"name"`
+	Css  types.String `tfsdk:"css"`
+}
+
 type Template struct {
 	ID                  types.String `tfsdk:"id"`
 	GroupId             types.String `tfsdk:"group_id"`

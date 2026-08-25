@@ -60,6 +60,10 @@ type Client interface {
 	GetIdValSetting(id string) (*IdValSetting, error)
 	DeleteIdValSetting(id string) error
 
+	UpsertTheme(theme Theme) error
+	GetTheme(name string) (*Theme, error)
+	DeleteTheme(name string) error
+
 	CreateApp(app *App) (*App, error)
 	GetApp(ClientId string) (*App, error)
 	GetAppByName(ClientName string) (*App, error)
