@@ -246,11 +246,17 @@ func (r *idValSettingResource) Read(ctx context.Context, req resource.ReadReques
 
 	setting, err := r.provider.client.GetIdValSetting(settingId)
 	if err != nil {
-		if err.Error() == "resource not found" {
-			// Terraform generally cannot delete this resource itself (see Delete) - a
-			// missing setting on refresh most likely means someone removed it manually
-			// via the Admin UI. Drop it from state without erroring so the next plan
-			// offers to create it again, instead of failing forever.
+		// id-val-srv returns 401 (not 404, unlike other cidaas resources) for a GET on
+		// an id that simply doesn't exist - confirmed by observation, not documented.
+		// Since this resource also can't be deleted via Terraform (see Delete), a
+		// missing/never-created setting is a real scenario on refresh, not just a
+		// theoretical one - drop it from state without erroring so the next plan
+		// offers to create it again, instead of failing forever on a stale state
+		// entry. Note this does mean a genuinely broken client_credentials token would
+		// also look like "not found" here rather than surfacing as an auth error - but
+		// Create/Update still hard-error on 401, so a real credentials problem still
+		// surfaces loudly during the same apply for any resource that needs creating.
+		if err.Error() == "resource not found" || strings.Contains(err.Error(), "status 401") {
 			req.State.RemoveResource(ctx)
 			resp.State.RemoveResource(ctx)
 			return
