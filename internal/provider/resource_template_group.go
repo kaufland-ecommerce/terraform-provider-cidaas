@@ -163,7 +163,7 @@ func (r *templateGroupResource) Create(ctx context.Context, req resource.CreateR
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
@@ -489,7 +489,7 @@ func (r *templateGroupResource) Update(ctx context.Context, req resource.UpdateR
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
@@ -567,7 +567,7 @@ func (r *templateGroupResource) Delete(ctx context.Context, req resource.DeleteR
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}

@@ -54,7 +54,7 @@ func (r *themeResource) Create(ctx context.Context, req resource.CreateRequest, 
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
@@ -84,7 +84,7 @@ func (r *themeResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
@@ -117,7 +117,7 @@ func (r *themeResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
@@ -147,7 +147,7 @@ func (r *themeResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
