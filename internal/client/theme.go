@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -23,7 +24,10 @@ func (c *client) UpsertTheme(theme Theme) error {
 	writer := multipart.NewWriter(body)
 
 	header := make(textproto.MIMEHeader)
-	header.Set("Content-Disposition", fmt.Sprintf(`form-data; name="theme"; filename="%s.css"`, theme.Name))
+	header.Set("Content-Disposition", mime.FormatMediaType("form-data", map[string]string{
+		"name":     "theme",
+		"filename": theme.Name + ".css",
+	}))
 	header.Set("Content-Type", "text/css")
 
 	part, err := writer.CreatePart(header)
