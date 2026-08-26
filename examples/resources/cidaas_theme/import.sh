@@ -1,0 +1,1 @@
+terraform import cidaas_theme.idval_kaufland idvalKaufland

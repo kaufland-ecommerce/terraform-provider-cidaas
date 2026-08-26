@@ -272,6 +272,94 @@ type Template struct {
 	VerificationType    string `json:"verificationType,omitempty"`
 }
 
+// IdValConsent carries both json and tfsdk tags (like HostedPage above) so it can be
+// used directly as the element type of a types.List via ElementsAs/ListValueFrom.
+type IdValConsent struct {
+	Name         string            `json:"name" tfsdk:"name"`
+	URL          string            `json:"url" tfsdk:"url"`
+	Mandatory    bool              `json:"mandatory" tfsdk:"mandatory"`
+	Localization map[string]string `json:"localization" tfsdk:"localization"`
+}
+
+type IdValConsentConfig struct {
+	Enabled  bool           `json:"enabled"`
+	Consents []IdValConsent `json:"consents"`
+}
+
+// IdValPrevalidationConfig, IdValDocumentMatchingConfig and IdValDocumentFilterConfig
+// are not exposed anywhere in the Terraform schema - we don't use prevalidation,
+// document data matching or the ID document filter. The resource always sends these
+// hardcoded to their disabled shape (see DisabledPrevalidationConfig etc. below), copied
+// verbatim from the real captured wire format of a disabled instance.
+type IdValPrevalidationConfig struct {
+	Enabled     bool              `json:"enabled"`
+	Fields      []any             `json:"fields"`
+	Description map[string]string `json:"description"`
+}
+
+type IdValDocumentMatchField struct {
+	FieldKey       string            `json:"field_key"`
+	DocumentKey    string            `json:"document_key"`
+	DataType       string            `json:"data_type"`
+	Required       bool              `json:"required"`
+	Order          int64             `json:"order"`
+	LocalizedNames map[string]string `json:"localized_names"`
+	ValidationRule string            `json:"validation_rule"`
+}
+
+type IdValDocumentMatchingConfig struct {
+	Enabled bool                      `json:"enabled"`
+	Fields  []IdValDocumentMatchField `json:"fields"`
+}
+
+type IdValDocumentFilterConfig struct {
+	Enabled     bool     `json:"enabled"`
+	FilterMode  string   `json:"filterMode"`
+	IdDocuments []string `json:"idDocuments"`
+}
+
+type IdValSetting struct {
+	ID                         string                      `json:"_id,omitempty"`
+	Name                       string                      `json:"name"`
+	Description                string                      `json:"description"`
+	Mode                       string                      `json:"mode"`
+	Theme                      string                      `json:"themeName,omitempty"`
+	AllowedRedirectUris        string                      `json:"allowed_redirect_uris"`
+	CreatedTime                string                      `json:"createdTime,omitempty"`
+	UpdatedTime                string                      `json:"updatedTime,omitempty"`
+	LastSeededAt               string                      `json:"last_seeded_at,omitempty"`
+	ConsentConfig              IdValConsentConfig          `json:"consent_config"`
+	PrevalidationConfig        IdValPrevalidationConfig    `json:"prevalidation_config"`
+	DocumentDataMatchingConfig IdValDocumentMatchingConfig `json:"document_data_matching_config"`
+	IdDocumentFilterConfig     IdValDocumentFilterConfig   `json:"iddocument_filter_config"`
+}
+
+// DisabledPrevalidationConfig, DisabledDocumentMatchingConfig and
+// DisabledDocumentFilterConfig are always used as-is when building the request body for
+// a cidaas_idval_setting resource - never read from Terraform plan/state, since we don't
+// expose these features. Values copied verbatim from the real captured disabled instance.
+var DisabledPrevalidationConfig = IdValPrevalidationConfig{
+	Enabled:     false,
+	Fields:      []any{},
+	Description: map[string]string{"en": ""},
+}
+
+var DisabledDocumentMatchingConfig = IdValDocumentMatchingConfig{
+	Enabled: false,
+	Fields: []IdValDocumentMatchField{
+		{FieldKey: "surname", DocumentKey: "surname", DataType: "string", Required: false, ValidationRule: "value == value", LocalizedNames: map[string]string{}},
+		{FieldKey: "given_names", DocumentKey: "given_names", DataType: "string", Required: false, ValidationRule: "value == value", LocalizedNames: map[string]string{}},
+		{FieldKey: "date_of_birth", DocumentKey: "date_of_birth", DataType: "string", Required: false, ValidationRule: "value == value", LocalizedNames: map[string]string{}},
+		{FieldKey: "document_number", DocumentKey: "document_number", DataType: "string", Required: false, ValidationRule: "value == value", LocalizedNames: map[string]string{}},
+	},
+}
+
+var DisabledDocumentFilterConfig = IdValDocumentFilterConfig{
+	Enabled:     false,
+	FilterMode:  "blacklist",
+	IdDocuments: []string{},
+}
+
 type CustomProvider struct {
 	DisplayName  string `json:"display_name"`
 	ProviderName string `json:"provider_name"`
