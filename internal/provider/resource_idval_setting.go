@@ -197,7 +197,7 @@ func (r *idValSettingResource) Create(ctx context.Context, req resource.CreateRe
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
@@ -283,7 +283,7 @@ func (r *idValSettingResource) Update(ctx context.Context, req resource.UpdateRe
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
@@ -325,7 +325,7 @@ func (r *idValSettingResource) Delete(ctx context.Context, req resource.DeleteRe
 	if !r.provider.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
 		)
 		return
 	}
@@ -343,13 +343,10 @@ func (r *idValSettingResource) Delete(ctx context.Context, req resource.DeleteRe
 		if strings.Contains(err.Error(), "status 401") {
 			resp.Diagnostics.AddError(
 				"Cannot delete ID Validator setting via Terraform",
-				"cidaas rejected the delete call with 401. Deleting an ID Validator setting appears to require a human "+
-					"identity holding the IDVAL_ACCOUNTANT role (confirmed by inspecting a working delete from the Admin UI: "+
-					"it authorized via role/group membership, not via any cidaas:idval_settings_* OAuth scope) - a "+
-					"NON_INTERACTIVE client_credentials token has no user identity to hold that role, so this may not be "+
-					"possible from Terraform regardless of granted scopes. Delete \""+state.ID.ValueString()+"\" manually "+
-					"via the cidaas Admin UI (ID validator > ID validation Settings), then remove it from Terraform state "+
-					"with `terraform state rm`.",
+				"cidaas rejected the delete call with 401. Ask an admin to delete \""+state.ID.ValueString()+"\" manually "+
+					"via the cidaas Admin UI (ID validator > ID validation Settings). If you're removing this resource for "+
+					"good, also run `terraform state rm` on it afterward - not needed if you're just recreating it, since "+
+					"the next plan will detect it's gone and recreate it automatically.",
 			)
 			return
 		}
