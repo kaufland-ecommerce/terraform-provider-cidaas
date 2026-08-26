@@ -236,6 +236,14 @@ func (r *idValSettingResource) Create(ctx context.Context, req resource.CreateRe
 }
 
 func (r *idValSettingResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if !r.provider.configured {
+		resp.Diagnostics.AddError(
+			"Provider not configured",
+			"The provider has not been configured. This typically occurs when a resource attribute depends on a value that is unknown until another resource is applied. Apply the dependent resource separately, then retry.",
+		)
+		return
+	}
+
 	var settingId string
 
 	diags := req.State.GetAttribute(ctx, path.Root("id"), &settingId)
@@ -253,10 +261,16 @@ func (r *idValSettingResource) Read(ctx context.Context, req resource.ReadReques
 		// theoretical one - drop it from state without erroring so the next plan
 		// offers to create it again, instead of failing forever on a stale state
 		// entry. Note this does mean a genuinely broken client_credentials token would
-		// also look like "not found" here rather than surfacing as an auth error - but
-		// Create/Update still hard-error on 401, so a real credentials problem still
-		// surfaces loudly during the same apply for any resource that needs creating.
+		// also look like "not found" here rather than surfacing as an auth error - a
+		// warning is added below so that case is at least visible during
+		// `-refresh-only`, where no Create/Update call would otherwise surface it.
 		if err.Error() == "resource not found" || strings.Contains(err.Error(), "status 401") {
+			resp.Diagnostics.AddWarning(
+				"ID Validator setting not found, removing from state",
+				"Got a 401 fetching \""+settingId+"\". This is the expected signal for a missing setting, but "+
+					"id-val-srv also returns 401 for unrelated authentication/authorization failures - if this setting "+
+					"still exists in cidaas, check the provider's credentials.",
+			)
 			req.State.RemoveResource(ctx)
 			resp.State.RemoveResource(ctx)
 			return
