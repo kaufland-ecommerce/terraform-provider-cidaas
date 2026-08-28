@@ -211,6 +211,24 @@ type Theme struct {
 	Css  types.String `tfsdk:"css"`
 }
 
+type NotificationServiceSetup struct {
+	ID                   types.String `tfsdk:"id"`
+	Name                 types.String `tfsdk:"name"`
+	ServiceId            types.String `tfsdk:"service_id"`
+	CommunicationMethods types.Set    `tfsdk:"communication_methods"`
+	Description          types.String `tfsdk:"description"`
+	HasRemoteTemplates   types.Bool   `tfsdk:"has_remote_templates"`
+	ParentServiceSetupId types.String `tfsdk:"parent_service_setup_id"`
+	ServiceCategory      types.String `tfsdk:"service_category"`
+	Status               types.String `tfsdk:"status"`
+}
+
+type NotificationProviderConfig struct {
+	ID             types.String `tfsdk:"id"`
+	ServiceSetupId types.String `tfsdk:"service_setup_id"`
+	ConfigData     types.String `tfsdk:"config_data"`
+}
+
 type Template struct {
 	ID                  types.String `tfsdk:"id"`
 	GroupId             types.String `tfsdk:"group_id"`

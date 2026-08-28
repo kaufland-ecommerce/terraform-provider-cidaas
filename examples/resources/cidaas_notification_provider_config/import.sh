@@ -1,0 +1,1 @@
+terraform import cidaas_notification_provider_config.ses_email b4ba52ae-87b3-4967-93b6-8e6ae8f39922

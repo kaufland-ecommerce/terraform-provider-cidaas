@@ -82,6 +82,14 @@ type Client interface {
 	UpdateTemplate(template Template) (*Template, error)
 	GetTemplate(templateId string) (*Template, error)
 	CreateTemplate(template Template) (*Template, error)
+
+	CreateNotificationServiceSetup(setup NotificationServiceSetup) (*NotificationServiceSetup, error)
+	GetNotificationServiceSetup(id string) (*NotificationServiceSetup, error)
+	UpdateNotificationServiceSetup(id string, name string, description string) (*NotificationServiceSetup, error)
+	DeleteNotificationServiceSetup(id string) error
+
+	UpsertNotificationProviderConfig(serviceSetupId string, configData string) error
+	GetNotificationProviderConfig(serviceSetupId string) error
 }
 
 type client struct {

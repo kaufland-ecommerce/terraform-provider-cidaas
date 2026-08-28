@@ -364,3 +364,18 @@ type CustomProvider struct {
 	DisplayName  string `json:"display_name"`
 	ProviderName string `json:"provider_name"`
 }
+
+// NotificationServiceSetup mirrors notifications-srv/servicesetups - a communication
+// provider connection (email/sms/ivr/push). Pair with a provider config (schema-less
+// credentials, see notification_provider_config.go) for the actual connection details.
+type NotificationServiceSetup struct {
+	ID                   string   `json:"_id,omitempty"`
+	Name                 string   `json:"name"`
+	ServiceId            string   `json:"serviceId"`
+	CommunicationMethods []string `json:"communicationMethods"`
+	Description          string   `json:"description,omitempty"`
+	HasRemoteTemplates   bool     `json:"hasRemoteTemplates"`
+	ParentServiceSetupId string   `json:"parentServiceSetupId,omitempty"`
+	ServiceCategory      string   `json:"serviceCategory,omitempty"`
+	Status               string   `json:"status,omitempty"`
+}
