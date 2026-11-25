@@ -510,43 +510,26 @@ func (r appResource) ValidateConfig(ctx context.Context, req resource.ValidateCo
 	}
 
 	var clientType types.String
-	var accentColor, primaryColor, hostedPageGroup, communicationMediumVerification types.String
-	var isRememberMeSelected, enablePasswordlessAuth, allowDisposableEmail types.Bool
-	var allowedLogoutUrls []string
-	var redirectUris, responseTypes, allowLoginWith types.List
-
 	req.Config.GetAttribute(ctx, path.Root("client_type"), &clientType)
-	req.Config.GetAttribute(ctx, path.Root("accent_color"), &accentColor)
-	req.Config.GetAttribute(ctx, path.Root("primary_color"), &primaryColor)
-	req.Config.GetAttribute(ctx, path.Root("hosted_page_group"), &hostedPageGroup)
-	req.Config.GetAttribute(ctx, path.Root("communication_medium_verification"), &communicationMediumVerification)
-	req.Config.GetAttribute(ctx, path.Root("is_remember_me_selected"), &isRememberMeSelected)
-	req.Config.GetAttribute(ctx, path.Root("allowed_logout_urls"), &allowedLogoutUrls)
-	req.Config.GetAttribute(ctx, path.Root("redirect_uris"), &redirectUris)
-	req.Config.GetAttribute(ctx, path.Root("response_types"), &responseTypes)
-	req.Config.GetAttribute(ctx, path.Root("allow_login_with"), &allowLoginWith)
-	req.Config.GetAttribute(ctx, path.Root("enable_passwordless_auth"), &enablePasswordlessAuth)
-	req.Config.GetAttribute(ctx, path.Root("allow_disposable_email"), &allowDisposableEmail)
-
-	setFields := map[string]bool{
-		"accent_color":                      !accentColor.IsNull(),
-		"primary_color":                     !primaryColor.IsNull(),
-		"hosted_page_group":                 !hostedPageGroup.IsNull(),
-		"communication_medium_verification": !communicationMediumVerification.IsNull(),
-		"is_remember_me_selected":           !isRememberMeSelected.IsNull(),
-		"allowed_logout_urls":               allowedLogoutUrls != nil,
-		"redirect_uris":                     !redirectUris.IsNull(),
-		"response_types":                    !responseTypes.IsNull(),
-		"allow_login_with":                  !allowLoginWith.IsNull(),
-		"enable_passwordless_auth":          !enablePasswordlessAuth.IsNull(),
-		"allow_disposable_email":            !allowDisposableEmail.IsNull(),
-	}
-
 	if clientType.IsUnknown() {
 		return
 	}
 
-	for _, name := range nonInteractiveFieldViolations(clientType.ValueString(), setFields) {
+	// knownSet: set to a known value. possiblySet: set, or unknown until plan.
+	// Unknown values are validated again once they are known.
+	knownSet := map[string]bool{}
+	possiblySet := map[string]bool{}
+	for _, name := range nonInteractiveUnsupportedFields {
+		var value attr.Value
+		req.Config.GetAttribute(ctx, path.Root(name), &value)
+		if value == nil || value.IsNull() {
+			continue
+		}
+		possiblySet[name] = true
+		knownSet[name] = !value.IsUnknown()
+	}
+
+	for _, name := range nonInteractiveFieldViolations(clientType.ValueString(), knownSet) {
 		resp.Diagnostics.AddAttributeError(
 			path.Root(name),
 			"Field not supported for NON_INTERACTIVE apps",
@@ -554,7 +537,7 @@ func (r appResource) ValidateConfig(ctx context.Context, req resource.ValidateCo
 		)
 	}
 
-	for _, name := range interactiveMissingFields(clientType.ValueString(), setFields) {
+	for _, name := range interactiveMissingFields(clientType.ValueString(), possiblySet) {
 		resp.Diagnostics.AddAttributeError(
 			path.Root(name),
 			"Missing required field",

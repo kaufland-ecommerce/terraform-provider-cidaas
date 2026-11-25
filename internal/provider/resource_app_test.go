@@ -347,6 +347,38 @@ func TestValidateConfig_NonInteractiveWithoutInteractiveFieldsIsValid(t *testing
 	}
 }
 
+func TestValidateConfig_NonInteractiveSkipsUnknownValues(t *testing.T) {
+	app := minimalAppPlanValue("NON_INTERACTIVE")
+	app.AccentColor = types.StringUnknown()
+	app.EnablePasswordlessAuth = types.BoolUnknown()
+
+	resp := validateAppConfig(t, app)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
+func TestValidateConfig_InteractiveCountsUnknownValuesAsSet(t *testing.T) {
+	app := withInteractiveRequiredFields(minimalAppPlanValue("REGULAR_WEB"))
+	app.EnablePasswordlessAuth = types.BoolUnknown()
+	app.AllowDisposableEmail = types.BoolUnknown()
+
+	resp := validateAppConfig(t, app)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
+func TestValidateConfig_UnknownClientTypeIsSkipped(t *testing.T) {
+	app := withInteractiveRequiredFields(minimalAppPlanValue("NON_INTERACTIVE"))
+	app.ClientType = types.StringUnknown()
+
+	resp := validateAppConfig(t, app)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
 func TestValidateConfig_InteractiveRequiresInteractiveFields(t *testing.T) {
 	resp := validateAppConfig(t, minimalAppPlanValue("REGULAR_WEB"))
 	if got := resp.Diagnostics.ErrorsCount(); got != len(interactiveRequiredFields) {
