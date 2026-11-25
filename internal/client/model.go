@@ -90,18 +90,6 @@ type AllowedGroup struct {
 	DefaultRoles []string `json:"default_roles" tfsdk:"default_roles"`
 }
 
-// BasicSettings mirrors a subset of App's fields; the cidaas UI always echoes it back on
-// every save. Fixes redirect_uris being dropped on write; does not fix allowed_logout_urls
-// (see nonInteractiveUnsupportedFields).
-type BasicSettings struct {
-	ClientId          string   `json:"client_id"`
-	RedirectUris      []string `json:"redirect_uris"`
-	AllowedLogoutUrls []string `json:"allowed_logout_urls"`
-	AppOwner          string   `json:"app_owner"`
-	AllowedScopes     []string `json:"allowed_scopes"`
-	ClientSecrets     []string `json:"client_secrets"`
-}
-
 type App struct {
 	ID                              string  `json:"id,omitempty"`
 	AcceptRolesInTheRegistration    bool    `json:"accept_roles_in_the_registration"`
@@ -138,8 +126,7 @@ type App struct {
 	BotProvider                     string  `json:"bot_provider,omitempty"`
 	OauthStandard                   string  `json:"oauthStandard,omitempty"`
 
-	AppKey        *AppKey        `json:"appKey,omitempty"`
-	BasicSettings *BasicSettings `json:"basic_settings,omitempty"`
+	AppKey *AppKey `json:"appKey,omitempty"`
 
 	AllowLoginWith               []string         `json:"allow_login_with"`
 	OperationsAllowedGroups      []AllowedGroup   `json:"operations_allowed_groups"`

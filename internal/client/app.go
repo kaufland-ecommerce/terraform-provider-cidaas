@@ -18,20 +18,6 @@ type appListResponse struct {
 	Data    []App `json:"data"`
 }
 
-// basicSettingsFor builds the nested basic_settings sub-object the cidaas UI always sends
-// alongside the top-level fields. Fixes redirect_uris being dropped on write; does not fix
-// allowed_logout_urls (see nonInteractiveUnsupportedFields for that).
-func basicSettingsFor(app App) *BasicSettings {
-	return &BasicSettings{
-		ClientId:          app.ClientId,
-		RedirectUris:      app.RedirectUris,
-		AllowedLogoutUrls: app.AllowedLogoutUrls,
-		AppOwner:          app.AppOwner,
-		AllowedScopes:     app.AllowedScopes,
-		ClientSecrets:     []string{},
-	}
-}
-
 func (c *client) CreateApp(app *App) (*App, error) {
 	toSend := *app
 
@@ -46,8 +32,6 @@ func (c *client) CreateApp(app *App) (*App, error) {
 		toSend.AccentColor = "#ef4923"
 		toSend.PrimaryColor = "#f7941d"
 	}
-
-	toSend.BasicSettings = basicSettingsFor(toSend)
 
 	rb, err := json.Marshal(toSend)
 	if err != nil {
@@ -105,7 +89,10 @@ func (c *client) GetApp(clientId string) (*App, error) {
 	}
 
 	var response appResponse
-	_ = json.Unmarshal(body, &response)
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, err
+	}
 
 	err = c.prepareResponse(&response.Data)
 
@@ -158,8 +145,6 @@ func (c *client) GetAppByName(clientName string) (*App, error) {
 }
 
 func (c *client) UpdateApp(app App) (*App, error) {
-	app.BasicSettings = basicSettingsFor(app)
-
 	rb, err := json.Marshal(app)
 	if err != nil {
 		return nil, err

@@ -49,38 +49,98 @@ func TestCreateApp_FillsPlaceholderColorForNonInteractiveAppsWithNoColorSet(t *t
 	}
 }
 
-func TestCreateApp_SendsBasicSettingsMirroringTopLevelFields(t *testing.T) {
-	// Regression test: redirect_uris was dropped on write unless basic_settings carried the
-	// same value too. allowed_logout_urls is included for parity with what the UI sends, but
-	// basic_settings alone doesn't make cidaas persist it (see nonInteractiveUnsupportedFields).
-	var receivedBody map[string]any
+// v4AppResponse is the shape cidaas v4 returns from GET and PUT /apps-srv/clients:
+// basic_settings.client_secrets is a list of objects.
+const v4AppResponse = `{
+  "success": true,
+  "status": 200,
+  "data": {
+    "_id": "app-id",
+    "client_id": "app-client-id",
+    "client_secret": "secret-1",
+    "client_secret_expires_at": null,
+    "client_name": "my-app",
+    "client_type": "NON_INTERACTIVE",
+    "allow_login_with": [],
+    "enable_passwordless_auth": null,
+    "allow_disposable_email": null,
+    "redirect_uris": [],
+    "response_types": [],
+    "grant_types": ["client_credentials"],
+    "allowed_scopes": ["openid"],
+    "password_policy_ref": "default",
+    "post_logout_redirect_uris": [],
+    "basic_settings": {
+      "client_id": "app-client-id",
+      "token_endpoint_auth_method": "client_secret_post",
+      "redirect_uris": [],
+      "allowed_logout_urls": [],
+      "app_owner": "CLIENT",
+      "allowed_scopes": ["openid"],
+      "client_secrets": [
+        {"client_secret": "secret-1", "client_secret_expires_at": null, "client_secret_issued_at": 1651481993812}
+      ]
+    }
+  }
+}`
+
+func TestCreateAndUpdateApp_DoNotSendBasicSettings(t *testing.T) {
+	var receivedBodies []map[string]any
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewDecoder(r.Body).Decode(&receivedBody)
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		receivedBodies = append(receivedBodies, body)
 		writeAppResponse(t, w, App{ClientId: "new-client-id"})
 	})
 
-	_, err := c.CreateApp(&App{
-		ClientName:        "my-app",
-		ClientId:          "new-client-id",
-		AllowedLogoutUrls: []string{"https://example.com/logout"},
-		RedirectUris:      []string{"https://example.com/cb"},
-		AllowedScopes:     []string{"openid"},
-		AppOwner:          "CLIENT",
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	app := App{
+		ClientName:    "my-app",
+		ClientId:      "new-client-id",
+		RedirectUris:  []string{"https://example.com/cb"},
+		AllowedScopes: []string{"openid"},
+	}
+	if _, err := c.CreateApp(&app); err != nil {
+		t.Fatalf("CreateApp: unexpected error: %v", err)
+	}
+	if _, err := c.UpdateApp(app); err != nil {
+		t.Fatalf("UpdateApp: unexpected error: %v", err)
 	}
 
-	basicSettings, ok := receivedBody["basic_settings"].(map[string]any)
-	if !ok {
-		t.Fatalf("expected basic_settings to be sent, got %v", receivedBody["basic_settings"])
+	for i, body := range receivedBodies {
+		if _, ok := body["basic_settings"]; ok {
+			t.Errorf("request %d: expected no basic_settings, got %v", i, body["basic_settings"])
+		}
 	}
-	if basicSettings["client_id"] != "new-client-id" {
-		t.Errorf("expected basic_settings.client_id to be set, got %v", basicSettings["client_id"])
+}
+
+func TestGetAndUpdateApp_DecodeV4Response(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(v4AppResponse))
+	})
+
+	got, err := c.GetApp("app-client-id")
+	if err != nil {
+		t.Fatalf("GetApp: unexpected error: %v", err)
 	}
-	logoutUrls, _ := basicSettings["allowed_logout_urls"].([]any)
-	if len(logoutUrls) != 1 || logoutUrls[0] != "https://example.com/logout" {
-		t.Errorf("expected basic_settings.allowed_logout_urls to mirror the top-level value, got %v", basicSettings["allowed_logout_urls"])
+	if got.ClientSecret != "secret-1" {
+		t.Errorf("expected client_secret to be read, got %q", got.ClientSecret)
+	}
+	if got.PasswordPolicy == nil || *got.PasswordPolicy != "default" {
+		t.Errorf("expected password_policy_ref \"default\", got %v", got.PasswordPolicy)
+	}
+
+	if _, err := c.UpdateApp(*got); err != nil {
+		t.Fatalf("UpdateApp: unexpected error: %v", err)
+	}
+}
+
+func TestGetApp_ReturnsDecodeError(t *testing.T) {
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"status": 200, "data": {"client_id": "app-client-id", "redirect_uris": "not-a-list"}}`))
+	})
+
+	if _, err := c.GetApp("app-client-id"); err == nil {
+		t.Fatal("expected a decode error, got nil")
 	}
 }
 

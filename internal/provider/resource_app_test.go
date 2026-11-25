@@ -258,13 +258,9 @@ func TestUpdateAndRefetchApp_UpdateErrorPropagates(t *testing.T) {
 }
 
 func TestNonInteractiveFieldViolations_OnlyAppliesToNonInteractive(t *testing.T) {
-	allSet := map[string]bool{
-		"accent_color":                      true,
-		"primary_color":                     true,
-		"hosted_page_group":                 true,
-		"communication_medium_verification": true,
-		"is_remember_me_selected":           true,
-		"allowed_logout_urls":               true,
+	allSet := map[string]bool{}
+	for _, name := range nonInteractiveUnsupportedFields {
+		allSet[name] = true
 	}
 
 	if got := nonInteractiveFieldViolations("SINGLE_PAGE", allSet); got != nil {
@@ -286,6 +282,115 @@ func TestNonInteractiveFieldViolations_OnlyFlagsFieldsThatAreSet(t *testing.T) {
 	}
 }
 
+func TestInteractiveMissingFields(t *testing.T) {
+	noneSet := map[string]bool{}
+	allSet := map[string]bool{}
+	for _, name := range interactiveRequiredFields {
+		allSet[name] = true
+	}
+
+	if got := interactiveMissingFields("NON_INTERACTIVE", noneSet); got != nil {
+		t.Errorf("expected nothing missing for NON_INTERACTIVE, got %v", got)
+	}
+	if got := interactiveMissingFields("", noneSet); got != nil {
+		t.Errorf("expected nothing missing for an empty client_type, got %v", got)
+	}
+	if got := interactiveMissingFields("SINGLE_PAGE", allSet); got != nil {
+		t.Errorf("expected nothing missing when all fields are set, got %v", got)
+	}
+	if got := interactiveMissingFields("SINGLE_PAGE", noneSet); len(got) != len(interactiveRequiredFields) {
+		t.Errorf("expected all %d fields missing, got %v", len(interactiveRequiredFields), got)
+	}
+}
+
+// validateAppConfig runs ValidateConfig against a config built from app.
+func validateAppConfig(t *testing.T, app *App) *resource.ValidateConfigResponse {
+	t.Helper()
+	ctx := context.Background()
+
+	var schemaResp resource.SchemaResponse
+	(&appResource{}).Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+
+	var plan tfsdk.Plan
+	plan.Schema = schemaResp.Schema
+	if diags := plan.Set(ctx, app); diags.HasError() {
+		t.Fatalf("unexpected diagnostics building config: %v", diags)
+	}
+
+	resp := &resource.ValidateConfigResponse{}
+	appResource{}.ValidateConfig(ctx, resource.ValidateConfigRequest{
+		Config: tfsdk.Config{Schema: schemaResp.Schema, Raw: plan.Raw},
+	}, resp)
+	return resp
+}
+
+func withInteractiveRequiredFields(app *App) *App {
+	app.RedirectUris = []string{"https://example.com/cb"}
+	app.ResponseTypes = []string{"code"}
+	app.AllowLoginWith = []string{"EMAIL"}
+	app.EnablePasswordlessAuth = types.BoolValue(false)
+	app.AllowDisposableEmail = types.BoolValue(false)
+	return app
+}
+
+func TestValidateConfig_NonInteractiveRejectsInteractiveRequiredFields(t *testing.T) {
+	resp := validateAppConfig(t, withInteractiveRequiredFields(minimalAppPlanValue("NON_INTERACTIVE")))
+	if got := resp.Diagnostics.ErrorsCount(); got != len(interactiveRequiredFields) {
+		t.Fatalf("expected %d errors, got %d: %v", len(interactiveRequiredFields), got, resp.Diagnostics)
+	}
+}
+
+func TestValidateConfig_NonInteractiveWithoutInteractiveFieldsIsValid(t *testing.T) {
+	resp := validateAppConfig(t, minimalAppPlanValue("NON_INTERACTIVE"))
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
+func TestValidateConfig_NonInteractiveSkipsUnknownValues(t *testing.T) {
+	app := minimalAppPlanValue("NON_INTERACTIVE")
+	app.AccentColor = types.StringUnknown()
+	app.EnablePasswordlessAuth = types.BoolUnknown()
+
+	resp := validateAppConfig(t, app)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
+func TestValidateConfig_InteractiveCountsUnknownValuesAsSet(t *testing.T) {
+	app := withInteractiveRequiredFields(minimalAppPlanValue("REGULAR_WEB"))
+	app.EnablePasswordlessAuth = types.BoolUnknown()
+	app.AllowDisposableEmail = types.BoolUnknown()
+
+	resp := validateAppConfig(t, app)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
+func TestValidateConfig_UnknownClientTypeIsSkipped(t *testing.T) {
+	app := withInteractiveRequiredFields(minimalAppPlanValue("NON_INTERACTIVE"))
+	app.ClientType = types.StringUnknown()
+
+	resp := validateAppConfig(t, app)
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
+func TestValidateConfig_InteractiveRequiresInteractiveFields(t *testing.T) {
+	resp := validateAppConfig(t, minimalAppPlanValue("REGULAR_WEB"))
+	if got := resp.Diagnostics.ErrorsCount(); got != len(interactiveRequiredFields) {
+		t.Fatalf("expected %d errors, got %d: %v", len(interactiveRequiredFields), got, resp.Diagnostics)
+	}
+
+	resp = validateAppConfig(t, withInteractiveRequiredFields(minimalAppPlanValue("REGULAR_WEB")))
+	if resp.Diagnostics.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", resp.Diagnostics)
+	}
+}
+
 func TestApplyAppToState_NonInteractiveAppsGetNullForUnsupportedFields(t *testing.T) {
 	// Regression test: cidaas never persists these fields for NON_INTERACTIVE apps, so state
 	// must report them as null (matching what ValidateConfig requires the config to leave
@@ -298,6 +403,9 @@ func TestApplyAppToState_NonInteractiveAppsGetNullForUnsupportedFields(t *testin
 		CommunicationMediumVerification: "leftover",
 		IsRememberMeSelected:            true,
 		AllowedLogoutUrls:               []string{"https://leftover.example.com"},
+		RedirectUris:                    []string{},
+		ResponseTypes:                   []string{},
+		AllowLoginWith:                  []string{},
 		AppKey:                          &client.AppKey{},
 	}
 
@@ -325,6 +433,16 @@ func TestApplyAppToState_NonInteractiveAppsGetNullForUnsupportedFields(t *testin
 	if !state.AllowedLogoutUrls.IsNull() {
 		t.Errorf("expected AllowedLogoutUrls to be null, got %v", state.AllowedLogoutUrls)
 	}
+	if !state.AllowDisposableEmail.IsNull() {
+		t.Errorf("expected AllowDisposableEmail to be null, got %v", state.AllowDisposableEmail)
+	}
+	if !state.EnablePasswordlessAuth.IsNull() {
+		t.Errorf("expected EnablePasswordlessAuth to be null, got %v", state.EnablePasswordlessAuth)
+	}
+	if state.RedirectUris != nil || state.ResponseTypes != nil || state.AllowLoginWith != nil {
+		t.Errorf("expected RedirectUris, ResponseTypes and AllowLoginWith to be nil, got %v, %v, %v",
+			state.RedirectUris, state.ResponseTypes, state.AllowLoginWith)
+	}
 }
 
 func TestApplyAppToState_InteractiveAppsKeepRealValues(t *testing.T) {
@@ -336,6 +454,8 @@ func TestApplyAppToState_InteractiveAppsKeepRealValues(t *testing.T) {
 		CommunicationMediumVerification: "mobile_and_email_verification_required",
 		IsRememberMeSelected:            true,
 		AllowedLogoutUrls:               []string{"https://example.com/logout"},
+		AllowDisposableEmail:            true,
+		RedirectUris:                    []string{"https://example.com/cb"},
 		AppKey:                          &client.AppKey{},
 	}
 
@@ -345,6 +465,15 @@ func TestApplyAppToState_InteractiveAppsKeepRealValues(t *testing.T) {
 		t.Fatalf("unexpected diagnostics: %v", diags)
 	}
 
+	if !state.AllowDisposableEmail.ValueBool() {
+		t.Errorf("expected AllowDisposableEmail to be preserved as true, got %v", state.AllowDisposableEmail)
+	}
+	if !state.EnablePasswordlessAuth.Equal(types.BoolValue(false)) {
+		t.Errorf("expected EnablePasswordlessAuth to be false, got %v", state.EnablePasswordlessAuth)
+	}
+	if len(state.RedirectUris) != 1 {
+		t.Errorf("expected RedirectUris to be preserved, got %v", state.RedirectUris)
+	}
 	if state.AccentColor.ValueString() != "#ef4923" {
 		t.Errorf("expected AccentColor to be preserved, got %v", state.AccentColor)
 	}
@@ -391,6 +520,32 @@ func TestPlanToApp_UnknownAllowedLogoutUrlsDoesNotError(t *testing.T) {
 	}
 	if plannedApp.AllowedLogoutUrls != nil {
 		t.Errorf("expected AllowedLogoutUrls to stay nil when the plan value is unknown, got %v", plannedApp.AllowedLogoutUrls)
+	}
+}
+
+func TestPlanToApp_UnknownPasswordPolicyIsNotSent(t *testing.T) {
+	plan := minimalAppPlanValue("SINGLE_PAGE")
+	plan.PasswordPolicy = types.StringUnknown()
+
+	plannedApp, diags := planToApp(context.Background(), plan, plan)
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if plannedApp.PasswordPolicy != nil {
+		t.Errorf("expected PasswordPolicy to be nil, got %v", *plannedApp.PasswordPolicy)
+	}
+}
+
+func TestPlanToApp_UnsetInteractiveListsAreSentAsEmpty(t *testing.T) {
+	plan := minimalAppPlanValue("NON_INTERACTIVE")
+
+	plannedApp, diags := planToApp(context.Background(), plan, plan)
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags)
+	}
+	if plannedApp.RedirectUris == nil || plannedApp.ResponseTypes == nil || plannedApp.AllowLoginWith == nil {
+		t.Errorf("expected empty slices, got %v, %v, %v",
+			plannedApp.RedirectUris, plannedApp.ResponseTypes, plannedApp.AllowLoginWith)
 	}
 }
 
