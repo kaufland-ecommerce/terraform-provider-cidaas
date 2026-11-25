@@ -32,10 +32,12 @@ func (d *socialProviderDataSource) Schema(_ context.Context, _ datasource.Schema
 			//	Computed: true,
 			//},
 			"provider_name": schema.StringAttribute{
-				Required: true,
+				Required:    true,
+				Description: "Provider type, e.g. \"google\". Shown as \"Provider\" in the cidaas admin UI.",
 			},
 			"name": schema.StringAttribute{
-				Optional: true,
+				Optional:    true,
+				Description: "Display name of the provider in the cidaas admin UI. Required when more than one provider of this type exists.",
 			},
 		},
 	}

@@ -23,11 +23,11 @@ data "cidaas_social_provider" "facebook" {
 
 ### Required
 
-- `provider_name` (String)
+- `provider_name` (String) Provider type, e.g. "google". Shown as "Provider" in the cidaas admin UI.
 
 ### Optional
 
-- `name` (String)
+- `name` (String) Display name of the provider in the cidaas admin UI. Required when more than one provider of this type exists.
 
 ### Read-Only
 
